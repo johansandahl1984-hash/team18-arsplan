@@ -1,0 +1,3119 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trelleborg IF · Team-18 · Årsplanering</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --ink:#12140F;
+    --pine:#1F4D3A;
+    --pine-dark:#132F24;
+    --pine-light:#3F8F5F;
+    --ice:#F4F6F1;
+    --ice-card:#FFFFFF;
+    --gold:#C9A24B;
+    --line:#DCE3D9;
+    --muted:#5B6459;
+    --red:#C24A3A;
+    --blue:#2E6C9E;
+    --purple:#8A6BAF;
+    --amber:#B57A3F;
+    --teal:#2E8B95;
+    --grey:#8A8F86;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--ice); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:'Oswald',sans-serif; letter-spacing:.02em; margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- HEADER ---------- */
+  header.app{
+    background:linear-gradient(135deg,var(--pine-dark),var(--pine) 70%);
+    color:#fff; padding:22px 20px 18px;
+    position:sticky; top:0; z-index:50;
+    box-shadow:0 4px 18px rgba(19,47,36,.25);
+  }
+  .brandrow{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .crest{
+    width:42px; height:42px; border-radius:50%; background:var(--gold);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.15);
+  }
+  .crest span{font-family:'Oswald'; font-weight:700; color:var(--pine-dark); font-size:18px;}
+  .brand h1{font-size:22px; font-weight:700; text-transform:uppercase;}
+  .brand .sub{font-size:12.5px; color:#DCEAE0; margin-top:2px; font-family:'IBM Plex Mono',monospace;}
+  .headnote{font-size:11.5px; color:#B9D3C4; max-width:230px; text-align:right; line-height:1.4;}
+
+  nav.tabs{
+    display:flex; gap:4px; margin-top:16px; overflow-x:auto; padding-bottom:2px;
+    scrollbar-width:none;
+  }
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#EAF2EC;
+    padding:9px 16px; border-radius:999px; font-family:'Oswald'; font-size:13.5px;
+    letter-spacing:.03em; cursor:pointer; white-space:nowrap; transition:all .15s;
+  }
+  nav.tabs button:hover{background:rgba(255,255,255,.16);}
+  nav.tabs button.active{background:var(--gold); color:var(--pine-dark); border-color:var(--gold); font-weight:600;}
+
+  main{max-width:1100px; margin:0 auto; padding:22px 18px 90px;}
+  .view{display:none; animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .section-title{display:flex; align-items:baseline; justify-content:space-between; margin:26px 0 12px; flex-wrap:wrap; gap:8px;}
+  .section-title h2{font-size:19px; color:var(--pine-dark);}
+  .section-title .hint{font-size:12px; color:var(--muted);}
+
+  .card{
+    background:var(--ice-card); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin-bottom:12px; box-shadow:0 1px 2px rgba(19,47,36,.04);
+  }
+
+  /* ---------- RUNE TIMELINE (signature) ---------- */
+  .timeline-wrap{background:var(--pine-dark); border-radius:16px; padding:18px 16px 14px; overflow-x:auto; margin-bottom:6px;}
+  .timeline-wrap svg{display:block; min-width:920px;}
+  .tl-caption{color:#B9D3C4; font-size:11px; font-family:'IBM Plex Mono'; margin-top:8px; text-align:center;}
+
+  .period-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:14px;}
+  .period-card{border-radius:14px; padding:15px 16px; border:1px solid var(--line); background:#fff; position:relative; overflow:hidden;}
+  .period-card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--pc-color,var(--pine));}
+  .period-card h3{font-size:15.5px; color:var(--pine-dark); margin-bottom:4px;}
+  .period-card .wk{font-family:'IBM Plex Mono'; font-size:11px; color:var(--muted); margin-bottom:8px;}
+  .period-card p{font-size:13px; color:#3a4038; line-height:1.5; margin:0;}
+
+  .note-box{background:#FBF3E3; border:1px solid #EAD8AE; border-radius:12px; padding:12px 14px; font-size:13px; color:#6B5326; margin-top:14px;}
+  .note-box b{color:#4E3B15;}
+
+  .event-list{list-style:none; padding:0; margin:0;}
+  .event-list li{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13.5px; align-items:center;}
+  .event-list li:last-child{border-bottom:none;}
+  .evt-date{font-family:'IBM Plex Mono'; font-weight:600; color:var(--pine-dark); min-width:88px;}
+  .evt-tag{font-size:10.5px; padding:2px 8px; border-radius:999px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;}
+  .tag-träning{background:#E4F1E8; color:var(--pine);}
+  .tag-match{background:#FBE7E3; color:var(--red);}
+  .tag-möte{background:#E9EDFB; color:var(--blue);}
+  .tag-annat{background:#F0E9F7; color:var(--purple);}
+
+  /* ---------- coach chips ---------- */
+  .chip{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px 3px 6px; border-radius:999px; background:#eee; font-weight:600; white-space:nowrap;}
+  .chip .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .chip-group{display:flex; flex-wrap:wrap; gap:6px;}
+
+  .coach-legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+
+  /* ---------- season template ---------- */
+  .week-picker{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;}
+  .week-btn{border:1px solid var(--line); background:#fff; padding:6px 11px; border-radius:9px; font-family:'IBM Plex Mono'; font-size:12px; cursor:pointer; color:var(--muted);}
+  .week-btn.active{background:var(--pine); color:#fff; border-color:var(--pine);}
+  .week-btn.hasdata::after{content:'●'; color:var(--gold); font-size:8px; margin-left:4px; vertical-align:middle;}
+
+  .pass-card{border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; background:#fff;}
+  .pass-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--line);}
+  .pass-head h3{font-size:16px; color:var(--pine-dark);}
+  .pass-meta{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); font-family:'IBM Plex Mono';}
+  .pass-meta b{color:var(--ink); font-family:'Inter'; font-weight:600;}
+  .moment-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); flex-wrap:wrap;}
+  .moment-row:last-child{border-bottom:none;}
+  .moment-name{font-weight:600; min-width:150px; font-size:13.5px;}
+  .moment-time{font-family:'IBM Plex Mono'; font-size:12px; color:var(--muted); min-width:52px;}
+  .suggest-link{font-size:11.5px; color:var(--teal); cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
+  .special-badge{background:var(--gold); color:var(--pine-dark); font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px;}
+
+  /* ---------- calendar ---------- */
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  .btn{
+    background:var(--pine); color:#fff; border:none; padding:9px 16px; border-radius:9px;
+    font-family:'Oswald'; font-size:13px; letter-spacing:.02em; cursor:pointer;
+  }
+  .btn:hover{background:var(--pine-dark);}
+  .btn.ghost{background:transparent; color:var(--pine); border:1px solid var(--pine);}
+  .btn.small{padding:5px 11px; font-size:11.5px; border-radius:7px;}
+  .btn.danger{background:var(--red);}
+
+  .sess-card{border:1px solid var(--line); border-radius:12px; padding:13px 15px; margin-bottom:10px; background:#fff; display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;}
+  .sess-date{min-width:92px; text-align:center; background:var(--ice); border-radius:10px; padding:8px 6px; font-family:'IBM Plex Mono';}
+  .sess-date .d{font-size:19px; font-weight:700; color:var(--pine-dark); display:block;}
+  .sess-date .m{font-size:10px; text-transform:uppercase; color:var(--muted);}
+  .sess-body{flex:1; min-width:200px;}
+  .sess-title-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .sess-title{font-weight:700; font-size:14.5px;}
+  .sess-sub{font-size:12.5px; color:var(--muted); margin-top:3px;}
+  .sess-actions{display:flex; gap:6px; align-self:flex-start;}
+
+  /* ---------- exercise bank ---------- */
+  .filter-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center;}
+  .cat-chip{border:1px solid var(--line); background:#fff; padding:6px 13px; border-radius:999px; font-size:12.5px; cursor:pointer; font-weight:600; color:var(--muted);}
+  .cat-chip.active{background:var(--pine); color:#fff; border-color:var(--pine);}
+  input[type=text], input[type=number], input[type=date], input[type=time], select, textarea{
+    font-family:'Inter'; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+  }
+  textarea{width:100%; resize:vertical; min-height:56px;}
+  .search-box{flex:1; min-width:160px;}
+  .search-box input{width:100%;}
+
+  .ex-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
+  .ex-card{border:1px solid var(--line); border-radius:14px; background:#fff; overflow:hidden;}
+  .ex-head{padding:14px 16px 10px; cursor:pointer;}
+  .ex-cat{display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:999px; margin-bottom:7px; color:#fff;}
+  .ex-head h4{font-size:15.5px; color:var(--pine-dark);}
+  .ex-purpose{font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.4;}
+  .ex-body{display:none; padding:0 16px 16px; font-size:13px; line-height:1.55;}
+  .ex-body.open{display:block;}
+  .ex-body h5{font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--pine); margin:12px 0 4px;}
+  .ex-body ol{margin:0; padding-left:18px;}
+  .ex-body ul{margin:0; padding-left:18px;}
+  .var-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;}
+  .var-box{background:var(--ice); border-radius:9px; padding:8px 10px; font-size:12.5px;}
+  .var-box b{display:block; font-size:10.5px; text-transform:uppercase; color:var(--muted); margin-bottom:3px;}
+  .ex-link{display:inline-block; margin-top:10px; font-size:12px; color:var(--teal);}
+  .expand-hint{font-size:11px; color:var(--grey); margin-top:6px;}
+
+  /* ---------- laget ---------- */
+  .group-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px;}
+  .group-card{border-radius:14px; padding:14px 16px; color:#fff;}
+  .group-card h3{font-size:16px;}
+  .group-card .cnt{font-size:12px; opacity:.9; margin-top:2px;}
+
+  .player-row{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .player-row:last-child{border-bottom:none;}
+  .pdot{width:11px; height:11px; border-radius:50%; flex-shrink:0;}
+  .player-name{font-weight:600; min-width:120px;}
+  .player-meta{font-size:12px; color:var(--muted); flex:1; min-width:180px;}
+  .player-toggle{font-size:12px; color:var(--teal); cursor:pointer;}
+  .player-detail{display:none; width:100%; background:var(--ice); border-radius:10px; padding:12px 14px; margin-top:6px; font-size:12.5px;}
+  .player-detail.open{display:block;}
+  .player-detail dl{margin:0;}
+  .player-detail dt{font-weight:700; margin-top:8px; font-size:11px; text-transform:uppercase; color:var(--pine);}
+  .player-detail dt:first-child{margin-top:0;}
+  .player-detail dd{margin:2px 0 0;}
+  .focus-tag{display:inline-block; background:#E4F1E8; color:var(--pine); font-size:11px; padding:2px 8px; border-radius:999px; margin:3px 4px 0 0;}
+
+  .coach-card{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .coach-card:last-child{border-bottom:none;}
+  .coach-avatar{width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-family:'Oswald'; flex-shrink:0;}
+  .coach-info b{display:block; font-size:14px;}
+  .coach-info span{font-size:12px; color:var(--muted);}
+
+  /* ---------- modal ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(18,20,15,.55); display:none; align-items:flex-end; justify-content:center; z-index:100;}
+  .overlay.open{display:flex;}
+  .modal{background:#fff; width:100%; max-width:560px; border-radius:18px 18px 0 0; padding:20px 20px 26px; max-height:88vh; overflow-y:auto; animation:slideup .2s ease;}
+  @media(min-width:640px){ .overlay{align-items:center;} .modal{border-radius:16px; margin-bottom:40px;} }
+  @keyframes slideup{from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+  .modal h3{font-size:18px; margin-bottom:14px; color:var(--pine-dark);}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--muted);}
+  .field input,.field select,.field textarea{width:100%;}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media(max-width:640px){ .field-row{grid-template-columns:1fr;} }
+  .checkchips{display:flex; flex-wrap:wrap; gap:6px;}
+  .checkchip{border:1px solid var(--line); padding:5px 11px; border-radius:999px; font-size:12px; cursor:pointer; user-select:none;}
+  .checkchip.on{background:var(--pine); color:#fff; border-color:var(--pine);}
+  .checkchip.selected{background:var(--gold); color:var(--pine-dark); border-color:var(--gold);}
+
+  .lineup-pool{border:1.5px dashed var(--line); border-radius:12px; padding:10px 12px; margin:6px 0 12px; background:var(--ice); transition:background .15s;}
+  .lineup-pool.dragover{background:#E4F1E8; border-color:var(--pine-light);}
+  .lineup-pool-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; margin-bottom:6px;}
+  .lineup-board{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px;}
+  .lineup-zone{border-radius:12px; padding:10px 12px; border:1.5px solid var(--lz-color,var(--line)); background:#fff; transition:background .15s; min-height:70px;}
+  .lineup-zone.dragover{background:var(--lz-color22,#eee);}
+  .lineup-zone-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px;}
+  .lineup-zone-head b{font-family:'Oswald'; font-size:13px;}
+  .lineup-zone select{font-size:11.5px; padding:4px 6px; max-width:100px;}
+  .lineup-chip{cursor:grab;}
+  .lineup-chip:active{cursor:grabbing;}
+
+  .blk-table{border-collapse:collapse; width:100%; min-width:560px;}
+  .blk-table th{font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); text-align:left; padding:4px 6px; border-bottom:2px solid var(--line);}
+  .blk-table td{padding:5px 6px; vertical-align:top; border-bottom:1px solid var(--line);}
+  .blk-table select, .blk-table input[type=number], .blk-table input[type=text]{width:100%; font-size:12px; padding:4px 5px;}
+
+  /* Bygg-pass-tabellen som staplade kort på mobil (istället för sidledsscroll) */
+  @media(max-width:640px){
+    .blk-table{min-width:0;}
+    .blk-table thead{display:none;}
+    .blk-table tbody{display:block;}
+    .blk-table tr{
+      display:block; border:1px solid var(--line); border-radius:10px;
+      margin-bottom:10px; padding:6px 8px; background:#fff;
+    }
+    .blk-table tr[style*="border-left"]{border-left-width:4px;}
+    .blk-table td{
+      display:flex; align-items:center; gap:8px; border-bottom:none; padding:4px 0;
+    }
+    .blk-table td[data-label]:not([data-label=""])::before{
+      content:attr(data-label); flex:0 0 92px; font-size:10.5px; text-transform:uppercase;
+      letter-spacing:.03em; color:var(--muted); font-weight:600;
+    }
+    .blk-table td[data-label]:not([data-label=""]) > *{flex:1; min-width:0;}
+    /* Rader/celler som hör till "extra"-innehåll (anteckningar, stationer/spel) tar full bredd, ingen etikett-kolumn */
+    .blk-table td[colspan]{display:block;}
+    /* tomma "spacer"-celler (utan data-label och utan colspan) hör inte hemma i kortvyn */
+    .blk-table td:not([data-label]):not([colspan]){display:none;}
+  }
+
+  .row-arrow{cursor:pointer; display:block; font-size:10px; line-height:1.3; color:var(--muted); user-select:none;}
+  .row-arrow:hover{color:var(--pine);}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+  .modal-actions-sticky{
+    position:sticky; bottom:-26px; margin:20px -20px -26px; padding:12px 20px;
+    background:#fff; border-top:1px solid var(--line);
+    box-shadow:0 -4px 10px rgba(19,47,36,.06);
+  }
+  .close-x{position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted);}
+
+  .fab{position:fixed; bottom:22px; right:20px; z-index:40;}
+  .empty{text-align:center; padding:30px 10px; color:var(--muted); font-size:13px;}
+
+  .print-only{display:none;}
+  @media print{
+    header.app, .toolbar, .fab, nav.tabs, .btn, .sess-actions, .filter-row, .expand-hint{display:none !important;}
+    body{background:#fff;}
+    .view{display:block !important;}
+    .card,.sess-card,.pass-card{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div id="lock-screen" style="position:fixed;inset:0;z-index:9999;background:#F4F6F1;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 10px 30px rgba(19,47,36,.15);text-align:center;">
+    <div style="font-family:'Oswald';font-weight:700;font-size:18px;margin-bottom:4px;">Team-18 · Ishockey</div>
+    <div style="font-size:12.5px;color:var(--muted, #6b7268);margin-bottom:18px;">Ange lösenord för att fortsätta</div>
+    <input type="password" id="lock-password" placeholder="Lösenord" style="width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:10px;" autocomplete="off">
+    <div id="lock-error" style="display:none;color:#C24A3A;font-size:12.5px;margin-bottom:10px;">Fel lösenord, försök igen.</div>
+    <button class="btn" style="width:100%;" onclick="checkLockPassword()">Lås upp</button>
+  </div>
+</div>
+
+<header class="app">
+  <div class="brandrow">
+    <div class="brand">
+      <div class="crest"><span>T18</span></div>
+      <div>
+        <h1>Team-18 · Ishockey</h1>
+        <div class="sub">Trelleborg IF Ungdom D2 — säsong 2026/27</div>
+      </div>
+    </div>
+    <div class="headnote">Delad tränarplan — alla ändringar sparas och syns för hela tränarstaben.</div>
+  </div>
+  <nav class="tabs" id="tabnav">
+    <button data-view="oversikt" class="active">Årsöversikt</button>
+    <button data-view="kalender">Kalender</button>
+    <button data-view="ovningar">Övningsbank</button>
+    <button data-view="laget">Laget</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ ÖVERSIKT ============ -->
+  <section class="view active" id="view-oversikt">
+    <div class="section-title">
+      <h2>Säsongens block, augusti–december</h2>
+      <span class="hint">Redigerbara perioder — vecka 32–52, kan inte överlappa</span>
+    </div>
+
+    <div class="timeline-wrap">
+      <svg id="tl-svg" viewBox="0 0 920 92" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="tl-caption">Varje segment = en vecka · färg = fokusblock · guldprick = specialhändelse (match/cup/Vikingadagen)</div>
+    </div>
+
+    <div class="toolbar" style="margin:12px 0 4px;"><button class="btn" onclick="openPeriodModal(null)">+ Ny period</button></div>
+    <div class="period-grid" id="period-grid"></div>
+
+    <div class="note-box">
+      <b>Från ramverket:</b> Fys ska läggas till som eget pass, 1 gång/vecka (utöver ispassen). Ej schemalagt ännu — lägg in via Kalender-fliken när dag/tid är bestämd.
+    </div>
+
+    <div class="section-title">
+      <h2>Kända händelser (från laget.se, augusti 2026)</h2>
+      <span class="hint">Uppdateras manuellt — be Claude "kolla kalendern" för nästa avstämning</span>
+    </div>
+    <div class="card">
+      <ul class="event-list" id="known-events"></ul>
+    </div>
+
+    <div class="section-title"><h2>Tränarstabens initialer i mallen</h2></div>
+    <div class="card">
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 8px;">Bekräftat: <b>OF</b>=Olof, <b>JS</b>=Johan, <b>FB</b>=Frank, <b>MJ</b>=Mathias, <b>PH</b>=Patrik, <b>KN</b>=Kalle (ungdomsansvarig). Ändra i fliken <b>Laget</b> om något behöver justeras framöver.</p>
+      <div class="coach-legend" id="coach-legend-mini"></div>
+    </div>
+  </section>
+
+  <!-- ============ KALENDER & PLANERING ============ -->
+  <section class="view" id="view-kalender">
+    <div class="section-title">
+      <h2>Kalender &amp; planering</h2>
+      <span class="hint">Kommande, pågående period och genomförda pass i ett</span>
+    </div>
+
+    <div class="card" id="current-period-banner"></div>
+
+    <div id="to-plan-callout"></div>
+
+    <div class="toolbar">
+      <button class="btn" onclick="openSessionModal()">+ Ny händelse</button>
+      <button class="btn ghost" onclick="linkSeasonPlanToTrainings()">🔗 Koppla säsongsplan</button>
+      <button class="btn ghost" onclick="window.print()">Skriv ut vy</button>
+      <span class="hint" style="margin-left:auto;">Källa för augusti: laget.se — resten fylls i av er</span>
+    </div>
+
+    <div class="week-picker" id="sess-mode-tabs">
+      <button class="week-btn active" onclick="setSessMode('upcoming')" id="mode-btn-upcoming">Kommande</button>
+      <button class="week-btn" onclick="setSessMode('archive')" id="mode-btn-archive">Genomförda / arkiv</button>
+    </div>
+
+    <div id="sess-list"></div>
+  </section>
+
+  <!-- ============ ÖVNINGSBANK ============ -->
+  <section class="view" id="view-ovningar">
+    <div class="section-title">
+      <h2>Övningsbank</h2>
+      <span class="hint" id="ex-count-hint"></span>
+    </div>
+    <div class="filter-row">
+      <div class="search-box"><input type="text" id="ex-search" placeholder="Sök övning…" oninput="renderExercises()"></div>
+    </div>
+    <div class="filter-row" id="cat-filter"></div>
+    <div class="ex-grid" id="ex-grid"></div>
+    <div class="card" style="margin-top:18px;">
+      <p style="font-size:12.5px;color:var(--muted);margin:0;">Fler idéer och video: <a class="ex-link" href="https://hockeyakademin.se/ovningar" target="_blank" rel="noopener">hockeyakademin.se — Svenska Ishockeyförbundets övningsbank ↗</a></p>
+    </div>
+  </section>
+
+  <!-- ============ LAGET ============ -->
+  <section class="view" id="view-laget">
+    <div class="section-title">
+      <h2>Färggrupper</h2>
+      <span class="hint">Färgpalett för träningsindelning — hur många ni använder väljs per träning i Kalender</span>
+    </div>
+    <div class="toolbar"><button class="btn" onclick="openGroupModal()">+ Ny grupp</button></div>
+    <div class="group-grid" id="group-grid"></div>
+
+    <div class="section-title" style="margin-top:30px;">
+      <h2>Spelare</h2>
+      <span class="hint" id="player-count-hint"></span>
+    </div>
+    <div class="toolbar">
+      <button class="btn" onclick="openPlayerModal()">+ Lägg till spelare</button>
+    </div>
+    <div class="card" id="player-list"></div>
+
+    <div class="section-title" style="margin-top:30px;">
+      <h2>Mixhistorik</h2>
+      <span class="hint">Bara genomförda pass räknas — hålls isär för träning och match</span>
+    </div>
+    <div class="toolbar" style="margin-bottom:8px;"><button class="btn ghost small" onclick="recomputeMixHistory()">🔄 Räkna om från grunden</button></div>
+    <div class="card" id="mix-history"></div>
+
+    <div class="section-title" style="margin-top:30px;">
+      <h2>Tränarstab</h2>
+      <span class="hint">Redigera roll/initialer om mappningen ovan är fel</span>
+    </div>
+    <div class="card" id="coach-list"></div>
+  </section>
+
+</main>
+
+<!-- ============ MODALS ============ -->
+<div class="overlay" id="modal-session">
+  <div class="modal" style="max-width:720px;">
+    <button class="close-x" onclick="closeModal('modal-session')">✕</button>
+    <h3 id="sess-modal-title">Ny händelse</h3>
+    <input type="hidden" id="sess-id">
+    <div class="field-row">
+      <div class="field"><label>Datum</label><input type="date" id="sess-date"></div>
+      <div class="field"><label>Typ</label>
+        <select id="sess-type">
+          <option value="Träning">Träning</option>
+          <option value="Match">Match</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Starttid</label><input type="time" id="sess-start"></div>
+      <div class="field"><label>Sluttid</label><input type="time" id="sess-end"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Samlingstid</label><input type="time" id="sess-gathering"></div>
+      <div class="field"><label>Plats</label><input type="text" id="sess-place" placeholder="t.ex. Söderslättshallen"></div>
+    </div>
+
+    <div class="field" id="sess-template-field">
+      <label>Starta med mall (valfritt)</label>
+      <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px;">Kopierar in blocken från en tidigare sparad träning direkt.</p>
+      <select id="sess-template"><option value="">— ingen mall —</option></select>
+    </div>
+
+    <div class="field">
+      <label>Koppla till säsongens träningsplan</label>
+      <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px;">Valfritt — kopplar in fokus/moment från ert ramverk som referens. Isyta och istid nedan går att ändra oavsett.</p>
+      <div class="field-row">
+        <select id="sess-week" onchange="onSessWeekChange()"><option value="">— ingen vecka —</option></select>
+        <select id="sess-pass" onchange="onSessPassChange()"><option value="">— inget pass —</option></select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Isyta</label>
+        <select id="sess-yta">
+          <option value="">— ej angiven —</option>
+          <option value="Helis">Helis</option>
+          <option value="2/3 is">2/3 is</option>
+          <option value="1/2 is">1/2 is</option>
+          <option value="Annat">Annat</option>
+        </select>
+      </div>
+      <div class="field"><label>Istid (min på is, kan skilja sig från start–sluttid ovan)</label><input type="number" id="sess-istid" min="0" step="5" placeholder="t.ex. 50"></div>
+    </div>
+
+    <div id="sess-pass-ref"></div>
+
+    <div class="field"><label>Ansvariga tränare (för hela träningen)</label><div class="checkchips" id="sess-coaches"></div></div>
+
+    <div class="field">
+      <label>Vilka är med idag?</label>
+      <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px;">Bocka av mot laget.se-anmälningarna. Bara de som är med här dyker upp i grupperingen nedan.</p>
+      <div class="checkchips" id="sess-attendance"></div>
+    </div>
+
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <label style="margin:0;">Aktiva grupper/färger denna gång</label>
+        <button type="button" class="btn ghost small" onclick="quickNewGroup()">+ Ny grupp</button>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Ibland 4, ibland 6 — välj de ni använder idag.</p>
+      <div class="checkchips" id="sess-active-groups"></div>
+    </div>
+
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <label style="margin:0;">Dra spelare till en grupp</label>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
+          <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
+        </div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Dra en spelare (håll in och dra på mobil, klicka-och-dra på dator) — eller tryck på spelaren och sedan på gruppen. "Föreslå mix" undviker par som redan tränat mycket ihop denna säsong.</p>
+      <div class="lineup-pool" id="lineup-pool" ondragover="event.preventDefault()" ondrop="onZoneDrop(event, null)" onclick="onZoneClick(null)">
+        <div class="lineup-pool-label">Ej indelade</div>
+        <div class="checkchips" id="lineup-pool-chips"></div>
+      </div>
+      <div class="lineup-board" id="lineup-board"></div>
+    </div>
+
+    <div class="field"><label>Anteckningar</label><textarea id="sess-notes" placeholder="T.ex. matchmotstånd, samling 15 min innan…"></textarea></div>
+    <div class="modal-actions modal-actions-sticky">
+      <button class="btn danger" id="sess-delete-btn" style="display:none;" onclick="deleteSession()">Ta bort</button>
+      <button class="btn ghost" id="sess-archive-btn" style="display:none;" onclick="toggleArchiveFromModal()"></button>
+      <button class="btn ghost" onclick="closeModal('modal-session')">Avbryt</button>
+      <button class="btn" onclick="saveSession()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-player">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('modal-player')">✕</button>
+    <h3 id="player-modal-title">Ny spelare</h3>
+    <input type="hidden" id="player-id">
+    <div class="field-row">
+      <div class="field"><label>Namn</label><input type="text" id="player-name" placeholder="Förnamn E (efternamnsinitial)"></div>
+      <div class="field"><label>Nummer</label><input type="text" id="player-number" placeholder="- om inget"></div>
+    </div>
+    <div class="field"><label>Styrkor</label><textarea id="player-strengths" placeholder="Vad är spelaren redan bra på?"></textarea></div>
+    <div class="field"><label>Utvecklingsområden</label><textarea id="player-growth" placeholder="Vad ska spelaren jobba på? (t.ex. skridsko, puckkontroll, passning, spel, styrka/balans)"></textarea></div>
+    <div class="field"><label>Övriga noteringar</label><textarea id="player-notes"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn danger" id="player-delete-btn" style="display:none;" onclick="deletePlayer()">Ta bort</button>
+      <button class="btn ghost" onclick="closeModal('modal-player')">Avbryt</button>
+      <button class="btn" onclick="savePlayer()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-group">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('modal-group')">✕</button>
+    <h3>Ny grupp</h3>
+    <input type="hidden" id="group-id">
+    <div class="field"><label>Namn på grupp</label><input type="text" id="group-name" placeholder="t.ex. Röd grupp"></div>
+    <div class="field"><label>Färg</label>
+      <div class="checkchips" id="group-color-picker"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="group-delete-btn" style="display:none;" onclick="deleteGroup()">Ta bort</button>
+      <button class="btn ghost" onclick="closeModal('modal-group')">Avbryt</button>
+      <button class="btn" onclick="saveGroup()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-coach">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('modal-coach')">✕</button>
+    <h3>Redigera tränare</h3>
+    <input type="hidden" id="coach-id">
+    <div class="field"><label>Namn</label><input type="text" id="coach-name"></div>
+    <div class="field-row">
+      <div class="field"><label>Roll</label><input type="text" id="coach-role"></div>
+      <div class="field"><label>Initialer i mallen</label><input type="text" id="coach-initials" maxlength="4"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-coach')">Avbryt</button>
+      <button class="btn" onclick="saveCoach()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-confirm">
+  <div class="modal" style="max-width:400px;">
+    <h3>Bekräfta</h3>
+    <p id="confirm-text" style="font-size:14px;color:var(--ink);line-height:1.5;margin:10px 0 0;"></p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="confirm-cancel">Avbryt</button>
+      <button class="btn danger" id="confirm-ok">Ta bort</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-period">
+  <div class="modal" style="max-width:560px;">
+    <button class="close-x" onclick="closeModal('modal-period')">✕</button>
+    <h3 id="period-modal-title">Ny period</h3>
+    <div class="field"><label>Namn</label><input type="text" id="period-label" placeholder="t.ex. Skridskoteknik"></div>
+    <div class="field-row">
+      <div class="field"><label>Startvecka</label><input type="number" id="period-week-start" min="32" max="52"></div>
+      <div class="field"><label>Slutvecka</label><input type="number" id="period-week-end" min="32" max="52"></div>
+    </div>
+    <div class="field"><label>Färg</label><div class="checkchips" id="period-color-picker"></div></div>
+    <div class="field"><label>Beskrivning</label><textarea id="period-description" placeholder="Vad handlar perioden om?"></textarea></div>
+    <div class="field">
+      <label>Tekniska moment i fokus</label>
+      <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px;">Styr vilka övningar som föreslås när ni bygger träningar i denna period.</p>
+      <div class="checkchips" id="period-focus"></div>
+    </div>
+    <div class="field"><label>Mål för perioden</label><textarea id="period-goal" placeholder="Vad ska gruppen ha uppnått när perioden är slut?"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Måluppfyllnad</label>
+        <select id="period-goal-status">
+          <option value="">— fylls i när perioden är slut —</option>
+          <option>Uppnått</option><option>Delvis uppnått</option><option>Ej uppnått</option>
+        </select>
+      </div>
+      <div class="field"><label>Anteckning</label><input type="text" id="period-goal-notes" placeholder="Kort kommentar"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="period-delete-btn" style="display:none;" onclick="deletePeriod()">Ta bort period</button>
+      <button class="btn ghost" onclick="closeModal('modal-period')">Avbryt</button>
+      <button class="btn" onclick="savePeriod()">Spara period</button>
+    </div>
+  </div>
+</div>
+
+<div id="save-toast" style="display:none;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;background:#C24A3A;color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;">
+  <span id="save-toast-text">Kunde inte spara.</span>
+  <button class="btn small" style="background:#fff;color:#C24A3A;" onclick="retrySave()">Försök igen</button>
+  <button class="close-x" style="position:static;color:#fff;" onclick="document.getElementById('save-toast').style.display='none';">✕</button>
+</div>
+
+<script>
+/* =========================================================================
+   STATIC DATA — säsongsramverk tolkat från uppladdad Excel + laget.se
+   ========================================================================= */
+
+const DEFAULT_PERIODS = [
+  {label:"Uppstart", weekStart:32, weekEnd:32, color:"#8A6BAF", description:"Isvana, lära känna gruppen, grundrutiner på och utanför isen.", focus:[], goal:"", goalStatus:"", goalNotes:""},
+  {label:"Back to school", weekStart:33, weekEnd:35, color:"#2E6C9E", description:"Skolstart — bygga struktur i passen och förbereda för seriestart/poolspel.", focus:[], goal:"", goalStatus:"", goalNotes:""},
+  {label:"Skridskoteknik", weekStart:36, weekEnd:40, color:"#1F4D3A", description:"Fokus på skridskoteknik: acceleration, svängar, bromsning och balans.", focus:["Skridskoteknik"], goal:"", goalStatus:"", goalNotes:""},
+  {label:"Puckkontroll / klubbteknik", weekStart:41, weekEnd:45, color:"#B57A3F", description:"Fokus på puckkontroll, puckföring och grundläggande klubbteknik.", focus:["Puckteknik"], goal:"", goalStatus:"", goalNotes:""},
+  {label:"Passning / mottagning", weekStart:46, weekEnd:50, color:"#C24A3A", description:"Fokus på passningar och mottagning i olika hastigheter, riktningar och vinklar.", focus:["Passning"], goal:"", goalStatus:"", goalNotes:""},
+  {label:"Jullov", weekStart:51, weekEnd:52, color:"#8A8F86", description:"Ingen ordinarie träning inplanerad i ramverket.", focus:[], goal:"", goalStatus:"", goalNotes:""},
+].map((p,i)=>({id:"per-default-"+i, ...p}));
+
+function periodForWeek(w){ return (DATA.periods||[]).find(p=>w>=p.weekStart && w<=p.weekEnd); }
+
+// Vecka -> {månad}. Från laget.se-kalendern (2026): v.32=3-9 aug, v.33=10-16 aug, v.34=17-23 aug, v.35=24-30 aug, v.36=31aug-6sep...
+const WEEK_MONTH = {32:"Aug",33:"Aug",34:"Aug",35:"Aug",36:"Sep",37:"Sep",38:"Sep",39:"Sep",40:"Sep/Okt",
+  41:"Okt",42:"Okt",43:"Okt",44:"Okt",45:"Nov",46:"Nov",47:"Nov",48:"Nov",49:"Nov/Dec",50:"Dec",51:"Dec",52:"Dec"};
+
+// Coach initial colors used across the app
+const COACH_COLORS = {OF:"#C9A24B", JS:"#3F8F5F", FB:"#2E6C9E", MJ:"#4C8FA8", PH:"#B57A3F", KN:"#8A8F86", "JS/FB":"#3F8F5F", "OF/FB":"#C9A24B"};
+
+const DEFAULT_COACHES = [
+  {id:"olof", name:"Olof", role:"Huvudtränare", initials:"OF"},
+  {id:"johan", name:"Johan", role:"Huvudtränare", initials:"JS"},
+  {id:"frank", name:"Frank", role:"Skridskoansvarig", initials:"FB"},
+  {id:"mathias", name:"Mathias", role:"Tränare (fys)", initials:"MJ"},
+  {id:"patrik", name:"Patrik", role:"Tränare", initials:"PH"},
+  {id:"ola", name:"Ola", role:"Tränare", initials:""},
+  {id:"par", name:"Pär", role:"Tränare", initials:""},
+  {id:"kalle", name:"Kalle", role:"Ungdomsansvarig", initials:"KN"},
+];
+
+// Weekly session templates, parsed directly from the uploaded framework.
+// moment: {n: namn, t: tid (min, null=ospecificerad), c: tränarinitial(er)}
+const WEEK_TEMPLATES = {
+  32: { pass1:{typ:"Fokus", yta:"Helis", istid:90, moment:[{n:"Skridsko", t:90, c:"KN"}]} },
+  33: {
+    pass1:{typ:"Station", yta:"2/3 is", istid:60, moment:[
+      {n:"Skridsko", t:10, c:"OF"}, {n:"Stationer", t:40, c:""}, {n:"Innerskär", t:null, c:"OF"},
+      {n:"Spel (3v3)", t:null, c:"MJ"}, {n:"Lek", t:null, c:"PH"}, {n:"Stafetter", t:10, c:"OF"}
+    ]},
+    pass2:{typ:"Fokus", yta:"Helis", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:45, c:"JS/FB"}, {n:"Spel", t:10, c:""}
+    ]},
+    pass3:{typ:"Station", yta:"Helis", istid:90, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:20, c:"OF/FB"}, {n:"Stationer", t:25, c:""},
+      {n:"2v2", t:null, c:"OF"}, {n:"Skridsko", t:null, c:"FB"}, {n:"Spel", t:10, c:""}, {n:"Fritt", t:30, c:""}
+    ]},
+  },
+  34: {
+    pass1:{typ:"Station", yta:"Helis", istid:50, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:10, c:"FB"}, {n:"Stationer", t:35, c:""},
+      {n:"Lek", t:null, c:""}, {n:"Kamp", t:null, c:""}, {n:"Puckföring", t:null, c:""}, {n:"Spelmoment", t:null, c:""}, {n:"Spel (3v3)", t:null, c:""}
+    ]},
+    pass2:{typ:"Fokus", yta:"Helis", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:45, c:"FB"}, {n:"Spel", t:10, c:""}
+    ]},
+  },
+  35: {
+    pass1:{typ:"Station", yta:"Helis", istid:50, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:10, c:"FB"}, {n:"Stationer", t:35, c:""},
+      {n:"Lek", t:null, c:""}, {n:"Kamp", t:null, c:""}, {n:"Puckföring", t:null, c:""}, {n:"Spelmoment", t:null, c:""}
+    ]},
+    pass2special:"Match / Poolspel — se Kalender för datum och motstånd.",
+  },
+  36: {
+    pass1:{typ:"Fokus", yta:"Helis", istid:50, moment:[
+      {n:"Fys (off-ice)", t:15, c:"MJ"}, {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:40, c:"FB"}, {n:"Stafetter", t:5, c:""}
+    ]},
+    pass2:{typ:"Station", yta:"Helis", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Stationer", t:45, c:""}, {n:"Lek", t:null, c:""}, {n:"Kamp", t:null, c:""},
+      {n:"Puckföring", t:null, c:""}, {n:"Spelmoment", t:null, c:""}, {n:"Spel (3v3)", t:null, c:""}
+    ]},
+  },
+  37: {
+    pass1:{typ:"Fokus", yta:"1/2 is", istid:50, moment:[
+      {n:"Fys (off-ice)", t:15, c:"MJ"}, {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:35, c:"FB"}, {n:"Spel", t:10, c:""}
+    ]},
+    pass2:{typ:"Station", yta:"1/2 is", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:10, c:"FB"}, {n:"Stationer", t:45, c:""}, {n:"Lek", t:null, c:""},
+      {n:"Kamp", t:null, c:""}, {n:"Spelmoment", t:null, c:""}, {n:"Spel (3v3)", t:null, c:""}
+    ]},
+    pass3special:"Vikingadagen — klubbens egen turneringsdag. Se Kalender.",
+  },
+  38: {
+    pass1:{typ:"Fokus", yta:"1/2 is", istid:50, moment:[
+      {n:"Fys (off-ice)", t:15, c:"MJ"}, {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:40, c:"FB"}, {n:"Stafetter", t:5, c:""}
+    ]},
+    pass2:{typ:"Station", yta:"1/2 is", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:10, c:"FB"}, {n:"Stationer", t:45, c:""}, {n:"Lek", t:null, c:""},
+      {n:"Kamp", t:null, c:""}, {n:"Spelmoment", t:null, c:""}, {n:"Spel (3v3)", t:null, c:""}
+    ]},
+  },
+  39: {
+    pass1:{typ:"Fokus", yta:"1/2 is", istid:50, moment:[
+      {n:"Fys (off-ice)", t:15, c:"MJ"}, {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:35, c:"FB"}, {n:"Spel", t:10, c:""}
+    ]},
+    pass2:{typ:"Station", yta:"1/2 is", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:10, c:"FB"}, {n:"Stationer", t:45, c:""}, {n:"Lek", t:null, c:""},
+      {n:"Kamp", t:null, c:""}, {n:"Spelmoment", t:null, c:""}, {n:"Spel (3v3)", t:null, c:""}
+    ]},
+  },
+  40: {
+    pass1:{typ:"Fokus", yta:"1/2 is", istid:50, moment:[
+      {n:"Fys (off-ice)", t:15, c:"MJ"}, {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:40, c:"FB"}, {n:"Stafetter", t:5, c:""}
+    ]},
+    pass2:{typ:"Station", yta:"1/2 is", istid:60, moment:[
+      {n:"Fritt", t:5, c:""}, {n:"Skridsko", t:10, c:"FB"}, {n:"Stationer", t:45, c:""}, {n:"Lek", t:null, c:""},
+      {n:"Kamp", t:null, c:""}, {n:"Puckföring", t:null, c:""}, {n:"Spelmoment", t:null, c:""}
+    ]},
+  },
+  42: { pass1:{typ:"Fokus", yta:"1/2 is", istid:50, moment:[{n:"Fys (off-ice)", t:15, c:"MJ"}]}, pass3special:"Cup — se Kalender för datum." },
+};
+// weeks 41,43,44,45,46,47,48,49,50 share the thin late-season template (fys only confirmed)
+[41,43,44,45,46,47,48,49,50].forEach(w=>{
+  WEEK_TEMPLATES[w] = { pass1:{typ:"Fokus", yta:"1/2 is", istid:50, moment:[{n:"Fys (off-ice)", t:15, c:"MJ"}]},
+    pass2:{typ:"Station", yta:"1/2 is", istid:60, moment:[]} };
+});
+
+// Trupp hämtad från laget.se/Trelleborgsif-vikingsteam18/Troop (18 aug 2026).
+// Format: förnamn + första bokstaven i efternamn, spelarnummer ("-" = saknas på laget.se).
+const ROSTER_SEED = [
+  {name:"Fritz D", number:"2"},
+  {name:"Moa Å", number:"4"},
+  {name:"Ilyas K", number:"6"},
+  {name:"Marlon F", number:"7"},
+  {name:"Gabriel L", number:"8"},
+  {name:"Otto E", number:"9"},
+  {name:"Finn D", number:"10"},
+  {name:"Collin B", number:"11"},
+  {name:"Ruben V", number:"12"},
+  {name:"Elliot S", number:"14"},
+  {name:"Elias K", number:"15"},
+  {name:"Truls L", number:"16"},
+  {name:"Sam J", number:"17"},
+  {name:"Ludvig F", number:"18"},
+  {name:"William M", number:"20"},
+  {name:"Florian J", number:"22"},
+  {name:"Oliver H", number:"23"},
+  {name:"Oliver S", number:"24"},
+  {name:"August F", number:"25"},
+  {name:"Victor C", number:"26"},
+  {name:"Walter B", number:"27"},
+  {name:"Sofia C", number:"29"},
+  {name:"Nils B", number:"-"},
+  {name:"Saga E", number:"-"},
+  {name:"August J", number:"-"},
+  {name:"Leonard K", number:"-"},
+  {name:"Louie N", number:"-"},
+];
+
+const KNOWN_EVENTS = [
+  {date:"2026-08-06", type:"Träning", label:"Ordinarie träning", time:"17:15–18:15"},
+  {date:"2026-08-10", type:"Träning", label:"Ordinarie träning", time:"17:15–18:15"},
+  {date:"2026-08-12", type:"Träning", label:"Ordinarie träning", time:"17:15–18:15"},
+  {date:"2026-08-15", type:"Träning", label:"Ordinarie träning", time:"09:10–10:10"},
+  {date:"2026-08-19", type:"Träning", label:"Ordinarie träning", time:"18:35–19:25"},
+  {date:"2026-08-22", type:"Träning", label:"Ordinarie träning", time:"09:10–10:10"},
+  {date:"2026-08-26", type:"Träning", label:"Ordinarie träning", time:"18:35–19:25"},
+  {date:"2026-08-29", type:"Match", label:"TIF Grön (hemma)", time:"09:00–12:00"},
+];
+
+/* -------- ÖVNINGSBANK -------- */
+const EX_CATS = [
+  {id:"skridsko", label:"Skridskoteknik", color:"#1F4D3A"},
+  {id:"puck", label:"Puckkontroll / puckföring", color:"#B57A3F"},
+  {id:"passning", label:"Passning & mottagning", color:"#C24A3A"},
+  {id:"skott", label:"Skott", color:"#C9A24B"},
+  {id:"spel", label:"Spelförståelse / spelmoment", color:"#2E6C9E"},
+  {id:"fys", label:"Fys & rörelse (off-ice)", color:"#4C8FA8"},
+  {id:"lek", label:"Lekar, stafetter & kamp", color:"#8A6BAF"},
+];
+
+function ex(id,cat,namn,syfte,material,steg,coaching,latt,svar,link){
+  return {id,cat,namn,syfte,material,steg,coaching,latt,svar,link};
+}
+
+const EXERCISES = [
+  // --- SKRIDSKOTEKNIK ---
+  ex("sk1","skridsko","Djurparksleken","Grundställning, balans och glädje på is — bygga isvana genom lek.","Ingen utrustning krävs. Hela gruppen, valfri yta.",
+    ["Samla gruppen på isen.","En spelare i taget får välja ett djur att härma (t.ex. björn, kanin, anka).","Alla andra åker och gör samma rörelse i låg fart.","Byt djur/spelare var 30–45 sekund."],
+    "Titta på knäböj och att blicken är uppe, inte ner i isen. Uppmuntra alla försök, inga är fel.",
+    "Gör rörelserna stillastående innan de sker i fart.","Lägg till riktningsbyten eller en hastighetsökning mellan djuren.",
+    "https://hockeyakademin.se/ovningar/skridskoakning-tekniska-grunder"),
+  ex("sk2","skridsko","V-fötter till glid","Lära grundteknik för framåtåkning: från V-ställning till effektivt glid.","Inga koner behövs, hela ytan i längdled.",
+    ["Starta i V-ställning (hälarna ihop, tårna ut).","Tryck ut med ena foten i en båge, för tillbaka.","Upprepa med andra foten, bygg fart.","Avsluta med en lång glidfas på båda skridskorna."],
+    "Kolla att knäna är böjda och att spelaren trycker isär, inte bakåt. Blicken upp.",
+    "Kör bara V-stegen utan glidfas, kortare distans.","Lägg till en accelerationssekvens på tre steg innan glidet.",
+    "https://hockeyakademin.se/ovningar/skridskoakning-tekniska-grunder-del-2"),
+  ex("sk3","skridsko","Snöplog & tvåfotsbroms","Grundläggande bromsteknik för kontroll och säkerhet.","Öppen yta, gärna markerad stopplinje med koner.",
+    ["Åk rakt fram i låg fart.","Vinkla båda skridskorna inåt (snöplog) och pressa is-spånor utåt.","Stanna helt vid konen.","Öva därefter tvåfotsbroms i sidled (skridskorna tvärs åkriktningen)."],
+    "Se till att knäna böjs och vikten sjunker ner — inte raka ben. Ingen ska bromsa med bara framkanten.",
+    "Bromsa från gångfart.","Bromsa från full fart och byt riktning direkt efter stopp.", null),
+  ex("sk4","skridsko","Baklängesåkning – grunder","Introducera baklängesåkning: balans och enkla C-steg.","Öppen yta.",
+    ["Stå still med böjda knän, tyngden centrerad.","Gör små C-formade steg bakåt, ett ben i taget.","Åk längs en rak linje mellan koner.","Öva att titta över axeln samtidigt."],
+    "Håll händer/klubba framför kroppen för balans. Uppmuntra korta, kontrollerade steg framför stora.",
+    "Håll i en kompis hand för extra stöd.","Åk baklänges i en slalombana mellan koner.", null),
+  ex("sk5","skridsko","Slalombana – svängar","Träna riktningsförändring och kantning av skridskon i sväng.","6–8 koner i en rak linje, ca 1,5 m mellanrum.",
+    ["Ställ upp konerna på rad.","Åk i slalom runt varje kon, växelvis höger/vänster sväng.","Fokusera på att luta kroppen in i svängen.","Kör flera varv, öka farten successivt."],
+    "Titta på att spelaren kantar skridskorna och inte bara vrider överkroppen. Blicken ska vara på nästa kon.",
+    "Öka avståndet mellan konerna för mjukare svängar.","Minska avståndet eller lägg till en puck att styra samtidigt.",
+    "https://hockeyakademin.se/ovningar/skridskoakning-tekniska-grunder"),
+  ex("sk6","skridsko","Ljus & mörker – start/stopp","Snabb reaktion, acceleration och kontrollerad inbromsning.","Visselpipa eller handsignal, öppen yta.",
+    ["Spelarna åker fritt i låg fart (\"mörker\").","Vid signal (\"ljus\") accelererar alla maximalt 3–4 steg.","Vid nästa signal bromsar alla kontrollerat till stopp.","Upprepa med varierande intervall."],
+    "Se till att alla bromsar kontrollerat — ingen ska glida in i en kompis. Berömma snabba, låga starter.",
+    "Längre tid i \"mörker\" mellan signalerna.","Kortare, oregelbundna intervall som testar reaktionsförmågan.", null),
+  ex("sk7","skridsko","Fall & resning","Lära barnen falla säkert och snabbt ta sig upp igen — minskar rädsla för is.","Öppen yta, gärna mjuk uppvärmning innan.",
+    ["Visa hur man faller kontrollerat (böjda knän, sida/rumpa, inte händerna först).","Låt alla öva att sätta sig ner kontrollerat på is och resa sig.","Gör det till en tävling: vem reser sig snabbast och åker vidare.","Kombinera med korta accelerationer efter resning."],
+    "Betona att detta är en vanlig och ofarlig del av hockey — skapa trygghet, inte prestation.",
+    "Öva bara sitta-och-resa utan fart efteråt.","Lägg in en kort spurt eller en pucktouch direkt efter resning.", null),
+
+  // --- PUCKKONTROLL / PUCKFÖRING ---
+  ex("pk1","puck","Puckföringsbana","Grundläggande puckkontroll genom en konbana i valfri väg.","1 puck och klubba per spelare, 6–8 koner.",
+    ["Lägg ut konerna i en slinga.","Spelarna åker igenom banan med pucken på klubban.","Uppmana till frånvändningar (puck-touch) runt varje kon.","Avsluta banan med ett skott mot mål."],
+    "Titta på att pucken hålls nära klubban och att spelaren tittar upp, inte bara ner på pucken.",
+    "Färre koner, rakare bana.","Lägg till en tidtagning eller en aktiv försvarare i slutet.",
+    "https://hockeyakademin.se/ovningar/stationstraning-8-stationer"),
+  ex("pk2","puck","Puckskydd mot sarg","Träna att skydda pucken med kroppen mot en passiv motståndare.","1 puck per par, avgränsad yta vid sargen.",
+    ["Två spelare, en har puck vid sargen.","Försvararen är passiv (rör bara klubban, inte kroppen) och försöker nudda pucken.","Anfallaren vänder kroppen mellan puck och försvarare för att skydda den.","Byt roller efter 20–30 sekunder."],
+    "Se till att anfallaren använder hela kroppen som skydd, inte bara armarna. Bekräfta trygga kontakter.",
+    "Försvararen är helt passiv, bara observerar.","Försvararen får aktivt försöka ta pucken (fortfarande kontrollerat).", null),
+  ex("pk3","puck","Åttan med puck","Puckkontroll i rörelse med riktningsbyten.","1 puck per spelare, 2 koner/puckar som markörer.",
+    ["Placera två koner med 3–4 meters mellanrum.","Spelaren åker en åtta-form runt konerna med pucken.","Fokus på mjuka, kontrollerade touch på pucken i varje sväng.","Öka tempot när tekniken sitter."],
+    "Kolla att handledsrörelsen styr pucken, inte hela armen. Blicken upp mellan touchen.",
+    "Åk åttan utan puck först, bara skridskoteknik.","Lägg till en passning till en medspelare i mitten av åttan.",
+    "https://hockeyakademin.se/ovningar/attan-med-passningar"),
+  ex("pk4","puck","Frånvändningar på plats","Isolerad teknikträning för att vända bort pucken från en motståndare.","1 puck per spelare, gärna i par.",
+    ["Stå stilla med pucken på klubban.","Öva frånvändning: för pucken snabbt åt sidan och tillbaka framför kroppen.","Gör rörelsen både höger och vänster.","Para ihop med en passiv försvarare som gör det svårare."],
+    "Titta på att spelaren håller låg kroppsposition och använder handlederna, inte bara armarna.",
+    "Långsamt tempo, stort rörelseutrymme.","Snabbare tempo med en aktiv försvarares klubba i vägen.", null),
+  ex("pk5","puck","Djurparksleken med puck","Samma princip som skridskoleken men med puck — kombinerar lek och teknik.","1 puck per spelare.",
+    ["Precis som djurparksleken, men alla åker med puck på klubban.","Ett barn väljer djur/rörelse, alla gör samma sak med bibehållen puckkontroll.","Byt ledare regelbundet."],
+    "Fokusera på att pucken stannar nära klubban även när kroppen gör en ovanlig rörelse.",
+    "Långsammare rörelser, större yta.","Snabbare byten, mindre yta.", null),
+  ex("pk6","puck","Stafett med puckföring","Tävlingsmoment som bygger puckkontroll under tidspress.","1 puck per lag, koner för bana, 2–4 lag.",
+    ["Dela in i lag om 3–5 spelare.","Varje spelare åker en markerad bana med puck och lämnar över till nästa.","Tävla om snabbaste laget.","Kör flera heat."],
+    "Betona kontroll före hastighet — en tappad puck kostar mer tid än en lugn sväng.",
+    "Kortare bana, färre hinder.","Lägg till en passning till nästa spelare istället för handbyte.",
+    "https://hockeyakademin.se/ovningar/stationstraning-6-stationer"),
+
+  // --- PASSNING & MOTTAGNING ---
+  ex("pa1","passning","Stillastående parpassning","Grundläggande passningsteknik, stillastående i par.","1 puck per par.",
+    ["Ställ er två och två, ca 3–4 meter isär.","Passa pucken fram och tillbaka längs isen.","Variera fotställning: tår rakt fram och tår åt sidan.","Fokusera på att ta emot med mjuka händer innan ni passar tillbaka."],
+    "Se till att klubbladet är vinklat mot mottagaren och att spelaren följer igenom med klubban.",
+    "Öka avståndet successivt.","Passa i rörelse i sidled istället för stillastående.",
+    "https://hockeyakademin.se/ovningar/passningar-tekniska-grunder"),
+  ex("pa2","passning","Passnings-virrvarr","Rörlig passningsövning med flera puckar samtidigt — bygger blick och beslutsfattande.","Flera puckar, hela gruppen på en yta.",
+    ["Alla spelare rör sig fritt inom ett avgränsat område.","Passa pucken till valfri medspelare som ropar/vinkar.","Ta emot, kolla upp, passa vidare direkt.","Lägg till fler puckar i omlopp när gruppen klarar det."],
+    "Uppmuntra att titta upp innan passning och att röra sig hela tiden — inte stå still och vänta.",
+    "Färre puckar, större yta, lägre tempo.","Fler puckar samtidigt, mindre yta.",
+    "https://hockeyakademin.se/ovningar/passnings-virr-varr"),
+  ex("pa3","passning","Åttan med passningar","Kombinerar rörelse i åtta-mönster med passningsmottagning.","1 puck, 2 koner som markörer, par.",
+    ["En spelare åker en åtta-form runt två koner.","En stillastående medspelare passar in pucken i rätt ögonblick.","Åkande spelaren tar emot, för ett par touch, passar tillbaka.","Byt roller efter varje varv."],
+    "Timing är nyckeln — passningen ska komma när åkaren är öppen, inte för tidigt eller sent.",
+    "Långsammare åkning, färre varv.","Öka passningstempot när tekniken sitter.",
+    "https://hockeyakademin.se/ovningar/attan-med-passningar"),
+  ex("pa4","passning","Triangelpassning","Passningsträning med tre spelare — introducerar spelförståelse i litet format.","1 puck, tre spelare i triangel.",
+    ["Tre spelare ställer sig i en triangel, 3–4 meter mellan varandra.","Passa medurs runt triangeln.","Byt riktning på signal.","Öka tempot när alla hittar rytmen."],
+    "Titta på att spelaren som ska ta emot är redo (blick, klubba i is) innan passningen kommer.",
+    "Stillastående triangel.","Alla tre rör sig sakta i triangeln samtidigt som de passar.", null),
+  ex("pa5","passning","Passning längs sargen i rörelse","Träna passning och mottagning i fart, en vanlig matchsituation.","1 puck per par, hela längden av planen/halvplan.",
+    ["Två spelare åker parallellt längs sargen i samma fart.","Passa pucken mellan varandra var 3–4:e sekund.","Håll jämn fart genom hela övningen.","Avsluta med ett skott mot mål."],
+    "Se till att passningarna läggs framför mottagaren, inte rakt på skridskorna.",
+    "Lägre fart, längre avstånd mellan spelarna.","Full fart, kortare avstånd, avslut med finter.", null),
+  ex("pa6","passning","Mottagning – mjuka händer","Isolerad teknik för att \"släcka\" hastigheten på en inkommande passning.","1 puck per par.",
+    ["Stå i par med 4–5 meters avstånd.","Passa pucken med lite extra kraft.","Mottagaren drar tillbaka klubban i mottagningsögonblicket för att dämpa farten.","Byt roller, öka passningens hastighet successivt."],
+    "Kolla att klubbladet är löst i händerna, inte spänt — spänd klubba studsar bort pucken.",
+    "Långsamma, mjuka passningar.","Hårdare passningar, mottagning på båda sidorna av kroppen.", null),
+
+  // --- SKOTT ---
+  ex("sh1","skott","Snärtskott mot tomt mål","Grundteknik för snärtskott — vikten av att rulla handleden och följa igenom.","1 puck per spelare, ett mål (tomt eller med målvakt).",
+    ["Stå still med pucken mitt framför kroppen, ca en armlängd från klubbladet.","För pucken bakåt en kort bit, rulla sedan handlederna framåt i en snärtrörelse.","Följ igenom mot målet med klubbladet pekande dit skottet ska gå.","Upprepa från olika vinklar framför mål."],
+    "Titta på att spelaren rullar handlederna, inte bara sveper med hela armen. Klubban ska peka mot målet efter skottet.",
+    "Skjut från kortare avstånd, utan press på tid.","Skjut i rörelse efter en kort puckföring fram mot målet.",
+    "https://hockeyakademin.se/ovningar"),
+  ex("sh2","skott","Skott efter mottagning","Kombinerar passningsmottagning med ett snabbt avslut — vanlig matchsituation.","1 puck per par, ett mål.",
+    ["En spelare passar in pucken till en skytt som står i skottläge.","Skytten tar emot och skjuter direkt eller efter en touch.","Byt roller efter varje skott.","Variera var passningen kommer ifrån (höger/vänster)."],
+    "Uppmuntra snabb växling mellan mottagning och skott — inte för lång tvekan innan avslut.",
+    "Skytten får ta flera touch innan skottet.","Skott direkt utan touch (\"one-timer\"-känsla).", null),
+  ex("sh3","skott","Måla hörnen","Precisionsträning mot uppmärkta mål i burens hörn.","Puckar, tejp eller koner för att markera fyra \"hörn\" i målet, ett mål.",
+    ["Markera fyra mål-hörn med tejp eller mjuka koner i målburen.","Spelaren skjuter mot ett hörn i taget, tränaren ropar vilket.","Räkna träffar per omgång.","Byt skytt efter 5–6 skott."],
+    "Fokusera på kontroll och precision framför hårt skott — det är träffbilden som räknas.",
+    "Större målytor, ingen tidspress.","Mindre målytor, eller skott i rörelse mot ett rörligt mål.", null),
+  ex("sh4","skott","Skott i rörelse genom bana","Kombinerar puckföring och avslut — bygger matchlik känsla för avslut efter förflyttning.","1 puck per spelare, 3–4 koner, ett mål.",
+    ["Lägg en kort konbana som leder fram mot målet.","Spelaren för pucken genom banan och avslutar med skott mot mål.","Kör flera varv, byt bana-riktning ibland.","Avsluta gärna med en kö där alla får flera försök."],
+    "Se till att spelaren håller upp blicken genom banan, inte bara i skottögonblicket.",
+    "Rakare, kortare bana.","Lägg till en passiv försvarare sista biten innan skott.", null),
+  ex("sh5","skott","Two on none — avslut","Enkel samarbetsövning som slutar med skott, bygger både passning och avslutskänsla.","1 puck per par, ett mål.",
+    ["Två spelare åker tillsammans mot mål utan motstånd.","De passar sinsemellan minst en gång på väg in.","Den som får sista passningen avslutar med skott.","Byt par efter varje försök."],
+    "Prata om timing — passningen ska komma i rätt ögonblick för ett bra avslutsläge, inte bara \"någonstans\".",
+    "Fast passningsmönster (t.ex. alltid en passning i mitten).","Fritt spel fram till avslut, upp till spelarna att välja väg.", null),
+
+  // --- SPELFÖRSTÅELSE / SPELMOMENT ---
+  ex("sp1","spel","1 mot 1 vid sargen","Grundläggande närkampsspel i en realistisk matchsituation.","1 puck, avgränsad yta vid sargen.",
+    ["Två spelare startar med pucken fri vid sargen.","Båda kämpar om pucken och försöker vinna den ut till öppen yta.","Spela vidare mot ett litet mål eller till tidsgräns.","Byt par regelbundet."],
+    "Betona spelregler för säkerhet (klubban lågt, ingen tacklingsteknik) och att kämpa med fötterna, inte bara armarna.",
+    "Utan kroppskontakt, bara puckvinnande med klubban.","Med tidsgräns och mål att spela mot direkt efter vunnen puck.", null),
+  ex("sp2","spel","2 mot 1 – överläge","Introducerar beslutsfattande: passa eller skjuta i numerärt överläge.","1 puck, 3 spelare + ev. målvakt, halvplan.",
+    ["Två anfallare startar mot en försvarare.","Anfallarna spelar mot mål och försöker skapa en öppen yta via passning.","Försvararen försöker störa passningsvägen.","Rotera roller efter varje försök."],
+    "Fråga spelarna efteråt: \"Vad såg du? Varför valde du att passa/skjuta?\" — bygg spelförståelse genom frågor (SCL-liknande även i hockey).",
+    "Utan försvarare, bara öva passningsmönstret.","Lägg till en andra försvarare (2 mot 2).", null),
+  ex("sp3","spel","Smålagsspel 3 mot 3 (cross-ice)","Matchliknande spel på liten yta — max bollberöring och beslutsfattande per spelare.","Små mål, avgränsad tvärplan-yta, västar i lagfärger.",
+    ["Dela in i lag om 3 spelare.","Spela på en tvärplan-yta (cross-ice) med små mål.","Byt lag/spelare var 2–3 minut för hög intensitet.","Låt spel flyta fritt — minimal avbrott från tränare."],
+    "Låt spelarna lösa situationer själva. Ställ frågor i pauser istället för att ge svar direkt.",
+    "Större yta, färre spelare per lag (2v2).","Mindre yta, fler spelare (4v4), kortare byten.", null),
+  ex("sp4","spel","Tvåmålsspel (fri lek)","Öppet spel mot två mål utan fasta positioner — bygger spelglädje och egna lösningar.","2 små mål, puckar, öppen yta.",
+    ["Placera två mål på valfria platser inom ytan.","Låt spelarna spela fritt, båda lagen kan göra mål på samma mål eller varsitt.","Ingen fast positionering eller regeluppläggning.","Byt lagindelning då och då."],
+    "Blanda dig minimalt — det här är barnens egna spel. Berömma initiativ och glädje snarare än resultat.",
+    "Fler, större mål = fler målchanser och mindre trängsel.","Färre mål, mindre yta = fler närkamper.", null),
+  ex("sp5","spel","Hitta ytan – positioneringslek","Enkel lek som bygger grundläggande rumsuppfattning för framtida positionsspel.","Markerad ruta (koner), inga puckar behövs.",
+    ["Alla spelare rör sig fritt inom en markerad ruta.","På signal ska alla hitta en \"tom yta\" långt från andra spelare och frysa.","Tränaren pekar ut bra exempel.","Upprepa med kortare tidsfönster."],
+    "Koppla till matchspel: \"Det är samma sak när ni spelar — hitta öppna ytor så kan ni få passningen.\"",
+    "Längre tid att hitta en yta, större ruta.","Kortare tid, mindre ruta, lägg till en puck som ska passas till den som hittat bäst yta.", null),
+
+  // --- FYS & RÖRELSE (OFF-ICE) ---
+  ex("fy1","fys","Koordinationsstege (ABC-löpning)","Grundläggande koordination, fotarbete och kroppskontroll utanför isen.","Koordinationsstege eller tejpade rutor på golv.",
+    ["Lägg ut stegen på ett golv/matta.","Låt spelarna göra enkla mönster: ett steg per ruta, sidsteg, hopp med båda fötter.","Variera mönster var 2:a minut.","Kör i station tillsammans med andra fysövningar."],
+    "Fokusera på snabba, lätta fötter — inte maxfart. Kvalitet före hastighet.",
+    "Ett enkelt mönster, långsamt tempo.","Kombinera flera mönster i följd, öka tempo.", null),
+  ex("fy2","fys","Djurgång – balans & core","Rolig balans- och bålstyrketräning genom djurrörelser.","Ingen utrustning, golvyta.",
+    ["Visa olika djurrörelser: björngång (händer+fötter), krabbgång (bakåt på händer/fötter), kaninhopp.","Låt spelarna ta sig från en linje till en annan med respektive rörelse.","Byt djur var 20–30 meter.","Avsluta med en kort stafett."],
+    "Kolla att ryggen hålls rak/stabil i björn- och krabbgång — inte svank.",
+    "Kortare sträckor, enklare rörelser (bara björngång).","Längre sträckor, kombinera två rörelser i följd.", null),
+  ex("fy3","fys","Hopprepsstation","Enkel explosivitets- och koordinationsträning med hopprep.","1 hopprep per spelare (eller station med 3–4 rep).",
+    ["Visa grundhoppet: båda fötter samtidigt, lätt studs.","Låt spelarna hoppa i 20–30 sekunder, vila, upprepa.","Variera med enfotshopp eller hopp framåt/bakåt.","Kör som en av flera stationer i ett stationspass."],
+    "Fokusera på mjuka landningar på framfoten, inte på hälarna.",
+    "Längre viloperioder, bara grundhopp.","Kortare intervaller, lägg till enfotshopp.", null),
+  ex("fy4","fys","Färgreaktion","Snabbhets- och reaktionslek som tränar beslutsfattande under tidspress.","Färgade koner eller lappar, öppen yta.",
+    ["Placera ut koner i olika färger runt ytan.","Tränaren ropar en färg — spelarna springer/åker till närmaste kon i den färgen.","Variera med \"sista som kommer fram gör en övning\" (t.ex. 5 hopp).","Öka svårighet med fler färger eller kombinationer."],
+    "Håll det lekfullt — reaktionsträning fungerar bäst med glädje, inte press.",
+    "Färre färger, gott om tid att reagera.","Fler färger, kombinera med en fysisk uppgift vid ankomst.", null),
+
+  // --- LEKAR, STAFETTER & KAMP ---
+  ex("le1","lek","Fryskull på is","Klassisk kullek anpassad för is — bygger skridskoteknik genom lek.","Ingen utrustning, avgränsad yta.",
+    ["Utse en eller två \"kullare\".","Den som blir kullad fryser till is med händerna upp.","En frusen spelare kan \"tinas\" genom att en kompis nuddar dem.","Byt kullare efter 1–2 minuter."],
+    "Uppmuntra alla att hjälpa till att tina kompisar — bygger lagkänsla, inte bara flykt.",
+    "Större yta, färre kullare.","Mindre yta, fler kullare, kortare rundor.", null),
+  ex("le2","lek","Björnleken","Enkel kull-variant där \"björnen\" jagar från mitten av planen.","Ingen utrustning.",
+    ["En spelare (\"björnen\") står i mitten.","Övriga spelare åker från en kortsida till den andra på signal.","Björnen försöker kulla så många som möjligt under passagen.","Kullade spelare blir björnar nästa runda."],
+    "Bra uppvärmningslek — håll energin uppe och byt björnar ofta så alla får vara med.",
+    "Längre startsträcka, färre björnar.","Kortare sträcka, fler björnar från start.", null),
+  ex("le3","lek","Stafett genom konbana","Tävlingsinriktad stafett som bygger både skridskoteknik och lagkänsla.","Koner, 2–4 lag.",
+    ["Dela in i lag vid varsin startlinje.","Första spelaren åker konbanan, rundar sista konen, åker tillbaka.","Nästa spelare i laget startar när föregående är i mål.","Laget som är klart först vinner."],
+    "Betona kontroll i svängarna — en tappad balans kostar mer tid än en lugn sväng.",
+    "Färre koner, rakare bana.","Lägg till en pucktouch eller ett skott i slutet av banan.",
+    "https://hockeyakademin.se/ovningar/stationstraning-10-stationer"),
+  ex("le4","lek","Närkampscirkel 1 mot 1","Kontrollerad introduktion till närkamp om pucken inom en avgränsad yta.","1 puck, markerad cirkel (koner).",
+    ["Markera en cirkel med koner, ca 4–5 meter i diameter.","Två spelare kämpar om en puck som ligger i mitten.","Den som vinner pucken ut ur cirkeln får en poäng.","Byt par efter varje omgång."],
+    "Sätt tydliga säkerhetsregler innan start (klubban lågt, ingen highstick). Fokusera på fotarbete i kampen.",
+    "Utan kroppskontakt, bara klubbkamp om pucken.","Kortare tidsgräns för snabbare avgörande, större intensitet.", null),
+  ex("le5","lek","Skattjakt – konsamling","Samarbetslek som bygger allmän rörelseglädje och laganda på is.","Koner/puckar utspridda över ytan, hinkar/mål per lag.",
+    ["Sprid ut koner eller puckar över hela ytan.","Dela in i lag — varje lag samlar sin färg till sin egen \"bas\".","En kon/puck i taget per resa.","Laget med flest vid tidens slut vinner."],
+    "Perfekt avslutning på ett pass — hög rörelse, lågt allvar, alla lyckas.",
+    "Färre koner utspridda på nära håll.","Fler koner, större yta, tidspress.", null),
+];
+
+/* =========================================================================
+   STATE + STORAGE
+   ========================================================================= */
+const SUPABASE_URL = "https://urgxbeyderielyhpchhy.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_CpKykzLQ6BMtwQZon530bg_9fP5CAyZ";
+const STORAGE_KEY = "trelleborg-team18-plan";
+let DATA = {
+  groups: [
+    {id:"g1", name:"Blå", color:"#2E6C9E"},
+    {id:"g2", name:"Grön", color:"#6FA85A"},
+    {id:"g3", name:"Röd", color:"#C24A3A"},
+    {id:"g4", name:"Gul", color:"#C9A24B"},
+    {id:"g5", name:"Lila", color:"#8A6BAF"},
+    {id:"g6", name:"MV", color:"#8A8F86"},
+  ],
+  players: ROSTER_SEED.map((r,i)=>({ id:"p-"+i, name:r.name, number:r.number, strengths:"", growth:"", notes:"" })),
+  sessions: [],
+  coaches: JSON.parse(JSON.stringify(DEFAULT_COACHES)),
+  pairHistory: {Träning:{}, Match:{}}, // per typ: "playerIdA|playerIdB" (sorted) -> antal gånger tillsammans i samma grupp
+  templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
+  periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
+  pairHistoryCountingMigrated: false,
+};
+let activeExCats = new Set();
+
+async function loadData(){
+  try{
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/team_data?key=eq.${STORAGE_KEY}&select=value`,
+      { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if(!res.ok) throw new Error("Supabase load failed: "+res.status);
+    const rows = await res.json();
+    if(rows && rows.length>0 && rows[0].value){
+      DATA = Object.assign(DATA, rows[0].value);
+    } else {
+      seedSessions();
+      await saveData();
+    }
+  }catch(e){
+    console.error("Kunde inte läsa från Supabase", e);
+    seedSessions();
+  }
+  migratePairHistory();
+  if(!DATA.periods || DATA.periods.length===0) DATA.periods = JSON.parse(JSON.stringify(DEFAULT_PERIODS));
+  migratePairHistoryCounting();
+  if(importAugustLineups()) await saveData();
+  if(mergeDuplicateGroups()) await saveData();
+  renderAll();
+}
+function migratePairHistory(){
+  // Äldre data hade en enda gemensam DATA.pairHistory (träning+match blandat).
+  // Migrera den till Träning-facket (rimligast antagande) och nollställ Match.
+  const ph = DATA.pairHistory;
+  const looksFlat = ph && !ph.Träning && !ph.Match && Object.keys(ph).length>0;
+  if(looksFlat){
+    DATA.pairHistory = {Träning: ph, Match: {}};
+  } else if(!ph || (!ph.Träning && !ph.Match)){
+    DATA.pairHistory = {Träning:{}, Match:{}};
+  } else {
+    if(!DATA.pairHistory.Träning) DATA.pairHistory.Träning = {};
+    if(!DATA.pairHistory.Match) DATA.pairHistory.Match = {};
+  }
+}
+// Engångsmigrering: innan denna uppdatering räknades laguppställningar in i mixhistoriken direkt vid
+// sparning, oavsett om passet var genomfört. Nu ska bara genomförda pass räknas. Det här drar bort
+// felaktig förhandsräkning för allt som ännu inte är markerat Genomfört, och märker resten som redan
+// korrekt räknat (så de inte råkar dubbelräknas).
+function migratePairHistoryCounting(){
+  if(DATA.pairHistoryCountingMigrated) return;
+  DATA.sessions.forEach(s=>{
+    if(s.pairHistoryCounted === undefined){
+      if(isArchived(s)){
+        s.pairHistoryCounted = true;
+      } else {
+        adjustPairHistory(s.lineup, -1, s.type);
+        s.pairHistoryCounted = false;
+      }
+    }
+  });
+  DATA.pairHistoryCountingMigrated = true;
+}
+
+/* =========================================================================
+   Engångsimport: verkliga laguppställningar från augusti (foto av handskrivna
+   listor). 6 augusti hade ingen färgindelning och lämnas orörd. Körs en gång
+   — spelarnamn matchas mot importerade truppen ("Förnamn E"), tränare mot
+   tränarlistan. Sessionerna markeras Genomförda så de räknas i mixhistoriken.
+   ========================================================================= */
+const AUGUST_LINEUP_IMPORT = {
+  "2026-08-10": { groups: {
+    "Blå": {coach:"Pär", players:["August F","Florian J","Ilyas K","Otto E","Truls L"]},
+    "Grön": {coach:"Olof", players:["Collin B","Elliot S","Marlon F","Oliver H","Ruben V"]},
+    "Röd": {coach:"Mathias", players:["August J","Fritz D","Moa Å","Oliver S","Sam J","Victor C"]},
+  }},
+  "2026-08-12": { groups: {
+    "Blå": {coach:null, players:["August F","Florian J","Ilyas K","Otto E"]},
+    "Grön": {coach:null, players:["Collin B","Elliot S","Oliver H","Truls L"]},
+    "Röd": {coach:null, players:["August J","Elias K","Moa Å"]},
+    "Gul": {coach:null, players:["Fritz D","Marlon F","Ruben V","Saga E"]},
+    "MV": {coach:null, players:[]},
+  }},
+  "2026-08-15": { groups: {
+    "Blå": {coach:null, players:["August F","Elias K","Ludvig F","Sam J"]},
+    "Grön": {coach:null, players:["Ilyas K","Marlon F","Ruben V"]},
+    "Röd": {coach:null, players:["Leonard K","Moa Å","Saga E","Victor C"]},
+    "MV": {coach:null, players:["Fritz D","Oliver S"]},
+  }},
+  "2026-08-19": { groups: {
+    "Blå": {coach:"Johan", players:["Elias K","Finn D","Marlon F","Otto E"]},
+    "Grön": {coach:"Pär", players:["August F","Collin B","Florian J","Truls L"]},
+    "Röd": {coach:"Olof", players:["Elliot S","Ludvig F","Oliver H","Walter B"]},
+    "Gul": {coach:"Ola", players:["August J","Leonard K","Nils B","Saga E","Victor C"]},
+    "Svart": {coach:"Mathias", players:["Fritz D","Moa Å","Oliver S","Sofia C"]},
+    "MV": {coach:null, players:["Ilyas K","Ruben V"]},
+  }},
+};
+function ensureGroupByName(name){
+  let g = DATA.groups.find(x=>x.name===name);
+  if(!g){
+    g = {id:"g-"+name.toLowerCase()+"-"+Date.now()+"-"+Math.floor(Math.random()*1000), name, color: name==="Svart" ? "#1A1A1A" : "#8A8F86"};
+    DATA.groups.push(g);
+  }
+  return g;
+}
+function importAugustLineups(){
+  if(DATA.augustLineupsImported) return false;
+  if(!DATA.players || DATA.players.length===0) return false; // ingen trupp importerad än — försök igen nästa gång appen öppnas
+  let changed = false;
+  Object.entries(AUGUST_LINEUP_IMPORT).forEach(([date, data])=>{
+    const s = DATA.sessions.find(x=>x.date===date && x.type==="Träning");
+    if(!s) return;
+    const lineup = {}; const activeGroups = []; const attendance = []; const coachIds = new Set();
+    Object.entries(data.groups).forEach(([groupName, ginfo])=>{
+      const g = ensureGroupByName(groupName);
+      const playerIds = ginfo.players.map(n=>{ const p = DATA.players.find(pl=>pl.name===n); return p?p.id:null; }).filter(Boolean);
+      const coach = ginfo.coach ? DATA.coaches.find(c=>c.name===ginfo.coach) : null;
+      lineup[g.id] = { coaches: coach?[coach.id]:[], players: playerIds, goalie: "" };
+      activeGroups.push(g.id);
+      playerIds.forEach(pid=>attendance.push(pid));
+      if(coach) coachIds.add(coach.id);
+    });
+    s.attendance = [...new Set(attendance)];
+    s.activeGroups = activeGroups;
+    s.lineup = lineup;
+    s.coaches = [...coachIds];
+    s.archiveOverride = true; // dessa är genomförda pass
+    s.pairHistoryCounted = false; // tvinga omregistrering i mixhistoriken med den riktiga datan
+    changed = true;
+  });
+  DATA.augustLineupsImported = true;
+  return changed;
+}
+
+/* =========================================================================
+   Engångsstädning: kvarlevor från tidigare gruppnamn ("Röd grupp" m.fl., från
+   innan grupperna döptes om till korta namn) som ligger dubblerade mot de
+   grupper som faktiskt används. Slår ihop och flyttar med alla kopplingar.
+   ========================================================================= */
+const GROUP_MERGE_PAIRS = [
+  ["Röd grupp","Röd"], ["Blå grupp","Blå"], ["Gul grupp","Gul"], ["Grön grupp","Grön"], ["Målvakt","MV"],
+];
+function mergeGroupReferences(s, dupId, keepId){
+  if(s.lineup && s.lineup[dupId]){
+    const dupEntry = s.lineup[dupId];
+    if(!s.lineup[keepId]) s.lineup[keepId] = {coaches:[], players:[], goalie:""};
+    const keepEntry = s.lineup[keepId];
+    keepEntry.players = [...new Set([...(keepEntry.players||[]), ...(dupEntry.players||[])])];
+    keepEntry.coaches = [...new Set([...(keepEntry.coaches||[]), ...(dupEntry.coaches||[])])];
+    if(!keepEntry.goalie && dupEntry.goalie) keepEntry.goalie = dupEntry.goalie;
+    delete s.lineup[dupId];
+  }
+  if(s.activeGroups) s.activeGroups = [...new Set(s.activeGroups.map(id=>id===dupId?keepId:id))];
+  (s.blocks||[]).forEach(b=>{
+    (b.rounds||[]).forEach(r=>{
+      if(r.assignments) Object.keys(r.assignments).forEach(stId=>{ if(r.assignments[stId]===dupId) r.assignments[stId]=keepId; });
+    });
+    (b.planRounds||[]).forEach(r=>{
+      if(r.assignments) Object.values(r.assignments).forEach(cell=>{
+        if(cell){ if(cell.a===dupId) cell.a=keepId; if(cell.b===dupId) cell.b=keepId; }
+      });
+    });
+  });
+}
+function mergeDuplicateGroups(){
+  if(DATA.duplicateGroupsMerged) return false;
+  let changed = false;
+  GROUP_MERGE_PAIRS.forEach(([dupName, keepName])=>{
+    const dup = DATA.groups.find(g=>g.name===dupName);
+    const keep = DATA.groups.find(g=>g.name===keepName);
+    if(dup && keep && dup.id!==keep.id){
+      DATA.sessions.forEach(s=> mergeGroupReferences(s, dup.id, keep.id));
+      DATA.groups = DATA.groups.filter(g=>g.id!==dup.id);
+      changed = true;
+    }
+  });
+  DATA.duplicateGroupsMerged = true;
+  return changed;
+}
+
+let SAVE_BUSY = false;
+// Wraps an async save action so rapid double-clicks can't run it twice / create duplicates.
+async function guard(fn){
+  if(SAVE_BUSY) return false;
+  SAVE_BUSY = true;
+  try { return await fn(); }
+  finally { SAVE_BUSY = false; }
+}
+
+// Promise-based confirm dialog (replaces silent one-click deletes)
+function confirmDialog(message, confirmLabel){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById("modal-confirm");
+    document.getElementById("confirm-text").textContent = message;
+    const okBtn = document.getElementById("confirm-ok");
+    okBtn.textContent = confirmLabel || "Ta bort";
+    const cancelBtn = document.getElementById("confirm-cancel");
+    const cleanup = ()=>{ overlay.classList.remove("open"); okBtn.onclick=null; cancelBtn.onclick=null; };
+    okBtn.onclick = ()=>{ cleanup(); resolve(true); };
+    cancelBtn.onclick = ()=>{ cleanup(); resolve(false); };
+    overlay.classList.add("open");
+  });
+}
+
+async function saveData(){
+  const ok = await trySaveOnce();
+  if(ok){ hideSaveToast(); return true; }
+  // automatic retries with increasing pauses (handles transient server hiccups
+  // without immediately bothering the user with the toast)
+  const delays = [900, 1800, 3600];
+  for(const delay of delays){
+    await new Promise(r=>setTimeout(r, delay));
+    const retryOk = await trySaveOnce();
+    if(retryOk){ hideSaveToast(); return true; }
+  }
+  showSaveToast();
+  return false;
+}
+async function trySaveOnce(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/team_data?on_conflict=key`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({ key: STORAGE_KEY, value: DATA })
+    });
+    return res.ok;
+  }catch(e){
+    console.error("Kunde inte spara", e);
+    return false;
+  }
+}
+function showSaveToast(){
+  document.getElementById("save-toast-text").textContent =
+    "Kunde inte spara till delad lagring just nu (tillfälligt fel hos tjänsten). Din ändring syns här men är inte synkad till de andra tränarna ännu.";
+  document.getElementById("save-toast").style.display = "flex";
+}
+function hideSaveToast(){ document.getElementById("save-toast").style.display = "none"; }
+async function retrySave(){
+  const ok = await saveData();
+  if(ok){
+    renderAll();
+  }
+}
+function seedSessions(){
+  const weekMap = {"2026-08-06":32,"2026-08-10":33,"2026-08-12":33,"2026-08-15":33,"2026-08-19":34,"2026-08-22":34,"2026-08-26":35,"2026-08-29":35};
+  DATA.sessions = KNOWN_EVENTS.filter(e=>e.type==="Träning"||e.type==="Match").map((e,i)=>{
+    const [s,en] = e.time.split("–");
+    return {
+      id:"seed-"+i, date:e.date, start:s, end:en, type:e.type,
+      place: e.type==="Match" ? "Söderslättshallen" : "",
+      week: weekMap[e.date] || "", pass:"", yta:"", istid:"",
+      coaches: [], attendance: [], activeGroups: [], lineup: {}, archiveOverride: null,
+      notes: e.label + (e.type==="Match" ? " — kontrollera tid/plats i laget.se." : "")
+    };
+  });
+}
+
+/* =========================================================================
+   RENDER: TABS
+   ========================================================================= */
+document.getElementById("tabnav").addEventListener("click", e=>{
+  const btn = e.target.closest("button[data-view]");
+  if(!btn) return;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+btn.dataset.view).classList.add("active");
+});
+
+function renderAll(){
+  renderTimeline();
+  renderPeriods();
+  renderKnownEvents();
+  renderCoachLegendMini();
+  renderCurrentPeriodBanner();
+  renderToPlanCallout();
+  renderSessions();
+  renderCategoryFilter();
+  renderExercises();
+  renderGroups();
+  renderPlayers();
+  renderMixHistory();
+  renderCoaches();
+}
+
+/* ---- Timeline (signature SVG) ---- */
+function renderTimeline(){
+  const svg = document.getElementById("tl-svg");
+  svg.setAttribute("viewBox", "0 0 920 108");
+  const weeks = []; for(let w=32; w<=52; w++) weeks.push(w);
+  const totalW = 900, x0=10, y0=46, h=34, gap=1.5;
+  const cw = (totalW - (weeks.length-1)*gap) / weeks.length;
+  let html = "";
+  weeks.forEach((w,i)=>{
+    const p = periodForWeek(w);
+    const x = x0 + i*(cw+gap);
+    const hasSpecial = (WEEK_TEMPLATES[w] && (WEEK_TEMPLATES[w].pass2special || WEEK_TEMPLATES[w].pass3special));
+    html += `<rect x="${x}" y="${y0}" width="${cw}" height="${h}" rx="3" fill="${p?p.color:'#444'}" opacity="0.92"/>`;
+    if(hasSpecial) html += `<circle cx="${x+cw/2}" cy="${y0-10}" r="3" fill="#C9A24B"/>`;
+    if(w%2===0) html += `<text x="${x+cw/2}" y="${y0+h+16}" font-size="8.5" fill="#B9D3C4" text-anchor="middle" font-family="IBM Plex Mono">${w}</text>`;
+  });
+  // month labels
+  const monthsOrder = [["Aug",32,35],["Sep",36,39],["Okt",40,44],["Nov",45,48],["Dec",49,52]];
+  monthsOrder.forEach(([m,ws,we])=>{
+    const i0 = weeks.indexOf(ws), i1=weeks.indexOf(we);
+    const xm = x0 + (i0*(cw+gap)) + ((i1-i0)*(cw+gap))/2 + cw/2;
+    html += `<text x="${xm}" y="20" font-size="11" fill="#EAF2EC" text-anchor="middle" font-family="Oswald" letter-spacing="1">${m.toUpperCase()}</text>`;
+  });
+  svg.innerHTML = html;
+}
+
+function renderPeriods(){
+  const grid = document.getElementById("period-grid");
+  const today = todayStr();
+  const curWeek = isoWeekNumber(new Date());
+  const sorted = [...(DATA.periods||[])].sort((a,b)=>a.weekStart-b.weekStart);
+  grid.innerHTML = sorted.map(p=>{
+    const ended = curWeek > p.weekEnd;
+    const needsGoalFill = ended && p.goal && !p.goalStatus;
+    const focusTags = (p.focus||[]).map(f=>`<span class="focus-tag" style="margin:2px 4px 0 0;">${f}</span>`).join("");
+    const statusColor = p.goalStatus==="Uppnått" ? "var(--pine)" : p.goalStatus==="Delvis uppnått" ? "var(--gold)" : p.goalStatus==="Ej uppnått" ? "var(--red)" : "var(--muted)";
+    return `
+    <div class="period-card" style="--pc-color:${p.color}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+        <h3>${p.label}</h3>
+        <button class="btn ghost small" style="flex-shrink:0;" onclick="openPeriodModal('${p.id}')">Redigera</button>
+      </div>
+      <div class="wk">Vecka ${p.weekStart}${p.weekEnd>p.weekStart?'–'+p.weekEnd:''} · ${WEEK_MONTH[p.weekStart]||''}</div>
+      <p>${p.description||''}</p>
+      ${focusTags?`<div style="margin-top:6px;">${focusTags}</div>`:""}
+      ${p.goal?`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;">
+        <b style="color:var(--muted);">Mål:</b> ${p.goal}
+        ${p.goalStatus?`<div style="margin-top:3px;color:${statusColor};font-weight:600;">${p.goalStatus}${p.goalNotes?' — '+p.goalNotes:''}</div>`:''}
+      </div>`:""}
+      ${needsGoalFill?`<div class="note-box" style="margin-top:8px;padding:8px 10px;font-size:11.5px;">Perioden är slut — fyll i måluppfyllnad.</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+/* ---- Period-modal: skapa/redigera säsongens block ---- */
+let periodDraftId = null;
+const PERIOD_COLOR_OPTIONS = ["#8A6BAF","#2E6C9E","#1F4D3A","#B57A3F","#C24A3A","#8A8F86","#4C8FA8","#2E8B95","#C9A24B"];
+function openPeriodModal(id){
+  periodDraftId = id || null;
+  const p = id ? DATA.periods.find(x=>x.id===id) : null;
+  document.getElementById("period-modal-title").textContent = p ? "Redigera period" : "Ny period";
+  document.getElementById("period-label").value = p ? p.label : "";
+  document.getElementById("period-week-start").value = p ? p.weekStart : "";
+  document.getElementById("period-week-end").value = p ? p.weekEnd : "";
+  document.getElementById("period-description").value = p ? (p.description||"") : "";
+  document.getElementById("period-goal").value = p ? (p.goal||"") : "";
+  document.getElementById("period-goal-status").value = p ? (p.goalStatus||"") : "";
+  document.getElementById("period-goal-notes").value = p ? (p.goalNotes||"") : "";
+  document.getElementById("period-focus").innerHTML = STATION_SUBTHEMES.map(t=>
+    `<span class="checkchip ${p&&(p.focus||[]).includes(t)?'on':''}" onclick="this.classList.toggle('on')">${t}</span>`).join("");
+  const colorPicker = document.getElementById("period-color-picker");
+  colorPicker.innerHTML = PERIOD_COLOR_OPTIONS.map(c=>
+    `<span class="checkchip" data-color="${c}" style="background:${c};color:#fff;border-color:${c};" onclick="pickPeriodColor('${c}')"> </span>`).join("");
+  pickPeriodColor(p ? p.color : PERIOD_COLOR_OPTIONS[0]);
+  document.getElementById("period-delete-btn").style.display = p ? "inline-block" : "none";
+  openModal("modal-period");
+}
+function pickPeriodColor(c){
+  document.querySelectorAll("#period-color-picker .checkchip").forEach(el=>{
+    el.style.outline = el.dataset.color===c ? "2px solid #12140F" : "none";
+  });
+  document.getElementById("period-color-picker").dataset.selected = c;
+}
+async function savePeriod(){
+  if(SAVE_BUSY) return; SAVE_BUSY = true;
+  try {
+  const label = document.getElementById("period-label").value.trim();
+  const weekStart = +document.getElementById("period-week-start").value;
+  const weekEnd = +document.getElementById("period-week-end").value;
+  if(!label){ alert("Ange ett namn på perioden."); return; }
+  if(!weekStart || !weekEnd || weekStart<32 || weekEnd>52 || weekStart>weekEnd){
+    alert("Ange giltiga veckor (32–52), där startvecka inte är efter slutvecka.");
+    return;
+  }
+  const overlap = DATA.periods.find(p => p.id!==periodDraftId && weekStart<=p.weekEnd && weekEnd>=p.weekStart);
+  if(overlap){
+    alert(`Veckorna ${weekStart}–${weekEnd} krockar med "${overlap.label}" (v.${overlap.weekStart}–${overlap.weekEnd}). Justera veckorna så perioderna inte överlappar.`);
+    return;
+  }
+  const focus = Array.from(document.querySelectorAll("#period-focus .checkchip.on")).map(e=>e.textContent);
+  const obj = {
+    id: periodDraftId || ("per-"+Date.now()),
+    label, weekStart, weekEnd,
+    color: document.getElementById("period-color-picker").dataset.selected || PERIOD_COLOR_OPTIONS[0],
+    description: document.getElementById("period-description").value,
+    focus,
+    goal: document.getElementById("period-goal").value,
+    goalStatus: document.getElementById("period-goal-status").value,
+    goalNotes: document.getElementById("period-goal-notes").value,
+  };
+  const idx = DATA.periods.findIndex(x=>x.id===obj.id);
+  if(idx>=0) DATA.periods[idx] = obj; else DATA.periods.push(obj);
+  renderTimeline(); renderPeriods(); renderCurrentPeriodBanner(); renderCoachLegendMini(); closeModal("modal-period");
+  saveData();
+  } finally { SAVE_BUSY = false; }
+}
+async function deletePeriod(){
+  const p = DATA.periods.find(x=>x.id===periodDraftId); if(!p) return;
+  const yes = await confirmDialog(`Ta bort perioden "${p.label}" (v.${p.weekStart}–${p.weekEnd})?`, "Ta bort period");
+  if(!yes) return;
+  await guard(async ()=>{
+    DATA.periods = DATA.periods.filter(x=>x.id!==periodDraftId);
+    renderTimeline(); renderPeriods(); renderCurrentPeriodBanner(); closeModal("modal-period");
+    saveData();
+  });
+}
+
+function renderKnownEvents(){
+  const list = document.getElementById("known-events");
+  const sorted = [...KNOWN_EVENTS].sort((a,b)=>a.date.localeCompare(b.date)+(a.time>b.time?1:-1));
+  list.innerHTML = sorted.map(e=>{
+    const d = new Date(e.date+"T00:00:00");
+    const dstr = d.toLocaleDateString("sv-SE",{day:"numeric",month:"short"});
+    return `<li><span class="evt-date">${dstr}</span><span class="evt-tag tag-${e.type.toLowerCase()}">${e.type}</span><span>${e.label} <span class="mono" style="color:var(--muted);font-size:12px;">· ${e.time}</span></span></li>`;
+  }).join("");
+}
+
+function coachById(id){ return DATA.coaches.find(c=>c.id===id); }
+function coachByInitials(ini){
+  if(!ini) return null;
+  return DATA.coaches.find(c=> c.initials && (c.initials===ini || ini.split("/").includes(c.initials)) );
+}
+
+/* =========================================================================
+   Koppla säsongsplanen (ramverkets Pass 1/2/3 per vecka) till faktiska
+   träningar i kalendern. Regel: Pass 1 = kronologiskt första träningen den
+   ISO-veckan, Pass 2 = andra, Pass 3 = tredje. Rör aldrig träningar som
+   redan har en veckokoppling (skyddar manuellt arbete).
+   ========================================================================= */
+const MOMENT_THEME_MAP = {
+  "Skridsko":"Skridskoteknik", "Innerskär":"Skridskoteknik",
+  "Puckföring":"Puckteknik",
+  "Spel (3v3)":"Spel", "Spel":"Spel", "2v2":"Spel", "Spelmoment":"Spel",
+  "Lek":"Lek", "Kamp":"Lek", "Stafetter":"Lek",
+  "Fys (off-ice)":"Fys",
+  "Fritt":"Uppvärmning",
+  "Stationer":"Stationer",
+};
+function blockFromMoment(m){
+  const theme = MOMENT_THEME_MAP[m.n] || "Uppvärmning";
+  const coach = coachByInitials(m.c);
+  return {
+    id:"blk-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),
+    theme, duration: m.t || "", coach: coach ? coach.id : "",
+    exerciseIds: [], instruction: (m.n && m.n!==theme) ? m.n : "", material: "",
+    stations: [], rounds: [],
+    numPlans:2, spelyta:"Tvärplan (cross-ice)", maltyp:"Småmål", malvakt:"Utan målvakt", planRounds:[],
+  };
+}
+async function linkSeasonPlanToTrainings(){
+  const yes = await confirmDialog("Koppla säsongsplanens Pass 1/2/3 till era träningar (kronologiskt först i veckan = Pass 1) och skapa övningsblock där ramverket har momentdata? Rör inte träningar som redan har en veckokoppling.", "Koppla säsongsplan");
+  if(!yes) return;
+  await guard(async ()=>{
+    const trainings = DATA.sessions.filter(s=>s.type==="Träning");
+    const byWeek = {};
+    trainings.forEach(s=>{
+      const wk = isoWeekNumber(new Date(s.date+"T00:00:00"));
+      (byWeek[wk] = byWeek[wk]||[]).push(s);
+    });
+    let linkedWithBlocks=0, linkedOnly=0, skippedAlready=0;
+    const notes = [];
+    Object.keys(byWeek).sort((a,b)=>a-b).forEach(wkStr=>{
+      const wk = +wkStr;
+      const all = byWeek[wk].slice().sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+      const already = all.filter(s=>s.week && s.pass);
+      const unlinked = all.filter(s=>!(s.week && s.pass));
+      skippedAlready += already.length;
+      const usedPassKeys = new Set(already.map(s=>s.pass).filter(Boolean));
+      const availablePassKeys = ["pass1","pass2","pass3"].filter(pk=>!usedPassKeys.has(pk));
+      if(unlinked.length > availablePassKeys.length){
+        notes.push(`Vecka ${wk}: ${unlinked.length} okopplade träningar men bara ${availablePassKeys.length} lediga passnummer (max 3/vecka) — de sista hoppades över, koppla dem manuellt.`);
+      }
+      const tmpl = WEEK_TEMPLATES[wk];
+      unlinked.slice(0, availablePassKeys.length).forEach((s,i)=>{
+        const passKey = availablePassKeys[i];
+        s.week = String(wk);
+        s.pass = passKey;
+        const pt = tmpl && tmpl[passKey];
+        if(pt){
+          if(!s.yta && pt.yta) s.yta = pt.yta;
+          if(!s.istid && pt.istid) s.istid = String(pt.istid);
+          if(pt.moment && pt.moment.length && (!s.blocks || s.blocks.length===0)){
+            s.blocks = pt.moment.map(blockFromMoment);
+            linkedWithBlocks++;
+          } else {
+            linkedOnly++;
+          }
+        } else {
+          linkedOnly++; // kopplad (vecka+pass) men ingen detaljerad momentdata i ramverket för det passet
+        }
+      });
+    });
+    renderSessions(); renderMixHistory();
+    const ok = await saveData();
+    const summary = `Klart!\n\n✅ ${linkedWithBlocks} träning(ar) kopplade — övningsblock skapade från säsongsplanens momentdata\n🔗 ${linkedOnly} träning(ar) kopplade till vecka/pass, men ramverket saknade detaljerad momentdata där\n⏭️ ${skippedAlready} träning(ar) hade redan en veckokoppling sedan tidigare — orörda`
+      + (notes.length ? `\n\n⚠️ ${notes.join('\n⚠️ ')}` : "");
+    alert(summary);
+  });
+}
+
+function renderCoachLegendMini(){
+  const el = document.getElementById("coach-legend-mini");
+  el.innerHTML = DATA.coaches.map(c=>{
+    const color = COACH_COLORS[c.initials] || "#999";
+    return `<span class="chip" style="background:${color}22;color:${color}"><span class="dot" style="background:${color}"></span>${c.initials||"—"} · ${c.name}</span>`;
+  }).join("");
+}
+
+/* ---- Aktuell period (Årsöversikt-banner + Kalender) ---- */
+function isoWeekNumber(date){
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function renderCurrentPeriodBanner(){
+  const el = document.getElementById("current-period-banner");
+  if(!el) return;
+  const wk = isoWeekNumber(new Date());
+  const p = periodForWeek(wk);
+  if(!p){ el.innerHTML = `<p style="margin:0;font-size:13px;color:var(--muted);">Vecka ${wk} ligger utanför säsongsramverket (v.32–52).</p>`; el.style.borderLeft=""; return; }
+  el.style.borderLeft = `5px solid ${p.color}`;
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <div><span class="hint" style="text-transform:uppercase;letter-spacing:.04em;font-size:10.5px;">Just nu — vecka ${wk}</span>
+      <h3 style="font-size:18px;color:${p.color};margin-top:2px;">${p.label}</h3></div>
+    <span style="font-size:12.5px;color:var(--muted);max-width:320px;">${p.description||''}</span>
+  </div>`;
+}
+function renderToPlanCallout(){
+  const el = document.getElementById("to-plan-callout");
+  if(!el) return;
+  const today = todayStr();
+  const needsPlanning = DATA.sessions.filter(s=>{
+    if(!["Träning","Match"].includes(s.type)) return false;
+    if(isArchived(s)) return false;
+    if(s.date < today) return false;
+    const assignedCount = Object.values(s.lineup||{}).reduce((n,g)=>n+(g.players||[]).length+(g.goalie?1:0),0);
+    if(assignedCount===0) return true;
+    return s.type==="Träning" && !s.week;
+  }).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+  if(needsPlanning.length===0){ el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="note-box"><b>Att planera:</b> ${needsPlanning.length} kommande pass saknar kopplad vecka och/eller laguppställning.
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      ${needsPlanning.map(s=>{
+        const d = new Date(s.date+"T00:00:00");
+        return `<button class="btn ghost small" onclick="editSession('${s.id}')">${d.toLocaleDateString("sv-SE",{day:"numeric",month:"short"})} · ${s.type}</button>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+
+/* ---- Kommande / Genomförda ---- */
+let sessMode = "upcoming";
+function setSessMode(mode){
+  sessMode = mode;
+  document.getElementById("mode-btn-upcoming").classList.toggle("active", mode==="upcoming");
+  document.getElementById("mode-btn-archive").classList.toggle("active", mode==="archive");
+  renderSessions();
+}
+function isArchived(s){
+  if(s.archiveOverride===true) return true;
+  if(s.archiveOverride===false) return false;
+  return s.date < todayStr();
+}
+function toggleArchiveFromCard(id){
+  const s = DATA.sessions.find(x=>x.id===id); if(!s) return;
+  const oldCounted = s.pairHistoryCounted;
+  s.archiveOverride = isArchived(s) ? false : true;
+  syncPairHistoryCounting(s.lineup, s.type, oldCounted, s);
+  renderSessions(); renderToPlanCallout(); renderMixHistory();
+  saveData();
+}
+let pendingArchiveOverride = null;
+function toggleArchiveFromModal(){
+  const id = document.getElementById("sess-id").value;
+  const s = DATA.sessions.find(x=>x.id===id); if(!s) return;
+  const current = pendingArchiveOverride!==null ? pendingArchiveOverride : (s.archiveOverride ?? null);
+  const currentlyArchived = current===true ? true : current===false ? false : isArchived(s);
+  pendingArchiveOverride = currentlyArchived ? false : true;
+  updateArchiveButtonLabel({...s, archiveOverride: pendingArchiveOverride});
+}
+function updateArchiveButtonLabel(s){
+  const btn = document.getElementById("sess-archive-btn");
+  if(!s){ btn.style.display="none"; return; }
+  btn.style.display = "inline-block";
+  btn.textContent = isArchived(s) ? "↩ Flytta till Kommande" : "✓ Markera som genomförd";
+}
+
+function momentSuggestLink(name){
+  const map = {"Skridsko":"skridsko","Stationer":"puck","Innerskär":"skridsko","Spel (3v3)":"spel","Spel":"spel",
+    "Lek":"lek","Kamp":"lek","Puckföring":"puck","Spelmoment":"spel","Stafetter":"lek","Fys (off-ice)":"fys",
+    "Fritt":"lek","2v2":"spel"};
+  return map[name] || null;
+}
+function openExerciseCat(catId){
+  document.querySelector('[data-view="ovningar"]').click();
+  activeExCats = new Set([catId]);
+  renderCategoryFilter(); renderExercises();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function renderPassCard(title, pass){
+  if(!pass) return "";
+  const moments = pass.moment.map(m=>{
+    const cid = momentSuggestLink(m.n);
+    const color = COACH_COLORS[m.c] || "#999";
+    return `<div class="moment-row">
+      <span class="moment-name">${m.n}</span>
+      <span class="moment-time">${m.t ? m.t+" min" : "—"}</span>
+      ${m.c ? `<span class="chip" style="background:${color}22;color:${color}"><span class="dot" style="background:${color}"></span>${m.c}</span>` : `<span class="chip" style="background:#eee;color:#999">ej tilldelad</span>`}
+      ${cid ? `<span class="suggest-link" onclick="openExerciseCat('${cid}')">→ förslag på övningar</span>` : ""}
+    </div>`;
+  }).join("");
+  return `<div class="pass-card">
+    <div class="pass-head">
+      <h3>${title}</h3>
+      <div class="pass-meta"><span><b>${pass.typ}</b></span><span>Yta: <b>${pass.yta}</b></span><span>Istid: <b>${pass.istid} min</b></span></div>
+    </div>
+    ${moments || '<p style="font-size:13px;color:var(--muted);">Inga detaljerade moment i ramverket ännu — fyll i själva.</p>'}
+  </div>`;
+}
+function passTemplateFor(week, passKey){
+  const t = WEEK_TEMPLATES[week]; if(!t) return null;
+  return t[passKey] || null;
+}
+function availablePassesFor(week){
+  const t = WEEK_TEMPLATES[week]; if(!t) return [];
+  const out = [];
+  if(t.pass1) out.push(["pass1","Pass 1"]);
+  if(t.pass2) out.push(["pass2","Pass 2"]);
+  if(t.pass2special) out.push(["pass2special","Pass 2 (specialhändelse)"]);
+  if(t.pass3) out.push(["pass3","Pass 3"]);
+  if(t.pass3special) out.push(["pass3special","Pass 3 (specialhändelse)"]);
+  return out;
+}
+
+/* ---- Kalender ---- */
+function lineupCoaches(entry){
+  if(entry.coaches) return entry.coaches;
+  return entry.coach ? [entry.coach] : []; // bakåtkompatibilitet med äldre sparad data (en tränare per lag)
+}
+function lineupTableHTML(s){
+  const groupsUsed = DATA.groups.filter(g => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
+  if(groupsUsed.length===0) return '<p style="font-size:12.5px;color:var(--muted);margin:8px 0 0;">Ingen laguppställning inlagd ännu.</p>';
+  const matchInfoRow = (s.type==="Match" && (s.gathering || s.place)) ? `
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;">
+      ${s.gathering ? `<span><b>Samling:</b> ${s.gathering}</span>` : ""}
+      ${s.place ? `<span><b>Plats:</b> ${s.place}</span>` : ""}
+    </div>` : "";
+  const heads = groupsUsed.map(g=>`<th style="background:${g.color};color:#fff;border:1px solid #999;padding:6px 8px;font-family:'Oswald';">${g.name}</th>`).join("");
+  const goalieRow = groupsUsed.map(g=>{
+    const lu = s.lineup[g.id]; const gp = lu.goalie ? DATA.players.find(p=>p.id===lu.goalie) : null;
+    return `<td style="border:1px solid #999;padding:6px 8px;font-size:12.5px;">${gp?gp.name:"—"}</td>`;
+  }).join("");
+  const cols = groupsUsed.map(g=>{
+    const lu = s.lineup[g.id];
+    const names = (lu.players||[]).map(pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean);
+    return `<td style="vertical-align:top;border:1px solid #999;padding:6px 8px;min-width:110px;">
+      <div style="font-weight:700;font-size:12.5px;">${names.map(n=>`<div>${n}</div>`).join("") || "—"}</div>
+    </td>`;
+  });
+  const coachRow = groupsUsed.map(g=>{
+    const lu = s.lineup[g.id]; const coaches = lineupCoaches(lu).map(cid=>coachById(cid)).filter(Boolean);
+    return `<td style="vertical-align:top;border:1px solid #999;padding:6px 8px;font-size:12.5px;">${coaches.length?coaches.map(c=>`<div>${c.name}</div>`).join(""):"—"}</td>`;
+  }).join("");
+  return `<table style="border-collapse:collapse;width:100%;margin-top:10px;background:#fff;">
+    <tr><td style="border:1px solid #999;background:#F4F6F1;"></td>${heads}</tr>
+    <tr><td style="border:1px solid #999;padding:6px 8px;font-weight:700;background:#F4F6F1;">Mv</td>${goalieRow}</tr>
+    <tr><td style="border:1px solid #999;padding:6px 8px;font-weight:700;background:#F4F6F1;vertical-align:top;">Spelare</td>${cols.join("")}</tr>
+    <tr><td style="border:1px solid #999;padding:6px 8px;font-weight:700;background:#F4F6F1;vertical-align:top;">Tr</td>${coachRow}</tr>
+  </table>${matchInfoRow}`;
+}
+
+function renderSessions(){
+  if(reconcileAutoArchivedPairHistory()) saveData(); // fångar upp pass som blev "Genomförda" enbart pga att datumet passerat
+  const list = document.getElementById("sess-list");
+  const visibleTypes = ["Träning","Match"];
+  const filtered = DATA.sessions.filter(s => visibleTypes.includes(s.type) && (sessMode==="archive" ? isArchived(s) : !isArchived(s)));
+  const sorted = [...filtered].sort((a,b)=> sessMode==="archive"
+    ? (b.date+b.start).localeCompare(a.date+a.start)
+    : (a.date+a.start).localeCompare(b.date+b.start));
+  if(sorted.length===0){
+    list.innerHTML = sessMode==="archive"
+      ? '<div class="empty">Inga genomförda pass ännu.</div>'
+      : '<div class="empty">Inga kommande händelser inlagda. Klicka på "+ Ny händelse".</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(s=>{
+    const d = new Date(s.date+"T00:00:00");
+    const dayNum = d.getDate();
+    const monStr = d.toLocaleDateString("sv-SE",{month:"short"}).replace(".","");
+    const coachChips = (s.coaches||[]).map(cid=>{
+      const c = coachById(cid); if(!c) return "";
+      const color = COACH_COLORS[c.initials] || "#999";
+      return `<span class="chip" style="background:${color}22;color:${color}"><span class="dot" style="background:${color}"></span>${c.name}</span>`;
+    }).join("");
+    const groupsUsed = DATA.groups.filter(g => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
+    const groupChips = groupsUsed.map(g=>{
+      const cnt = s.lineup[g.id].players.length;
+      const mv = s.lineup[g.id].goalie ? " +Mv" : "";
+      return `<span class="chip" style="background:${g.color}22;color:${g.color}"><span class="dot" style="background:${g.color}"></span>${g.name} (${cnt}${mv})</span>`;
+    }).join("");
+    const passLabel = s.week ? `· vecka ${s.week}${s.pass?' · '+passDisplayLabel(s.pass):''}` : "";
+    const ytaIstidLabel = (s.yta||s.istid) ? `· ${s.yta||'yta ej angiven'}${s.istid?', '+s.istid+' min istid':''}` : "";
+    const archived = isArchived(s);
+    return `<div class="sess-card" style="flex-direction:column;align-items:stretch;${archived?'opacity:.75;':''}">
+      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+        <div class="sess-date"><span class="d">${dayNum}</span><span class="m">${monStr}</span></div>
+        <div class="sess-body">
+          <div class="sess-title-row">
+            <span class="evt-tag tag-${s.type.toLowerCase()}">${s.type}</span>
+            ${archived?'<span class="evt-tag" style="background:#eee;color:#888;">Genomförd</span>':''}
+            <span class="sess-title">${s.notes ? s.notes.split(" — ")[0] : s.type}</span>
+          </div>
+          <div class="sess-sub">${s.start||"?"}–${s.end||"?"} ${s.place?"· "+s.place:""} ${passLabel} ${ytaIstidLabel}</div>
+          <div class="chip-group" id="chip-group-${s.id}" style="margin-top:6px;">${coachChips}${groupChips}</div>
+        </div>
+        <div class="sess-actions">
+          <button class="btn ghost small" onclick="toggleInlineLineup('${s.id}')" id="lu-toggle-${s.id}">${groupsUsed.length?'Redigera laguppställning':'Lägg till laguppställning'}</button>
+          ${s.type!=="Match" ? `<button class="btn ghost small" onclick="toggleBlocksPanel('${s.id}')" id="blk-toggle-${s.id}">${(s.blocks&&s.blocks.length)?`Bygg pass (${s.blocks.length})`:'Bygg pass'}</button>` : ""}
+          ${s.week ? `<button class="btn ghost small" onclick="togglePassRef('${s.id}')" id="pr-toggle-${s.id}">Säsongsreferens</button>` : ""}
+          <button class="btn ghost small" onclick="editSession('${s.id}')">Redigera</button>
+          <button class="btn ghost small" onclick="toggleArchiveFromCard('${s.id}')">${archived?'↩ Kommande':'✓ Genomförd'}</button>
+        </div>
+      </div>
+      ${s.week ? `<div id="pr-panel-${s.id}" style="display:none;">${renderPassCard((s.pass?passDisplayLabel(s.pass):"Passdetaljer")+" (referens från säsongsplanen — inspiration, ej redigerbar)", passTemplateFor(s.week, s.pass))}</div>` : ""}
+      ${s.type!=="Match" ? `<div id="blocks-panel-${s.id}" style="display:none;"></div>` : ""}
+      <div id="inline-lineup-container-${s.id}" style="overflow-x:auto;"></div>
+    </div>`;
+  }).join("");
+}
+function passDisplayLabel(passKey){
+  const map = {pass1:"Pass 1", pass2:"Pass 2", pass2special:"Pass 2", pass3:"Pass 3", pass3special:"Pass 3"};
+  return map[passKey] || "";
+}
+function togglePassRef(id){
+  const panel = document.getElementById("pr-panel-"+id);
+  const btn = document.getElementById("pr-toggle-"+id);
+  const open = panel.style.display !== "none";
+  panel.style.display = open ? "none" : "block";
+  btn.textContent = open ? "Säsongsreferens" : "Dölj referens";
+}
+
+/* =========================================================================
+   BYGG PASS — tabellmotor (se nedan för fullständig implementation)
+   ========================================================================= */
+const BLOCK_THEME_COLORS = {
+  "Uppvärmning":"#8A6BAF","Lek":"#8A6BAF","Spel":"#2E6C9E","Fys":"#4C8FA8","Stationer":"#C9A24B",
+  // äldre teman (från tidigare version) — behålls så gammal data fortfarande visas med rätt färg
+  "Skridskoteknik":"#1F4D3A","Puckteknik":"#B57A3F","Skott":"#C9A24B","Passning":"#C24A3A","Annat":"#8A8F86"
+};
+function exerciseById(id){ return EXERCISES.find(e=>e.id===id); }
+function exerciseOptionsHTML(selectedId){
+  let html = '<option value="">— ingen, bara fritext —</option>';
+  EX_CATS.forEach(cat=>{
+    const items = EXERCISES.filter(e=>e.cat===cat.id);
+    if(!items.length) return;
+    html += `<optgroup label="${cat.label}">` + items.map(e=>
+      `<option value="${e.id}" ${selectedId===e.id?'selected':''}>${e.namn}</option>`).join("") + `</optgroup>`;
+  });
+  return html;
+}
+
+/* =========================================================================
+   BYGG PASS — tabellvy: varje rad = ett block, direkt redigerbart
+   ========================================================================= */
+const MAIN_THEME_LIST = ["Uppvärmning","Lek","Spel","Fys","Stationer"];
+const STATION_SUBTHEMES = ["Skridskoteknik","Puckteknik","Passning","Skott","Spel","Fys","Lek"];
+const SUBTHEME_TO_CAT = {Skridskoteknik:"skridsko", Puckteknik:"puck", Passning:"passning", Skott:"skott", Spel:"spel", Fys:"fys", Lek:"lek"};
+const MAIN_THEME_TO_CAT = {Lek:"lek", Fys:"fys", Spel:"spel"}; // Uppvärmning/Stationer har ingen given kategori
+const SPELYTA_OPTIONS = ["Helplan","Halvplan","Tvärplan (cross-ice)","1/3 plan","Annat"];
+const MALTYP_OPTIONS = ["Fullstora mål","Mellanmål","Småmål","Inget mål/fritt"];
+
+function isStationBlock(b){ return b.theme==="Stationer" || (b.stationMode && !MAIN_THEME_LIST.includes(b.theme)); }
+function isSpelBlock(b){ return b.theme==="Spel"; }
+function themeColor(theme){ return BLOCK_THEME_COLORS[theme] || "#8A8F86"; }
+
+function toggleBlocksPanel(sid){
+  const panel = document.getElementById("blocks-panel-"+sid);
+  const open = panel.style.display !== "none" && panel.innerHTML.trim() !== "";
+  if(open){ panel.style.display = "none"; panel.innerHTML = ""; }
+  else { panel.style.display = "block"; renderBlocksPanel(sid); }
+}
+
+/* ---- spara-debounce så snabba cell-ändringar inte skickar en storage-request per knapptryck ---- */
+let blockSaveTimer = null;
+let pendingRerenderSids = new Set();
+function scheduleBlockSave(sid, rerender){
+  if(rerender !== false) pendingRerenderSids.add(sid); // OR:a ihop behovet — ett senare anrop med rerender=false ska inte kunna släcka ett tidigare som behövde rita om
+  clearTimeout(blockSaveTimer);
+  blockSaveTimer = setTimeout(async ()=>{
+    const sidsToRerender = new Set(pendingRerenderSids);
+    pendingRerenderSids = new Set();
+    const ok = await saveData();
+    renderSessions();
+    sidsToRerender.forEach(id=>{
+      if(document.getElementById("blocks-panel-"+id)) renderBlocksPanel(id);
+    });
+  }, 500);
+}
+
+function updateBlockField(sid, bid, field, value){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  const b = (s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  b[field] = value;
+  if(field==="theme"){
+    renderBlocksPanel(sid); // temaval avgör om en underrad ska visas — rita direkt, ingen debounce
+    scheduleBlockSave(sid, false);
+  } else {
+    scheduleBlockSave(sid, false);
+  }
+}
+function addBlockExercise(sid, bid, exId){
+  if(!exId) return;
+  const s = DATA.sessions.find(x=>x.id===sid); const b = (s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  if(!b.exerciseIds) b.exerciseIds = [];
+  if(!b.exerciseIds.includes(exId)) b.exerciseIds.push(exId);
+  scheduleBlockSave(sid);
+  renderBlocksPanel(sid);
+}
+function removeBlockExercise(sid, bid, exId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b = (s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  b.exerciseIds = (b.exerciseIds||[]).filter(x=>x!==exId);
+  scheduleBlockSave(sid);
+  renderBlocksPanel(sid);
+}
+
+async function addBlockRow(sid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  if(!s.blocks) s.blocks = [];
+  s.blocks.push({ id:"blk-"+Date.now()+"-"+Math.random().toString(36).slice(2,5), theme:"Uppvärmning", duration:"", coach:"", exerciseIds:[], instruction:"", material:"",
+    stations:[], rounds:[], numPlans:2, spelyta:"Tvärplan (cross-ice)", maltyp:"Småmål", malvakt:"Utan målvakt", planRounds:[] });
+  renderSessions(); renderBlocksPanel(sid); // rita direkt — spara i bakgrunden
+  saveData();
+}
+async function deleteBlockRow(sid, bid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  const b = (s.blocks||[]).find(x=>x.id===bid);
+  const yes = await confirmDialog(`Ta bort raden "${b?(b.theme):"blocket"}"?`, "Ta bort");
+  if(!yes) return;
+  await guard(async ()=>{
+    s.blocks = (s.blocks||[]).filter(x=>x.id!==bid);
+    renderSessions(); renderBlocksPanel(sid);
+    saveData();
+  });
+}
+async function moveBlock(sid, bid, dir){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s||!s.blocks) return;
+  const idx = s.blocks.findIndex(b=>b.id===bid);
+  const swapIdx = idx+dir;
+  if(swapIdx<0 || swapIdx>=s.blocks.length) return;
+  [s.blocks[idx], s.blocks[swapIdx]] = [s.blocks[swapIdx], s.blocks[idx]];
+  renderSessions(); renderBlocksPanel(sid);
+  saveData();
+}
+
+function renderBlocksPanel(sid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  const panel = document.getElementById("blocks-panel-"+sid);
+  panel.style.display = "block"; // renderSessions() bygger om kortet med en färsk, dold panel — säkerställ att den syns igen
+  const blocks = s.blocks || [];
+  const totalPlanned = blocks.reduce((n,b)=>n+(+b.duration||0),0);
+  const istid = +s.istid || 0;
+  const remaining = istid ? istid - totalPlanned : null;
+  const timeNote = istid
+    ? (remaining>=0 ? `${totalPlanned}/${istid} min · ${remaining} min kvar` : `${totalPlanned}/${istid} min · ${Math.abs(remaining)} min för mycket ⚠`)
+    : `${totalPlanned} min planerat (ingen istid angiven på träningen)`;
+
+  const templates = DATA.templates || [];
+  const templateBar = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0;">
+    <select id="blk-template-select-${sid}" style="font-size:11.5px;padding:5px 7px;">
+      <option value="">${templates.length?'— välj mall —':'— inga mallar sparade —'}</option>
+      ${templates.map(t=>`<option value="${t.id}">${t.name} (${t.blocks.length} block)</option>`).join("")}
+    </select>
+    <button class="btn ghost small" onclick="applyTemplateToSession('${sid}')" ${templates.length?'':'disabled'}>Använd mall</button>
+    <button class="btn ghost small" onclick="saveSessionAsTemplate('${sid}')" ${blocks.length?'':'disabled'}>💾 Spara som mall</button>
+  </div>`;
+
+  const rows = blocks.map((b,i)=>blockRowHTML(s,b,i,blocks.length)).join("");
+
+  const period = sessionPeriod(s);
+  const periodBanner = period ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 2px;padding:6px 9px;background:${period.color}14;border-left:3px solid ${period.color};border-radius:6px;">
+    <span style="font-size:11px;font-weight:700;color:${period.color};">📅 ${period.label}</span>
+    ${(period.focus||[]).length ? `<span class="hint" style="font-size:10.5px;">Fokus: ${period.focus.join(', ')}</span>` : ""}
+    ${period.goal ? `<span class="hint" style="font-size:10.5px;">· Mål: ${period.goal}</span>` : ""}
+  </div>` : "";
+
+  panel.innerHTML = `
+    <div class="card" style="margin-top:8px;padding:11px 12px;border-left:4px solid var(--gold);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+        <b style="font-family:'Oswald';font-size:13px;color:var(--pine-dark);">Bygg träningen</b>
+        <span class="hint mono" style="font-size:11px;${remaining!==null&&remaining<0?'color:var(--red);font-weight:700;':''}">${timeNote}</span>
+      </div>
+      ${periodBanner}
+      ${templateBar}
+      <div style="overflow-x:auto;">
+        <table class="blk-table">
+          <thead><tr>
+            <th style="width:34px;"></th>
+            <th style="width:64px;">Tid</th>
+            <th style="min-width:110px;">Tema</th>
+            <th style="min-width:160px;">Koppla övningar</th>
+            <th style="min-width:110px;">Ansvarig</th>
+            <th style="width:70px;"></th>
+          </tr></thead>
+          <tbody id="blocks-tbody-${sid}">${rows || `<tr><td colspan="6" class="empty" style="padding:10px;">Inga block ännu.</td></tr>`}</tbody>
+        </table>
+      </div>
+      <button class="btn ghost small" style="margin-top:8px;" onclick="addBlockRow('${sid}')">+ Ny rad</button>
+    </div>`;
+}
+
+function blockRowHTML(s, b, i, total){
+  const color = themeColor(b.theme);
+  const themeOpts = MAIN_THEME_LIST.map(t=>`<option ${b.theme===t?'selected':''}>${t}</option>`).join("")
+    + (!MAIN_THEME_LIST.includes(b.theme) ? `<option selected>${b.theme}</option>` : "");
+  const coachOpts = '<option value="">—</option>' + DATA.coaches.map(c=>`<option value="${c.id}" ${b.coach===c.id?'selected':''}>${c.name}</option>`).join("");
+  const cat = MAIN_THEME_TO_CAT[b.theme];
+  const exChipsAndAdd = exerciseCellHTML(s.id, b, cat, periodFocusCatIds(s));
+
+  let extraRow = "";
+  if(isStationBlock(b)) extraRow = stationExtraRowHTML(s, b);
+  else if(isSpelBlock(b)) extraRow = spelExtraRowHTML(s, b);
+
+  const mainRow = `<tr style="border-left:4px solid ${color};">
+    <td class="mono" data-label="" style="text-align:center;color:var(--muted);">
+      ${i>0?`<span class="row-arrow" onclick="moveBlock('${s.id}','${b.id}',-1)">▲</span>`:""}
+      ${i<total-1?`<span class="row-arrow" onclick="moveBlock('${s.id}','${b.id}',1)">▼</span>`:""}
+    </td>
+    <td data-label="Tid"><input type="number" min="0" step="5" value="${b.duration||''}" style="width:56px;" placeholder="min"
+        onchange="updateBlockField('${s.id}','${b.id}','duration',this.value)"></td>
+    <td data-label="Tema"><select style="background:${color}18;font-weight:600;color:${color};" onchange="updateBlockField('${s.id}','${b.id}','theme',this.value)">${themeOpts}</select></td>
+    <td data-label="Koppla övningar">${exChipsAndAdd}</td>
+    <td data-label="Ansvarig"><select onchange="updateBlockField('${s.id}','${b.id}','coach',this.value)">${coachOpts}</select></td>
+    <td data-label="" style="text-align:right;white-space:nowrap;">
+      <button class="btn ghost small" style="padding:3px 7px;" onclick="toggleBlockNotes('${b.id}')" title="Anteckningar">📝</button>
+      <button class="btn ghost small" style="padding:3px 7px;" onclick="deleteBlockRow('${s.id}','${b.id}')" title="Ta bort">🗑</button>
+    </td>
+  </tr>`;
+  const notesRow = `<tr id="blk-notes-row-${b.id}" style="display:none;"><td></td><td colspan="5" style="padding:6px 8px 10px;">
+    <textarea placeholder="Material, anteckningar…" style="min-height:36px;font-size:12px;" onchange="updateBlockField('${s.id}','${b.id}','instruction',this.value)">${b.instruction||''}</textarea>
+  </td></tr>`;
+  return mainRow + notesRow + extraRow;
+}
+function toggleBlockNotes(bid){
+  const row = document.getElementById("blk-notes-row-"+bid);
+  if(row) row.style.display = row.style.display==="none" ? "table-row" : "none";
+}
+
+function sessionPeriod(s){
+  const wk = s.week ? +s.week : isoWeekNumber(new Date(s.date+"T00:00:00"));
+  return periodForWeek(wk);
+}
+function periodFocusCatIds(s){
+  const p = sessionPeriod(s); if(!p || !p.focus) return [];
+  return [...new Set(p.focus.map(f=>SUBTHEME_TO_CAT[f]).filter(Boolean))];
+}
+function exerciseCellHTML(sid, b, suggestCat, periodCats){
+  const ids = b.exerciseIds || [];
+  const chips = ids.map(id=>{
+    const e = exerciseById(id); if(!e) return "";
+    const c = EX_CATS.find(x=>x.id===e.cat);
+    return `<span class="chip" style="background:${c.color}22;color:${c.color};margin:1px 3px 1px 0;font-size:10.5px;padding:2px 6px;">📋 ${e.namn}
+      <span style="cursor:pointer;margin-left:4px;" onclick="removeBlockExercise('${sid}','${b.id}','${id}')">✕</span></span>`;
+  }).join("");
+  // förvalda förslag överst i listan: tema-baserat, sen periodens fokusmoment, sen alla kategorier
+  let opts = '<option value="">+ lägg till övning…</option>';
+  const shown = new Set();
+  if(suggestCat){
+    const cat = EX_CATS.find(c=>c.id===suggestCat);
+    const suggested = EXERCISES.filter(e=>e.cat===suggestCat && !ids.includes(e.id));
+    if(suggested.length){ opts += `<optgroup label="Föreslaget: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`; shown.add(suggestCat); }
+  }
+  (periodCats||[]).forEach(pc=>{
+    if(shown.has(pc)) return;
+    const cat = EX_CATS.find(c=>c.id===pc); if(!cat) return;
+    const suggested = EXERCISES.filter(e=>e.cat===pc && !ids.includes(e.id));
+    if(suggested.length){ opts += `<optgroup label="📅 Periodens fokus: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`; shown.add(pc); }
+  });
+  EX_CATS.forEach(c=>{
+    const items = EXERCISES.filter(e=>e.cat===c.id && !ids.includes(e.id) && !shown.has(c.id));
+    if(!items.length) return;
+    opts += `<optgroup label="${c.label}">` + items.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`;
+  });
+  return `<div>${chips}</div><select style="font-size:11px;margin-top:2px;" onchange="addBlockExercise('${sid}','${b.id}',this.value);this.value=''">${opts}</select>`;
+}
+
+/* ---- Stationer (Tema = "Stationer") ---- */
+function stationGroupOptions(sessionId){
+  const s = DATA.sessions.find(x=>x.id===sessionId);
+  const groups = (s && s.activeGroups && s.activeGroups.length) ? DATA.groups.filter(g=>s.activeGroups.includes(g.id)) : DATA.groups;
+  return groups;
+}
+function nextStationLetter(b){ const letters="ABCDEFGH"; return letters[(b.stations||[]).length] || ("S"+((b.stations||[]).length+1)); }
+async function addStation(sid, bid){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  if(!b.stations) b.stations=[];
+  b.stations.push({ id:"st-"+Date.now(), name:"Station "+nextStationLetter(b), subtheme:"Skridskoteknik", exerciseIds:[], coach:"" });
+  renderBlocksPanel(sid); saveData();
+}
+async function removeStation(sid, bid, stId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  b.stations = (b.stations||[]).filter(st=>st.id!==stId);
+  (b.rounds||[]).forEach(r=>{ delete r.assignments[stId]; });
+  renderBlocksPanel(sid); saveData();
+}
+function updateStationField(sid, bid, stId, field, value){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); const st=(b.stations||[]).find(x=>x.id===stId); if(!st) return;
+  st[field] = value;
+  if(field==="subtheme"){
+    renderBlocksPanel(sid); // undertema styr vilka övningar som föreslås — rita direkt
+    scheduleBlockSave(sid, false);
+  } else {
+    scheduleBlockSave(sid, false);
+  }
+}
+function addStationExercise(sid, bid, stId, exId){
+  if(!exId) return;
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); const st=(b.stations||[]).find(x=>x.id===stId); if(!st) return;
+  if(!st.exerciseIds) st.exerciseIds=[];
+  if(!st.exerciseIds.includes(exId)) st.exerciseIds.push(exId);
+  scheduleBlockSave(sid); renderBlocksPanel(sid);
+}
+function removeStationExercise(sid, bid, stId, exId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); const st=(b.stations||[]).find(x=>x.id===stId); if(!st) return;
+  st.exerciseIds = (st.exerciseIds||[]).filter(x=>x!==exId);
+  scheduleBlockSave(sid); renderBlocksPanel(sid);
+}
+async function addRound(sid, bid){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  if(!b.rounds) b.rounds=[];
+  b.rounds.push({ id:"rd-"+Date.now(), assignments:{} });
+  renderBlocksPanel(sid); saveData();
+}
+async function removeRound(sid, bid, rId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  b.rounds = (b.rounds||[]).filter(r=>r.id!==rId);
+  renderBlocksPanel(sid); saveData();
+}
+function updateRoundAssignment(sid, bid, rId, stId, groupId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); const r=(b.rounds||[]).find(x=>x.id===rId); if(!r) return;
+  r.assignments[stId] = groupId;
+  scheduleBlockSave(sid, false);
+}
+function stationExtraRowHTML(s, b){
+  const stations = b.stations || [];
+  const groups = stationGroupOptions(s.id);
+  const groupOpts = gid => '<option value="">—</option>' + groups.map(g=>`<option value="${g.id}" ${gid===g.id?'selected':''}>${g.name}</option>`).join("");
+
+  const stationCards = stations.map(st=>{
+    const subOpts = STATION_SUBTHEMES.map(t=>`<option ${st.subtheme===t?'selected':''}>${t}</option>`).join("");
+    const subCat = SUBTHEME_TO_CAT[st.subtheme];
+    return `<div style="padding:5px 8px;margin:3px 0;background:#fff;border:1px solid var(--line);border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;">
+        <input type="text" value="${st.name}" style="font-size:12px;min-width:80px;flex:1;" title="Namn"
+          onchange="updateStationField('${s.id}','${b.id}','${st.id}','name',this.value)">
+        <select style="font-size:11px;min-width:110px;flex:1;" title="Undertema"
+          onchange="updateStationField('${s.id}','${b.id}','${st.id}','subtheme',this.value)">${subOpts}</select>
+        <select style="font-size:11px;min-width:100px;flex:1;" title="Ansvarig"
+          onchange="updateStationField('${s.id}','${b.id}','${st.id}','coach',this.value)">
+          <option value="">Ansvarig —</option>${DATA.coaches.map(c=>`<option value="${c.id}" ${st.coach===c.id?'selected':''}>${c.name}</option>`).join("")}</select>
+        <button class="btn ghost small" style="padding:3px 7px;flex-shrink:0;" title="Ta bort station" onclick="removeStation('${s.id}','${b.id}','${st.id}')">🗑</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin:4px 0 2px;">Övningar (förslag: ${subCat?EX_CATS.find(c=>c.id===subCat).label:"—"})</div>
+      ${exerciseCellHTMLForStation(s.id, b.id, st, subCat)}
+    </div>`;
+  }).join("");
+
+  const rotHead = stations.map(st=>`<th style="border:1px solid var(--line);padding:4px 6px;font-size:10.5px;">${st.name}</th>`).join("");
+  const rotRows = (b.rounds||[]).map((r,ri)=>{
+    const cells = stations.map(st=>`<td style="border:1px solid var(--line);padding:3px;">
+      <select style="font-size:11px;" onchange="updateRoundAssignment('${s.id}','${b.id}','${r.id}','${st.id}',this.value)">${groupOpts(r.assignments[st.id])}</select></td>`).join("");
+    return `<tr><td style="border:1px solid var(--line);padding:4px 6px;font-size:10.5px;color:var(--muted);">Byte ${ri+1} <span style="cursor:pointer;color:var(--red);" onclick="removeRound('${s.id}','${b.id}','${r.id}')">✕</span></td>${cells}</tr>`;
+  }).join("");
+  const rotTable = stations.length ? `<div style="font-size:10.5px;color:var(--muted);margin:6px 0 3px;">Rotation — vem är var, byte för byte</div>
+    <div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;"><tr><td style="border:1px solid var(--line);"></td>${rotHead}</tr>${rotRows}</table></div>
+    <button class="btn ghost small" style="margin-top:5px;" onclick="addRound('${s.id}','${b.id}')">+ Byte</button>` : "";
+
+  return `<tr><td></td><td colspan="5" style="padding:6px 8px 12px;background:#FAFAF7;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <b style="font-size:11.5px;color:var(--pine);">Stationer</b>
+      <button class="btn ghost small" onclick="addStation('${s.id}','${b.id}')">+ Station</button>
+    </div>
+    ${stationCards || '<p class="hint" style="font-size:11.5px;">Inga stationer ännu.</p>'}
+    ${rotTable}
+  </td></tr>`;
+}
+function exerciseCellHTMLForStation(sid, bid, st, suggestCat){
+  const ids = st.exerciseIds || [];
+  const chips = ids.map(id=>{
+    const e = exerciseById(id); if(!e) return "";
+    const c = EX_CATS.find(x=>x.id===e.cat);
+    return `<span class="chip" style="background:${c.color}22;color:${c.color};margin:1px 3px 1px 0;font-size:10px;padding:1px 5px;">📋 ${e.namn}
+      <span style="cursor:pointer;margin-left:3px;" onclick="removeStationExercise('${sid}','${bid}','${st.id}','${id}')">✕</span></span>`;
+  }).join("");
+  let opts = '<option value="">+ lägg till övning…</option>';
+  if(suggestCat){
+    const cat = EX_CATS.find(c=>c.id===suggestCat);
+    const suggested = EXERCISES.filter(e=>e.cat===suggestCat && !ids.includes(e.id));
+    if(suggested.length) opts += `<optgroup label="Föreslaget: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`;
+  }
+  EX_CATS.forEach(c=>{
+    const items = EXERCISES.filter(e=>e.cat===c.id && !ids.includes(e.id) && !(suggestCat===c.id));
+    if(!items.length) return;
+    opts += `<optgroup label="${c.label}">` + items.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`;
+  });
+  return `<div>${chips}</div><select style="font-size:10.5px;margin-top:2px;" onchange="addStationExercise('${sid}','${bid}','${st.id}',this.value);this.value=''">${opts}</select>`;
+}
+
+/* ---- Spel (Tema = "Spel") — flera planer, roterande lagmöten ---- */
+function ensurePlanConfigs(b){
+  const n = Math.max(1, +b.numPlans || 1);
+  if(!b.plans) b.plans = [];
+  while(b.plans.length < n) b.plans.push({yta:"Tvärplan (cross-ice)", maltyp:"Småmål", malvakt:"Utan målvakt"});
+  if(b.plans.length > n) b.plans = b.plans.slice(0, n);
+}
+function updateSpelField(sid, bid, field, value){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  b[field] = value;
+  if(field==="numPlans"){
+    ensurePlanConfigs(b);
+    const n = Math.max(1, +value || 1);
+    (b.planRounds||[]).forEach(r=>{ Object.keys(r.assignments||{}).forEach(k=>{ if(+k>=n) delete r.assignments[k]; }); });
+    renderBlocksPanel(sid); // antal planer styr hur många kolumner som ska visas — rita direkt
+    scheduleBlockSave(sid, false);
+  } else {
+    scheduleBlockSave(sid, false);
+  }
+}
+function updatePlanConfigField(sid, bid, planIdx, field, value){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  ensurePlanConfigs(b);
+  b.plans[planIdx][field] = value;
+  scheduleBlockSave(sid, false);
+}
+async function addPlanRound(sid, bid){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  if(!b.planRounds) b.planRounds=[];
+  b.planRounds.push({ id:"pr-"+Date.now(), assignments:{} }); // assignments[planIdx] = {a:groupId,b:groupId}
+  renderBlocksPanel(sid); saveData();
+}
+async function removePlanRound(sid, bid, rId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); if(!b) return;
+  b.planRounds = (b.planRounds||[]).filter(r=>r.id!==rId);
+  renderBlocksPanel(sid); saveData();
+}
+function updatePlanMatchup(sid, bid, rId, planIdx, side, groupId){
+  const s = DATA.sessions.find(x=>x.id===sid); const b=(s.blocks||[]).find(x=>x.id===bid); const r=(b.planRounds||[]).find(x=>x.id===rId); if(!r) return;
+  if(!r.assignments[planIdx]) r.assignments[planIdx] = {a:"",b:""};
+  r.assignments[planIdx][side] = groupId;
+  scheduleBlockSave(sid, false);
+}
+function spelExtraRowHTML(s, b){
+  const numPlans = Math.max(1, +b.numPlans || 1);
+  ensurePlanConfigs(b);
+  // Se alltid till att det finns minst en rad (startuppställningen) så färgerna som börjar på
+  // respektive plan syns direkt, utan att behöva klicka "+ Byte" först.
+  if(!b.planRounds) b.planRounds = [];
+  if(b.planRounds.length===0) b.planRounds.push({ id:"pr-"+Date.now(), assignments:{} });
+
+  const groups = stationGroupOptions(s.id);
+  const groupOpts = gid => '<option value="">—</option>' + groups.map(g=>`<option value="${g.id}" ${gid===g.id?'selected':''}>${g.name}</option>`).join("");
+  const planLabels = Array.from({length:numPlans},(_,i)=>"Plan "+String.fromCharCode(65+i));
+
+  const planConfigCards = planLabels.map((label,pi)=>{
+    const cfg = b.plans[pi] || {yta:"", maltyp:"", malvakt:""};
+    return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;padding:5px 8px;margin:3px 0;background:#fff;border:1px solid var(--line);border-radius:8px;overflow-x:auto;">
+      <b style="font-size:11px;color:var(--pine);white-space:nowrap;flex-shrink:0;">${label}</b>
+      <select style="font-size:11px;min-width:118px;flex:1;" title="Storlek/yta"
+        onchange="updatePlanConfigField('${s.id}','${b.id}',${pi},'yta',this.value)">
+        ${SPELYTA_OPTIONS.map(o=>`<option ${cfg.yta===o?'selected':''}>${o}</option>`).join("")}</select>
+      <select style="font-size:11px;min-width:100px;flex:1;" title="Mål"
+        onchange="updatePlanConfigField('${s.id}','${b.id}',${pi},'maltyp',this.value)">
+        ${MALTYP_OPTIONS.map(o=>`<option ${cfg.maltyp===o?'selected':''}>${o}</option>`).join("")}</select>
+      <select style="font-size:11px;min-width:100px;flex:1;" title="Målvakt"
+        onchange="updatePlanConfigField('${s.id}','${b.id}',${pi},'malvakt',this.value)">
+        <option ${cfg.malvakt==="Med målvakt"?'selected':''}>Med målvakt</option><option ${cfg.malvakt==="Utan målvakt"?'selected':''}>Utan målvakt</option></select>
+    </div>`;
+  }).join("");
+
+  const rotHead = planLabels.map(p=>`<th style="border:1px solid var(--line);padding:4px 6px;font-size:10.5px;" colspan="2">${p}</th>`).join("");
+  const rotRows = (b.planRounds||[]).map((r,ri)=>{
+    const cells = planLabels.map((_,pi)=>{
+      const a = r.assignments[pi]?.a || "", bb = r.assignments[pi]?.b || "";
+      return `<td style="border:1px solid var(--line);padding:2px;"><select style="font-size:10.5px;width:100%;" onchange="updatePlanMatchup('${s.id}','${b.id}','${r.id}',${pi},'a',this.value)">${groupOpts(a)}</select></td>
+        <td style="border:1px solid var(--line);padding:2px;"><select style="font-size:10.5px;width:100%;" onchange="updatePlanMatchup('${s.id}','${b.id}','${r.id}',${pi},'b',this.value)">${groupOpts(bb)}</select></td>`;
+    }).join("");
+    const rowLabel = ri===0 ? "Start" : "Byte "+(ri+1);
+    return `<tr><td style="border:1px solid var(--line);padding:4px 6px;font-size:10.5px;color:var(--muted);">${rowLabel} ${ri>0?`<span style="cursor:pointer;color:var(--red);" onclick="removePlanRound('${s.id}','${b.id}','${r.id}')">✕</span>`:''}</td>${cells}</tr>`;
+  }).join("");
+
+  return `<tr><td></td><td colspan="5" style="padding:6px 8px 12px;background:#FAFAF7;">
+    <b style="font-size:11.5px;color:var(--pine);">Spelupplägg</b>
+    <div class="field" style="margin-top:6px;max-width:120px;">
+      <label style="font-size:10.5px;">Antal planer</label><input type="number" min="1" max="4" value="${numPlans}" style="font-size:12px;"
+        onchange="updateSpelField('${s.id}','${b.id}','numPlans',this.value)">
+    </div>
+    ${planConfigCards}
+    <div style="font-size:10.5px;color:var(--muted);margin:8px 0 3px;">Vilka möts var — vem som börjar på respektive plan, och eventuella byten under blocket</div>
+    <div style="overflow-x:auto;"><table style="border-collapse:collapse;">
+      <tr><td style="border:1px solid var(--line);"></td>${rotHead}</tr>${rotRows}</table></div>
+    <button class="btn ghost small" style="margin-top:5px;" onclick="addPlanRound('${s.id}','${b.id}')">+ Byte</button>
+  </td></tr>`;
+}
+
+/* ---- Mallar: spara ett träningspass block-för-block, återanvänd i en annan träning ---- */
+async function saveSessionAsTemplate(sid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  if(!s.blocks || s.blocks.length===0){ alert("Inga block att spara — bygg passet först."); return; }
+  const suggested = (s.notes||"").split(" — ")[0] || s.type || "Träningsmall";
+  const name = window.prompt("Namn på mallen:", suggested);
+  if(!name || !name.trim()) return;
+  if(!DATA.templates) DATA.templates = [];
+  const tmpl = { id:"tmpl-"+Date.now(), name:name.trim(), blocks: JSON.parse(JSON.stringify(s.blocks)), yta:s.yta||"", istid:s.istid||"", savedAt: todayStr() };
+  DATA.templates.push(tmpl);
+  await guard(async ()=>{
+    const ok = await saveData();
+    if(ok){ renderBlocksPanel(sid); alert(`Mall "${tmpl.name}" sparad (${tmpl.blocks.length} block). Den går nu att välja på andra träningar.`); }
+  });
+}
+async function applyTemplateToSession(sid){
+  const sel = document.getElementById("blk-template-select-"+sid);
+  if(!sel || !sel.value) return;
+  const tmpl = (DATA.templates||[]).find(t=>t.id===sel.value); if(!tmpl) return;
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  const doApply = ()=> guard(async ()=>{
+    const cloned = JSON.parse(JSON.stringify(tmpl.blocks)).map(b=>({...b, id:"blk-"+Date.now()+"-"+Math.random().toString(36).slice(2,7)}));
+    s.blocks = (s.blocks||[]).concat(cloned);
+    if(!s.yta && tmpl.yta) s.yta = tmpl.yta;
+    if(!s.istid && tmpl.istid) s.istid = tmpl.istid;
+    const ok = await saveData();
+    if(ok){ renderSessions(); renderBlocksPanel(sid); }
+  });
+  if((s.blocks||[]).length>0){
+    const yes = await confirmDialog(`Lägga till ${tmpl.blocks.length} block från mallen "${tmpl.name}" till de ${s.blocks.length} block som redan finns på denna träning?`, "Lägg till block");
+    if(yes) await doApply();
+  } else { await doApply(); }
+}
+
+
+
+/* ---- Inline laguppställning direkt på träningskortet ---- */
+function inlineLineupShellHTML(s){
+  const sid = s.id;
+  return `<div class="card" style="margin-top:8px;border-left:4px solid var(--gold);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      <b style="font-family:'Oswald';font-size:14px;color:var(--pine-dark);">Laguppställning</b>
+      <button class="btn ghost small" onclick="closeInlineLineup('${sid}')">Stäng</button>
+    </div>
+    <div class="field">
+      <label style="font-size:12px;">Vilka är med idag?</label>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px;">Alla är förvalda — klicka bort de som inte kommer.</p>
+      <div class="checkchips" id="il-attendance-${sid}"></div>
+    </div>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <label style="margin:0;font-size:12px;">Aktiva grupper/färger</label>
+        <button type="button" class="btn ghost small" onclick="quickNewGroup()">+ Ny grupp</button>
+      </div>
+      <div class="checkchips" id="il-groups-${sid}"></div>
+    </div>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <label style="margin:0;font-size:12px;">Dra spelare till en grupp</label>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
+          <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Dra en spelare, eller tryck på spelaren och sedan på gruppen.</p>
+      <div class="lineup-pool" id="il-pool-${sid}" ondragover="event.preventDefault()" ondrop="onZoneDrop(event, null)" onclick="onZoneClick(null)">
+        <div class="lineup-pool-label">Ej indelade</div>
+        <div class="checkchips" id="il-pool-chips-${sid}"></div>
+      </div>
+      <div class="lineup-board" id="il-board-${sid}"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:10px;">
+      <button class="btn" onclick="saveInlineLineup('${sid}')">Spara laguppställning</button>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);">
+      <b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">Sparad laguppställning (för delning/skärmdump)</b>
+      <div id="il-shared-table-${sid}">${lineupTableHTML(s)}</div>
+    </div>
+  </div>`;
+}
+function toggleInlineLineup(sid){
+  const container = document.getElementById("inline-lineup-container-"+sid);
+  const isOpen = container && container.innerHTML.trim() !== "";
+  if(isOpen) closeInlineLineup(sid); else openInlineLineup(sid);
+}
+function openInlineLineup(sid){
+  // bara en inline-redigerare öppen åt gången
+  document.querySelectorAll('[id^="inline-lineup-container-"]').forEach(el=>{
+    if(el.id !== "inline-lineup-container-"+sid) el.innerHTML = "";
+  });
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  lineupScope = sid;
+  const lineup = JSON.parse(JSON.stringify(s.lineup||{}));
+  const activeGroups = s.activeGroups && s.activeGroups.length ? s.activeGroups.slice() : DATA.groups.slice(0,4).map(g=>g.id);
+  const hadAnyPlayers = Object.values(lineup).some(g=>(g.players||[]).length>0);
+  const attendance = (s.attendance && s.attendance.length) ? s.attendance.slice()
+    : hadAnyPlayers ? [...new Set(Object.values(lineup).flatMap(g=>g.players||[]))]
+    : DATA.players.map(p=>p.id); // förvalt: alla är med
+  activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:""}; });
+  sessionDraft = { attendance, activeGroups, lineup };
+  const container = document.getElementById("inline-lineup-container-"+sid);
+  container.innerHTML = inlineLineupShellHTML(s);
+  renderAttendanceEditor(); renderActiveGroupsPicker(); renderLineupBoard();
+  const btn = document.getElementById("lu-toggle-"+sid);
+  if(btn) btn.textContent = "Dölj laguppställning";
+}
+function closeInlineLineup(sid){
+  const container = document.getElementById("inline-lineup-container-"+sid);
+  if(container) container.innerHTML = "";
+  if(lineupScope===sid) lineupScope = null;
+  const s = DATA.sessions.find(x=>x.id===sid);
+  const used = s && DATA.groups.filter(g=>s.lineup&&s.lineup[g.id]&&((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
+  const btn = document.getElementById("lu-toggle-"+sid);
+  if(btn) btn.textContent = (used&&used.length) ? "Redigera laguppställning" : "Lägg till laguppställning";
+}
+function refreshSessionCardSummary(sid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  const el = document.getElementById("chip-group-"+sid); if(!el) return;
+  const coachChips = (s.coaches||[]).map(cid=>{
+    const c = coachById(cid); if(!c) return "";
+    const color = COACH_COLORS[c.initials] || "#999";
+    return `<span class="chip" style="background:${color}22;color:${color}"><span class="dot" style="background:${color}"></span>${c.name}</span>`;
+  }).join("");
+  const groupsUsed = DATA.groups.filter(g => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
+  const groupChips = groupsUsed.map(g=>{
+    const cnt = s.lineup[g.id].players.length;
+    const mv = s.lineup[g.id].goalie ? " +Mv" : "";
+    return `<span class="chip" style="background:${g.color}22;color:${g.color}"><span class="dot" style="background:${g.color}"></span>${g.name} (${cnt}${mv})</span>`;
+  }).join("");
+  el.innerHTML = coachChips + groupChips;
+}
+async function saveInlineLineup(sid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  const oldLineup = s.lineup, oldType = s.type, oldCounted = s.pairHistoryCounted;
+  s.attendance = sessionDraft.attendance.slice();
+  s.activeGroups = sessionDraft.activeGroups.slice();
+  s.lineup = JSON.parse(JSON.stringify(sessionDraft.lineup));
+  syncPairHistoryCounting(oldLineup, oldType, oldCounted, s);
+  // Riktade uppdateringar istället för att bygga om hela kortet/redigeraren — sessionDraft är redan
+  // exakt det som just sparades, så vi behöver bara uppdatera sammanfattningen och delningstabellen.
+  refreshSessionCardSummary(sid);
+  const tableEl = document.getElementById("il-shared-table-"+sid);
+  if(tableEl) tableEl.innerHTML = lineupTableHTML(s);
+  renderGroups(); renderMixHistory(); renderToPlanCallout();
+  saveData(); // sparas i bakgrunden
+}
+
+function populateSessionFormLists(){
+  const weekSel = document.getElementById("sess-week");
+  weekSel.innerHTML = '<option value="">— ingen vecka —</option>' +
+    Array.from({length:21},(_,i)=>32+i).map(w=>`<option value="${w}">Vecka ${w}${WEEK_TEMPLATES[w]?'':' (ingen mall)'}</option>`).join("");
+  document.getElementById("sess-coaches").innerHTML = DATA.coaches.map(c=>
+    `<span class="checkchip" data-id="${c.id}" onclick="this.classList.toggle('on')">${c.name}</span>`).join("");
+  const tmplSel = document.getElementById("sess-template");
+  const templates = DATA.templates || [];
+  tmplSel.innerHTML = '<option value="">— ingen mall —</option>' +
+    templates.map(t=>`<option value="${t.id}">${t.name} (${t.blocks.length} block)</option>`).join("");
+}
+function refreshPassOptions(selectedPass){
+  const week = document.getElementById("sess-week").value;
+  const passSel = document.getElementById("sess-pass");
+  const opts = week ? availablePassesFor(+week) : [];
+  passSel.innerHTML = '<option value="">— inget pass —</option>' + opts.map(([key,label])=>
+    `<option value="${key}" ${selectedPass===key?'selected':''}>${label}</option>`).join("");
+  if(!opts.length) passSel.innerHTML = '<option value="">— inga pass för denna vecka —</option>';
+}
+function onSessWeekChange(){
+  refreshPassOptions("");
+  renderPassRefInModal();
+}
+function onSessPassChange(){
+  const week = document.getElementById("sess-week").value;
+  const passKey = document.getElementById("sess-pass").value;
+  const tpl = passKey ? passTemplateFor(+week, passKey) : null;
+  if(tpl){
+    document.getElementById("sess-yta").value = tpl.yta || "";
+    document.getElementById("sess-istid").value = tpl.istid || "";
+  }
+  renderPassRefInModal();
+}
+function renderPassRefInModal(){
+  const week = document.getElementById("sess-week").value;
+  const passKey = document.getElementById("sess-pass").value;
+  const el = document.getElementById("sess-pass-ref");
+  if(!week || !passKey){ el.innerHTML = ""; return; }
+  const tpl = passTemplateFor(+week, passKey);
+  el.innerHTML = tpl ? renderPassCard(passDisplayLabel(passKey)+" — referens från säsongsplanen", tpl) :
+    '<p style="font-size:12px;color:var(--muted);">Specialhändelse utan detaljerade moment i ramverket.</p>';
+}
+function quickNewGroup(){
+  openGroupModal(); // stacks on top of the session modal; saveGroup() refreshes sess-active-groups after
+}
+
+/* ---- Laguppställning: state under tiden modalen är öppen ---- */
+let sessionDraft = null; // {attendance:[playerId...], activeGroups:[groupId...], lineup:{groupId:{coach,players:[]}}}
+let lineupSelectedPlayer = null; // för tryck-och-tryck-läge på mobil
+let lineupScope = null; // null = redigera-händelse-modalen, annars ett session-id = inline på kortet
+
+function scopedId(base){
+  const modalIds = { attendance:"sess-attendance", groups:"sess-active-groups", poolChips:"lineup-pool-chips", board:"lineup-board" };
+  if(!lineupScope) return modalIds[base];
+  const inlineIds = { attendance:`il-attendance-${lineupScope}`, groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, board:`il-board-${lineupScope}` };
+  return inlineIds[base];
+}
+
+function pairKey(a,b){ return [a,b].sort().join("|"); }
+function pairsInGroup(players){ const out=[]; for(let i=0;i<players.length;i++) for(let j=i+1;j<players.length;j++) out.push(pairKey(players[i],players[j])); return out; }
+function pairsInLineup(lineup){ let out=[]; Object.values(lineup||{}).forEach(g=>{ out = out.concat(pairsInGroup(g.players||[])); }); return out; }
+function adjustPairHistory(lineup, delta, type){
+  const bucketKey = (type==="Match") ? "Match" : "Träning"; // allt annat (t.ex. äldre data) räknas som Träning
+  if(!DATA.pairHistory[bucketKey]) DATA.pairHistory[bucketKey] = {};
+  const bucket = DATA.pairHistory[bucketKey];
+  pairsInLineup(lineup).forEach(k=>{
+    const next = (bucket[k]||0) + delta;
+    if(next<=0) delete bucket[k]; else bucket[k] = next;
+  });
+}
+// Mixhistoriken ska bara spegla GENOMFÖRDA pass. Detta är den enda platsen som (av)registrerar
+// ett pass räkning — allt annat (spara laguppställning, redigera händelse, arkiv-togglar) går via denna.
+// `oldLineup/oldType/oldCounted` beskriver läget INNAN ändringen; `session` är objektet EFTER ändringen
+// (redan tillagt i DATA.sessions, med sitt slutgiltiga lineup/type/archiveOverride satt).
+function syncPairHistoryCounting(oldLineup, oldType, oldCounted, session){
+  if(oldCounted) adjustPairHistory(oldLineup, -1, oldType); // dra bort ev. tidigare registrerad räkning
+  if(isArchived(session)){
+    adjustPairHistory(session.lineup, +1, session.type);
+    session.pairHistoryCounted = true;
+  } else {
+    session.pairHistoryCounted = false;
+  }
+}
+// Fångar upp pass som blivit "Genomförda" enbart för att datumet passerat (ingen manuell knapptryckning
+// skedde) — körs vid varje sessionsrendering så mixhistoriken hålls i synk utan en bakgrundsprocess.
+function reconcileAutoArchivedPairHistory(){
+  let changed = false;
+  DATA.sessions.forEach(s=>{
+    if(isArchived(s) && !s.pairHistoryCounted){
+      adjustPairHistory(s.lineup, +1, s.type);
+      s.pairHistoryCounted = true;
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function renderAttendanceEditor(){
+  const el = document.getElementById(scopedId("attendance")); if(!el) return;
+  if(DATA.players.length===0){ el.innerHTML = '<span style="font-size:12px;color:var(--muted);">Inga spelare inlagda i "Laget" än.</span>'; return; }
+  el.innerHTML = [...DATA.players].sort((a,b)=>a.name.localeCompare(b.name,'sv')).map(p=>
+    `<span class="checkchip ${sessionDraft.attendance.includes(p.id)?'on':''}" onclick="toggleAttendance('${p.id}')">${p.name}</span>`).join("");
+}
+function toggleAttendance(pid){
+  if(sessionDraft.attendance.includes(pid)){
+    sessionDraft.attendance = sessionDraft.attendance.filter(x=>x!==pid);
+    // en spelare som inte är med idag kan inte stå kvar i en grupp, varken som utespelare eller målvakt
+    Object.values(sessionDraft.lineup).forEach(g=>{
+      g.players = g.players.filter(x=>x!==pid);
+      if(g.goalie===pid) g.goalie = "";
+    });
+  } else {
+    sessionDraft.attendance.push(pid);
+  }
+  renderAttendanceEditor(); renderLineupBoard();
+}
+
+function renderActiveGroupsPicker(){
+  const el = document.getElementById(scopedId("groups")); if(!el) return;
+  el.innerHTML = DATA.groups.map(g=>
+    `<span class="checkchip ${sessionDraft.activeGroups.includes(g.id)?'on':''}" style="${sessionDraft.activeGroups.includes(g.id)?`background:${g.color};border-color:${g.color};`:''}" onclick="toggleActiveGroup('${g.id}')">${g.name}</span>`).join("");
+}
+function toggleActiveGroup(gid){
+  if(sessionDraft.activeGroups.includes(gid)){
+    sessionDraft.activeGroups = sessionDraft.activeGroups.filter(x=>x!==gid);
+    // spelare i en grupp som stängs av släpps tillbaka till poolen
+    if(sessionDraft.lineup[gid]) sessionDraft.lineup[gid].players = [];
+  } else {
+    sessionDraft.activeGroups.push(gid);
+    if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""};
+  }
+  renderActiveGroupsPicker(); renderLineupBoard();
+}
+
+function assignedElsewhere(pid){
+  for(const gid in sessionDraft.lineup){
+    const entry = sessionDraft.lineup[gid];
+    if(entry.players.includes(pid) || entry.goalie===pid) return gid;
+  }
+  return null;
+}
+function movePlayerToGroup(pid, targetGid){
+  const from = assignedElsewhere(pid);
+  if(from){
+    sessionDraft.lineup[from].players = sessionDraft.lineup[from].players.filter(x=>x!==pid);
+    if(sessionDraft.lineup[from].goalie===pid) sessionDraft.lineup[from].goalie = "";
+  }
+  if(targetGid){
+    if(!sessionDraft.lineup[targetGid]) sessionDraft.lineup[targetGid] = {coaches:[], players:[], goalie:""};
+    if(!sessionDraft.lineup[targetGid].players.includes(pid)) sessionDraft.lineup[targetGid].players.push(pid);
+  }
+  lineupSelectedPlayer = null;
+  renderLineupBoard();
+}
+function toggleZoneCoach(gid, coachId){
+  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""};
+  const entry = sessionDraft.lineup[gid];
+  const current = lineupCoaches(entry);
+  entry.coaches = current.includes(coachId) ? current.filter(x=>x!==coachId) : current.concat([coachId]);
+  delete entry.coach; // migrera bort ev. gammalt enkelfält
+  renderLineupBoard();
+}
+function setZoneGoalie(gid, pid){
+  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""};
+  if(pid){
+    // en spelare kan inte samtidigt vara utespelare någonstans eller målvakt för ett annat lag
+    const from = assignedElsewhere(pid);
+    if(from) sessionDraft.lineup[from].players = sessionDraft.lineup[from].players.filter(x=>x!==pid);
+    DATA.groups.forEach(g=>{ if(sessionDraft.lineup[g.id] && sessionDraft.lineup[g.id].goalie===pid) sessionDraft.lineup[g.id].goalie=""; });
+  }
+  sessionDraft.lineup[gid].goalie = pid;
+  renderLineupBoard();
+}
+
+function renderLineupBoard(){
+  const poolIds = sessionDraft.attendance.filter(pid => !assignedElsewhere(pid));
+  const poolEl = document.getElementById(scopedId("poolChips")); if(!poolEl) return;
+  poolEl.innerHTML = poolIds.length===0
+    ? '<span style="font-size:12px;color:var(--muted);">Alla närvarande är indelade.</span>'
+    : poolIds.map(pid=>{
+        const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
+        const sel = lineupSelectedPlayer===pid ? "selected" : "";
+        return `<span class="checkchip lineup-chip ${sel}" draggable="true" data-pid="${pid}"
+          ondragstart="onChipDragStart(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}</span>`;
+      }).join("");
+
+  const board = document.getElementById(scopedId("board")); if(!board) return;
+  const activeGroups = DATA.groups.filter(g=>sessionDraft.activeGroups.includes(g.id));
+  if(activeGroups.length===0){ board.innerHTML = '<p style="font-size:12.5px;color:var(--muted);">Välj minst en aktiv grupp ovan.</p>'; return; }
+  board.innerHTML = activeGroups.map(g=>{
+    const lu = sessionDraft.lineup[g.id] || {coaches:[], players:[], goalie:""};
+    const luCoaches = lineupCoaches(lu);
+    const coachChips = DATA.coaches.map(c=>{
+      const on = luCoaches.includes(c.id);
+      return `<span class="checkchip ${on?'on':''}" style="font-size:10.5px;padding:2px 8px;" onclick="event.stopPropagation();toggleZoneCoach('${g.id}','${c.id}')">${c.name}</span>`;
+    }).join("");
+    const goalieOpts = '<option value="">Målvakt —</option>' + sessionDraft.attendance.map(pid=>{
+      const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
+      return `<option value="${pid}" ${lu.goalie===pid?'selected':''}>${p.name}</option>`;
+    }).join("");
+    const chips = lu.players.map(pid=>{
+      const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
+      const sel = lineupSelectedPlayer===pid ? "selected" : "";
+      return `<span class="checkchip lineup-chip ${sel}" draggable="true" data-pid="${pid}"
+        ondragstart="onChipDragStart(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}</span>`;
+    }).join("") || '<span style="font-size:11.5px;color:var(--muted);">Tomt — dra hit spelare</span>';
+    return `<div class="lineup-zone" style="--lz-color:${g.color};--lz-color22:${g.color}22;"
+        ondragover="event.preventDefault(); this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="this.classList.remove('dragover'); onZoneDrop(event,'${g.id}')"
+        onclick="onZoneClick('${g.id}')">
+      <div class="lineup-zone-head">
+        <b style="color:${g.color};">${g.name}</b>
+        <select style="font-size:11px;max-width:120px;" onclick="event.stopPropagation()" onchange="event.stopPropagation();setZoneGoalie('${g.id}',this.value)">${goalieOpts}</select>
+      </div>
+      <div class="checkchips" style="margin-bottom:6px;" onclick="event.stopPropagation()">${coachChips}</div>
+      <div class="checkchips">${chips}</div>
+    </div>`;
+  }).join("");
+}
+function onChipDragStart(ev, pid){ ev.dataTransfer.setData("text/plain", pid); }
+function onZoneDrop(ev, gid){ ev.preventDefault(); const pid = ev.dataTransfer.getData("text/plain"); if(pid) movePlayerToGroup(pid, gid); }
+function onChipClick(ev, pid){
+  ev.stopPropagation();
+  if(lineupSelectedPlayer===pid){ lineupSelectedPlayer=null; renderLineupBoard(); return; }
+  lineupSelectedPlayer = pid; renderLineupBoard();
+}
+function onZoneClick(gid){
+  if(lineupSelectedPlayer) movePlayerToGroup(lineupSelectedPlayer, gid);
+}
+function clearLineupAssignments(){
+  Object.keys(sessionDraft.lineup).forEach(gid=>{ sessionDraft.lineup[gid].players = []; });
+  lineupSelectedPlayer = null;
+  renderLineupBoard();
+}
+function currentSessionType(){
+  if(lineupScope){ const s = DATA.sessions.find(x=>x.id===lineupScope); return s ? s.type : "Träning"; }
+  const el = document.getElementById("sess-type"); return el ? el.value : "Träning";
+}
+function suggestMix(){
+  const groups = sessionDraft.activeGroups;
+  if(groups.length===0){ alert("Välj minst en aktiv grupp först."); return; }
+  const pool = sessionDraft.attendance.filter(pid => !assignedElsewhere(pid));
+  if(pool.length===0){ alert("Alla närvarande är redan indelade — tryck Nollställ om du vill blanda om."); return; }
+  const bucketKey = currentSessionType()==="Match" ? "Match" : "Träning";
+  const bucket = DATA.pairHistory[bucketKey] || {};
+  const shuffled = [...pool].sort(()=>Math.random()-0.5);
+  const groupPlayers = {}; groups.forEach(g=>{ groupPlayers[g] = (sessionDraft.lineup[g]?.players || []).slice(); });
+  shuffled.forEach(pid=>{
+    let best=null, bestScore=Infinity;
+    groups.forEach(g=>{
+      const existing = groupPlayers[g];
+      const score = existing.reduce((s,oid)=> s + (bucket[pairKey(pid,oid)]||0), 0) + existing.length*0.05;
+      if(score<bestScore){ bestScore=score; best=g; }
+    });
+    groupPlayers[best].push(pid);
+  });
+  groups.forEach(g=>{ if(!sessionDraft.lineup[g]) sessionDraft.lineup[g]={coaches:[],players:[],goalie:""}; sessionDraft.lineup[g].players = groupPlayers[g]; });
+  renderLineupBoard();
+}
+
+function openSessionModal(){
+  populateSessionFormLists();
+  document.getElementById("sess-modal-title").textContent = "Ny händelse";
+  document.getElementById("sess-id").value = "";
+  document.getElementById("sess-date").value = "";
+  document.getElementById("sess-type").value = "Träning";
+  document.getElementById("sess-start").value = "";
+  document.getElementById("sess-end").value = "";
+  document.getElementById("sess-place").value = "";
+  document.getElementById("sess-gathering").value = "";
+  document.getElementById("sess-week").value = "";
+  document.getElementById("sess-yta").value = "";
+  document.getElementById("sess-istid").value = "";
+  document.getElementById("sess-notes").value = "";
+  document.getElementById("sess-delete-btn").style.display = "none";
+  document.getElementById("sess-template-field").style.display = "block";
+  document.getElementById("sess-template").value = "";
+  refreshPassOptions(""); renderPassRefInModal();
+  pendingArchiveOverride = null;
+  updateArchiveButtonLabel(null);
+  sessionDraft = { attendance: DATA.players.map(p=>p.id), activeGroups: DATA.groups.slice(0,4).map(g=>g.id), lineup: {} };
+  sessionDraft.activeGroups.forEach(gid=> sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""});
+  lineupScope = null;
+  renderAttendanceEditor(); renderActiveGroupsPicker(); renderLineupBoard();
+  openModal("modal-session");
+}
+function editSession(id){
+  const s = DATA.sessions.find(x=>x.id===id); if(!s) return;
+  populateSessionFormLists();
+  document.getElementById("sess-modal-title").textContent = "Redigera händelse";
+  document.getElementById("sess-id").value = s.id;
+  document.getElementById("sess-date").value = s.date;
+  document.getElementById("sess-type").value = s.type;
+  document.getElementById("sess-start").value = s.start||"";
+  document.getElementById("sess-end").value = s.end||"";
+  document.getElementById("sess-place").value = s.place||"";
+  document.getElementById("sess-gathering").value = s.gathering||"";
+  document.getElementById("sess-week").value = s.week||"";
+  document.getElementById("sess-yta").value = s.yta||"";
+  document.getElementById("sess-istid").value = s.istid||"";
+  document.getElementById("sess-notes").value = s.notes||"";
+  document.getElementById("sess-template-field").style.display = "none";
+  refreshPassOptions(s.pass||""); renderPassRefInModal();
+  pendingArchiveOverride = null;
+  updateArchiveButtonLabel(s);
+  (s.coaches||[]).forEach(cid=>{ const el=document.querySelector(`#sess-coaches [data-id="${cid}"]`); if(el) el.classList.add("on"); });
+  const lineup = JSON.parse(JSON.stringify(s.lineup||{}));
+  const activeGroups = s.activeGroups && s.activeGroups.length ? s.activeGroups.slice() : Object.keys(lineup);
+  const hadAnyPlayers = Object.values(lineup).some(g=>(g.players||[]).length>0);
+  const attendance = (s.attendance && s.attendance.length) ? s.attendance.slice()
+    : hadAnyPlayers ? [...new Set(Object.values(lineup).flatMap(g=>g.players||[]))]
+    : []; // ingen gissning här — "alla med" sätts bara i Ny händelse / laguppställnings-editorn, inte tyst vid en vanlig redigering
+  activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:""}; });
+  sessionDraft = { attendance, activeGroups, lineup };
+  lineupScope = null;
+  renderAttendanceEditor(); renderActiveGroupsPicker(); renderLineupBoard();
+  document.getElementById("sess-delete-btn").style.display = "inline-block";
+  openModal("modal-session");
+}
+async function saveSession(){
+  if(SAVE_BUSY) return; SAVE_BUSY = true;
+  try {
+  const id = document.getElementById("sess-id").value || ("s-"+Date.now());
+  const coaches = Array.from(document.querySelectorAll("#sess-coaches .checkchip.on")).map(e=>e.dataset.id);
+  const oldSession = DATA.sessions.find(x=>x.id===id);
+  const obj = {
+    id, date: document.getElementById("sess-date").value, type: document.getElementById("sess-type").value,
+    start: document.getElementById("sess-start").value, end: document.getElementById("sess-end").value,
+    place: document.getElementById("sess-place").value, week: document.getElementById("sess-week").value,
+    gathering: document.getElementById("sess-gathering").value,
+    pass: document.getElementById("sess-pass").value,
+    yta: document.getElementById("sess-yta").value, istid: document.getElementById("sess-istid").value,
+    coaches, attendance: sessionDraft.attendance, activeGroups: sessionDraft.activeGroups, lineup: sessionDraft.lineup,
+    notes: document.getElementById("sess-notes").value,
+    archiveOverride: pendingArchiveOverride!==null ? pendingArchiveOverride : (oldSession ? (oldSession.archiveOverride ?? null) : null),
+  };
+  if(!obj.date){ alert("Ange ett datum."); return; }
+  if(!oldSession){
+    const tmplId = document.getElementById("sess-template").value;
+    const tmpl = tmplId ? (DATA.templates||[]).find(t=>t.id===tmplId) : null;
+    if(tmpl){
+      obj.blocks = JSON.parse(JSON.stringify(tmpl.blocks)).map(b=>({...b, id:"blk-"+Date.now()+"-"+Math.random().toString(36).slice(2,7)}));
+      if(!obj.yta && tmpl.yta) obj.yta = tmpl.yta;
+      if(!obj.istid && tmpl.istid) obj.istid = tmpl.istid;
+    }
+  }
+  const idx = DATA.sessions.findIndex(x=>x.id===id);
+  if(idx>=0) DATA.sessions[idx] = obj; else DATA.sessions.push(obj);
+  syncPairHistoryCounting(oldSession?oldSession.lineup:{}, oldSession?oldSession.type:obj.type, oldSession?oldSession.pairHistoryCounted:false, obj);
+  const ok = await saveData(); renderSessions(); renderMixHistory(); renderGroups(); renderToPlanCallout(); if(ok) closeModal("modal-session");
+  } finally { SAVE_BUSY = false; }
+}
+async function deleteSession(){
+  const id = document.getElementById("sess-id").value;
+  const s = DATA.sessions.find(x=>x.id===id);
+  const d = s ? new Date(s.date+"T00:00:00").toLocaleDateString("sv-SE",{day:"numeric",month:"short"}) : "";
+  const yes = await confirmDialog(`Ta bort ${s?s.type+" "+d:"händelsen"}? Laguppställning och pass för den försvinner.`, "Ta bort händelse");
+  if(!yes) return;
+  await guard(async ()=>{
+    if(s && s.pairHistoryCounted) adjustPairHistory(s.lineup, -1, s.type);
+    DATA.sessions = DATA.sessions.filter(x=>x.id!==id);
+    const ok = await saveData(); renderSessions(); renderMixHistory(); renderGroups(); renderToPlanCallout(); if(ok) closeModal("modal-session");
+  });
+}
+
+/* ---- Övningsbank ---- */
+function renderCategoryFilter(){
+  const el = document.getElementById("cat-filter");
+  el.innerHTML = EX_CATS.map(c=>`<span class="cat-chip ${activeExCats.has(c.id)?'active':''}" onclick="toggleCat('${c.id}')">${c.label}</span>`).join("")
+    + `<span class="cat-chip ${activeExCats.size===0?'active':''}" onclick="clearCats()">Alla</span>`;
+}
+function toggleCat(id){ if(activeExCats.has(id)) activeExCats.delete(id); else activeExCats.add(id); renderCategoryFilter(); renderExercises(); }
+function clearCats(){ activeExCats = new Set(); renderCategoryFilter(); renderExercises(); }
+
+function renderExercises(){
+  const q = (document.getElementById("ex-search").value||"").toLowerCase();
+  const filtered = EXERCISES.filter(e=>{
+    const catOk = activeExCats.size===0 || activeExCats.has(e.cat);
+    const searchOk = !q || e.namn.toLowerCase().includes(q) || e.syfte.toLowerCase().includes(q);
+    return catOk && searchOk;
+  });
+  document.getElementById("ex-count-hint").textContent = `${EXERCISES.length} övningar i banken · visar ${filtered.length}`;
+  const grid = document.getElementById("ex-grid");
+  if(filtered.length===0){ grid.innerHTML = '<div class="empty">Inga övningar matchade sökningen.</div>'; return; }
+  grid.innerHTML = filtered.map(e=>{
+    const cat = EX_CATS.find(c=>c.id===e.cat);
+    return `<div class="ex-card">
+      <div class="ex-head" onclick="toggleEx('${e.id}')">
+        <span class="ex-cat" style="background:${cat.color}">${cat.label}</span>
+        <h4>${e.namn}</h4>
+        <div class="ex-purpose">${e.syfte}</div>
+        <div class="expand-hint" id="hint-${e.id}">Tryck för detaljer ▾</div>
+      </div>
+      <div class="ex-body" id="body-${e.id}">
+        <h5>Material &amp; antal spelare</h5><p style="margin:0;">${e.material}</p>
+        <h5>Instruktion</h5><ol>${e.steg.map(s=>`<li>${s}</li>`).join("")}</ol>
+        <h5>Coachingpunkter</h5><p style="margin:0;">${e.coaching}</p>
+        <h5>Variation</h5>
+        <div class="var-grid">
+          <div class="var-box"><b>Enklare</b>${e.latt}</div>
+          <div class="var-box"><b>Svårare</b>${e.svar}</div>
+        </div>
+        ${e.link ? `<a class="ex-link" href="${e.link}" target="_blank" rel="noopener">Se referens / video ↗</a>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+function toggleEx(id){
+  const body = document.getElementById("body-"+id);
+  const hint = document.getElementById("hint-"+id);
+  const open = body.classList.toggle("open");
+  hint.textContent = open ? "Dölj detaljer ▴" : "Tryck för detaljer ▾";
+}
+
+/* ---- Laget: grupper ---- */
+const GROUP_COLOR_OPTIONS = ["#C24A3A","#2E6C9E","#C9A24B","#3F8F5F","#8A6BAF","#B57A3F","#2E8B95","#8A8F86"];
+function renderGroups(){
+  const grid = document.getElementById("group-grid");
+  grid.innerHTML = DATA.groups.map(g=>{
+    const usedIn = DATA.sessions.filter(s => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie)).length;
+    return `<div class="group-card" style="background:${g.color}" onclick="openGroupModal('${g.id}')">
+      <h3>${g.name}</h3><div class="cnt">Använd i ${usedIn} träning${usedIn===1?'':'ar'}</div>
+    </div>`;
+  }).join("");
+}
+function openGroupModal(id){
+  document.getElementById("group-color-picker").innerHTML = GROUP_COLOR_OPTIONS.map(c=>
+    `<span class="checkchip" data-color="${c}" style="background:${c};color:#fff;border-color:${c}" onclick="pickGroupColor('${c}')"> </span>`).join("");
+  if(id){
+    const g = DATA.groups.find(x=>x.id===id);
+    document.getElementById("group-id").value = g.id;
+    document.getElementById("group-name").value = g.name;
+    pickGroupColor(g.color);
+    document.getElementById("group-delete-btn").style.display = "inline-block";
+  } else {
+    document.getElementById("group-id").value = "";
+    document.getElementById("group-name").value = "";
+    pickGroupColor(GROUP_COLOR_OPTIONS[DATA.groups.length % GROUP_COLOR_OPTIONS.length]);
+    document.getElementById("group-delete-btn").style.display = "none";
+  }
+  openModal("modal-group");
+}
+function pickGroupColor(c){
+  document.querySelectorAll("#group-color-picker .checkchip").forEach(el=>{
+    el.classList.toggle("on", el.dataset.color===c);
+    el.style.outline = el.dataset.color===c ? "2px solid #12140F" : "none";
+  });
+  document.getElementById("group-color-picker").dataset.selected = c;
+}
+async function saveGroup(){
+  if(SAVE_BUSY) return; SAVE_BUSY = true;
+  try {
+  const id = document.getElementById("group-id").value || ("g-"+Date.now());
+  const name = document.getElementById("group-name").value.trim();
+  const color = document.getElementById("group-color-picker").dataset.selected || GROUP_COLOR_OPTIONS[0];
+  if(!name){ alert("Ange ett namn."); return; }
+  const isNew = !DATA.groups.some(x=>x.id===id);
+  const idx = DATA.groups.findIndex(x=>x.id===id);
+  if(idx>=0) DATA.groups[idx] = {id,name,color}; else DATA.groups.push({id,name,color});
+  renderGroups(); renderPlayers(); closeModal("modal-group");
+  if(sessionDraft){
+    if(isNew) sessionDraft.activeGroups.push(id);
+    if(!sessionDraft.lineup[id]) sessionDraft.lineup[id] = {coaches:[], players:[], goalie:""};
+    renderActiveGroupsPicker(); renderLineupBoard();
+  }
+  saveData(); // sparas i bakgrunden
+  } finally { SAVE_BUSY = false; }
+}
+async function deleteGroup(){
+  const id = document.getElementById("group-id").value;
+  const g = DATA.groups.find(x=>x.id===id);
+  const usedIn = DATA.sessions.filter(s => s.lineup && s.lineup[id] && (s.lineup[id].players||[]).length>0).length;
+  const extra = usedIn ? ` Gruppen används i ${usedIn} tränings laguppställningar; spelarna där hamnar som oindelade.` : "";
+  const yes = await confirmDialog(`Ta bort ${g?g.name:"gruppen"}?${extra}`, "Ta bort grupp");
+  if(!yes) return;
+  await guard(async ()=>{
+    DATA.groups = DATA.groups.filter(x=>x.id!==id);
+    DATA.sessions.forEach(s=>{
+      if(s.lineup && s.lineup[id]) delete s.lineup[id];
+      if(s.activeGroups) s.activeGroups = s.activeGroups.filter(x=>x!==id);
+      // clean any block station-rotation cells pointing at this group
+      (s.blocks||[]).forEach(b=>{ (b.rounds||[]).forEach(r=>{ Object.keys(r.assignments||{}).forEach(stId=>{ if(r.assignments[stId]===id) r.assignments[stId]=""; }); }); });
+    });
+    const ok = await saveData(); renderGroups(); renderPlayers(); renderSessions(); if(ok) closeModal("modal-group");
+  });
+}
+
+/* ---- Laget: spelare ---- */
+function focusSuggestions(text){
+  if(!text) return [];
+  const t = text.toLowerCase(); const out = [];
+  if(/skridsk|balans|fall|sväng|brom/.test(t)) out.push("Skridskoteknik");
+  if(/puck|klubb|dribbl/.test(t)) out.push("Puckkontroll / puckföring");
+  if(/passning|mottag/.test(t)) out.push("Passning & mottagning");
+  if(/spel|position|besluts|matchförst/.test(t)) out.push("Spelförståelse / spelmoment");
+  if(/styrka|kondition|fys|balans|core|explosiv/.test(t)) out.push("Fys & rörelse (off-ice)");
+  if(/kamp|närkamp|mod|aggres/.test(t)) out.push("Lekar, stafetter & kamp");
+  return [...new Set(out)];
+}
+function trainingCountFor(pid){
+  return DATA.sessions.filter(s =>
+    s.type==="Träning" && isArchived(s) &&
+    Object.values(s.lineup||{}).some(g => (g.players||[]).includes(pid) || g.goalie===pid)
+  ).length;
+}
+function renderPlayers(){
+  document.getElementById("player-count-hint").textContent = DATA.players.length + " spelare registrerade";
+  const list = document.getElementById("player-list");
+  if(DATA.players.length===0){ list.innerHTML = '<div class="empty">Inga spelare tillagda ännu.</div>'; return; }
+  const numVal = p => { const n = parseInt(p.number,10); return isNaN(n) ? 9999 : n; };
+  const sorted = [...DATA.players].sort((a,b)=> numVal(a)-numVal(b) || a.name.localeCompare(b.name,'sv'));
+  list.innerHTML = sorted.map(p=>{
+    const suggestions = focusSuggestions(p.growth);
+    return `<div class="player-row" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span class="mono" style="min-width:26px;text-align:center;font-weight:700;color:var(--pine);">${p.number&&p.number!=='-'?'#'+p.number:'—'}</span>
+        <span class="player-name">${p.name}</span>
+        <span class="player-meta">${trainingCountFor(p.id)} träningar registrerade</span>
+        <span class="player-toggle" onclick="togglePlayer('${p.id}')" id="ptoggle-${p.id}">Visa profil ▾</span>
+        <button class="btn ghost small" style="margin-left:auto;" onclick="editPlayer('${p.id}')">Redigera</button>
+      </div>
+      <div class="player-detail" id="pdetail-${p.id}">
+        <dl>
+          <dt>Styrkor</dt><dd>${p.strengths||'—'}</dd>
+          <dt>Utvecklingsområden</dt><dd>${p.growth||'—'}</dd>
+          ${p.notes?`<dt>Noteringar</dt><dd>${p.notes}</dd>`:''}
+          ${suggestions.length?`<dt>Föreslaget fokus (auto, baserat på utvecklingsområden)</dt><dd>${suggestions.map(s=>`<span class="focus-tag">${s}</span>`).join("")}</dd>`:''}
+        </dl>
+      </div>
+    </div>`;
+  }).join("");
+}
+function togglePlayer(id){
+  const d = document.getElementById("pdetail-"+id);
+  const t = document.getElementById("ptoggle-"+id);
+  const open = d.classList.toggle("open");
+  t.textContent = open ? "Dölj profil ▴" : "Visa profil ▾";
+}
+function openPlayerModal(){
+  document.getElementById("player-modal-title").textContent = "Ny spelare";
+  document.getElementById("player-id").value = "";
+  document.getElementById("player-name").value = "";
+  document.getElementById("player-number").value = "";
+  renderPlayers();
+  document.getElementById("player-strengths").value = "";
+  document.getElementById("player-growth").value = "";
+  document.getElementById("player-notes").value = "";
+  document.getElementById("player-delete-btn").style.display = "none";
+  openModal("modal-player");
+}
+function editPlayer(id){
+  const p = DATA.players.find(x=>x.id===id); if(!p) return;
+  renderPlayers();
+  document.getElementById("player-modal-title").textContent = "Redigera spelare";
+  document.getElementById("player-id").value = p.id;
+  document.getElementById("player-name").value = p.name;
+  document.getElementById("player-number").value = p.number||"";
+  document.getElementById("player-strengths").value = p.strengths||"";
+  document.getElementById("player-growth").value = p.growth||"";
+  document.getElementById("player-notes").value = p.notes||"";
+  document.getElementById("player-delete-btn").style.display = "inline-block";
+  openModal("modal-player");
+}
+async function savePlayer(){
+  if(SAVE_BUSY) return; SAVE_BUSY = true;
+  try {
+  const id = document.getElementById("player-id").value || ("p-"+Date.now());
+  const name = document.getElementById("player-name").value.trim();
+  if(!name){ alert("Ange ett namn."); return; }
+  const obj = {
+    id, name, number: document.getElementById("player-number").value.trim() || "-",
+    strengths: document.getElementById("player-strengths").value,
+    growth: document.getElementById("player-growth").value,
+    notes: document.getElementById("player-notes").value,
+  };
+  const idx = DATA.players.findIndex(x=>x.id===id);
+  if(idx>=0) DATA.players[idx]=obj; else DATA.players.push(obj);
+  const ok = await saveData(); renderPlayers(); renderGroups(); if(ok) closeModal("modal-player");
+  } finally { SAVE_BUSY = false; }
+}
+async function deletePlayer(){
+  const id = document.getElementById("player-id").value;
+  const p = DATA.players.find(x=>x.id===id);
+  const inLineups = DATA.sessions.filter(s=>(s.attendance||[]).includes(id) || Object.values(s.lineup||{}).some(g=>(g.players||[]).includes(id) || g.goalie===id)).length;
+  const extra = inLineups ? ` Spelaren finns i ${inLineups} laguppställningar (inkl. ev. som målvakt) och tas bort därifrån också.` : "";
+  const yes = await confirmDialog(`Ta bort ${p?p.name:"spelaren"}?${extra}`, "Ta bort spelare");
+  if(!yes) return;
+  await guard(async ()=>{
+    // cascade: remove from every session's attendance + lineup (skater och målvakt), och städa pairHistory
+    DATA.sessions.forEach(s=>{
+      if(s.attendance) s.attendance = s.attendance.filter(x=>x!==id);
+      if(s.lineup) Object.values(s.lineup).forEach(g=>{
+        if(g.players) g.players = g.players.filter(x=>x!==id);
+        if(g.goalie===id) g.goalie = "";
+      });
+    });
+    ["Träning","Match"].forEach(bk=>{
+      Object.keys(DATA.pairHistory[bk]||{}).forEach(k=>{ if(k.split("|").includes(id)) delete DATA.pairHistory[bk][k]; });
+    });
+    DATA.players = DATA.players.filter(x=>x.id!==id);
+    const ok = await saveData();
+    renderPlayers(); renderGroups(); renderMixHistory(); renderSessions();
+    if(ok) closeModal("modal-player");
+  });
+}
+
+function mixHistorySectionHTML(bucket, verbMest, verbMinst, playerMap){
+  const entries = Object.entries(bucket||{}).filter(([k,v])=>v>0);
+  if(entries.length===0) return `<p class="empty" style="padding:6px 0;">Ingen data ännu.</p>`;
+  const named = entries.map(([k,v])=>{
+    const [a,b] = k.split("|");
+    const pa = playerMap.get(a), pb = playerMap.get(b);
+    return {names: (pa&&pb) ? `${pa.name} & ${pb.name}` : null, count:v};
+  }).filter(x=>x.names);
+  const most = [...named].sort((a,b)=>b.count-a.count).slice(0,6);
+  const least = [...named].sort((a,b)=>a.count-b.count).slice(0,6);
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+    <div><h4 style="font-size:13px;color:var(--pine);margin-bottom:6px;">${verbMest}</h4>
+      <ul class="event-list">${most.map(m=>`<li><span>${m.names}</span><span class="mono" style="margin-left:auto;color:var(--muted);">${m.count}×</span></li>`).join("")}</ul>
+    </div>
+    <div><h4 style="font-size:13px;color:var(--pine);margin-bottom:6px;">${verbMinst}</h4>
+      <ul class="event-list">${least.map(m=>`<li><span>${m.names}</span><span class="mono" style="margin-left:auto;color:var(--muted);">${m.count}×</span></li>`).join("")}</ul>
+    </div>
+  </div>`;
+}
+async function recomputeMixHistory(){
+  const yes = await confirmDialog("Räkna om mixhistoriken från grunden, baserat på nuvarande laguppställningar i alla genomförda pass? Rättar till ev. felaktig/gammal data. Kan inte ångras.", "Räkna om");
+  if(!yes) return;
+  await guard(async ()=>{
+    DATA.pairHistory = {Träning:{}, Match:{}};
+    DATA.sessions.forEach(s=>{
+      if(isArchived(s)){
+        adjustPairHistory(s.lineup, +1, s.type);
+        s.pairHistoryCounted = true;
+      } else {
+        s.pairHistoryCounted = false;
+      }
+    });
+    const ok = await saveData();
+    renderMixHistory(); renderPlayers();
+    if(ok) alert("Mixhistoriken är omräknad.");
+  });
+}
+function renderMixHistory(){
+  const el = document.getElementById("mix-history");
+  const ph = DATA.pairHistory || {Träning:{}, Match:{}};
+  const playerMap = new Map(DATA.players.map(p=>[p.id,p]));
+  el.innerHTML = `
+    <div>
+      <b style="font-size:12.5px;color:var(--pine-dark);">🏒 Träningar</b>
+      <div style="margin-top:6px;">${mixHistorySectionHTML(ph.Träning, "Tränat mest ihop", "Tränat minst ihop", playerMap)}</div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--line);">
+      <b style="font-size:12.5px;color:var(--pine-dark);">🥅 Matcher</b>
+      <div style="margin-top:6px;">${mixHistorySectionHTML(ph.Match, "Spelat mest ihop", "Spelat minst ihop", playerMap)}</div>
+    </div>`;
+}
+
+/* ---- Laget: tränare ---- */
+function renderCoaches(){
+  const list = document.getElementById("coach-list");
+  list.innerHTML = DATA.coaches.map(c=>{
+    const color = COACH_COLORS[c.initials] || "#999";
+    return `<div class="coach-card">
+      <div class="coach-avatar" style="background:${color}">${(c.initials||c.name[0]).slice(0,2)}</div>
+      <div class="coach-info" style="flex:1;"><b>${c.name}</b><span>${c.role}</span></div>
+      <button class="btn ghost small" onclick="editCoach('${c.id}')">Redigera</button>
+    </div>`;
+  }).join("");
+}
+function editCoach(id){
+  const c = DATA.coaches.find(x=>x.id===id); if(!c) return;
+  document.getElementById("coach-id").value = c.id;
+  document.getElementById("coach-name").value = c.name;
+  document.getElementById("coach-role").value = c.role;
+  document.getElementById("coach-initials").value = c.initials;
+  openModal("modal-coach");
+}
+async function saveCoach(){
+  const id = document.getElementById("coach-id").value;
+  const idx = DATA.coaches.findIndex(x=>x.id===id);
+  if(idx>=0){
+    DATA.coaches[idx].name = document.getElementById("coach-name").value.trim();
+    DATA.coaches[idx].role = document.getElementById("coach-role").value.trim();
+    DATA.coaches[idx].initials = document.getElementById("coach-initials").value.trim().toUpperCase();
+  }
+  const ok = await saveData(); renderCoaches(); renderCoachLegendMini(); renderSessions(); if(ok) closeModal("modal-coach");
+}
+
+/* ---- Modal helpers ---- */
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+function closeModal(id){
+  document.getElementById(id).classList.remove("open");
+  // When the edit-event modal closes, clear its lineup working-state so later
+  // inline renders don't accidentally target modal element IDs (or vice versa).
+  if(id==="modal-session"){ lineupScope = null; sessionDraft = null; }
+}
+/* =========================================================================
+   LÖSENORDSSKYDD (enkelt delat lösenord, skydd mot oavsiktlig åtkomst —
+   inte avsett som skydd mot en teknisk angripare, se konversation med Claude)
+   ========================================================================= */
+const LOCK_PASSWORD_HASH = "f1520317b1ed55b6";
+function simpleHash(str){
+  // Enkel, dependency-fri hash (funkar även när filen öppnas som lokal fil, där
+  // crypto.subtle/Web Crypto API kan vara blockerat av webbläsaren av säkerhetsskäl).
+  // Detta är INTE kryptografiskt säkert — det är bara till för att undvika att spara
+  // lösenordet i klartext i localStorage, se konversation med Claude.
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i=0; i<str.length; i++){
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (h1>>>0).toString(16).padStart(8,"0") + (h2>>>0).toString(16).padStart(8,"0");
+}
+async function checkLockPassword(){
+  const input = document.getElementById("lock-password").value;
+  const hash = simpleHash(input);
+  if(hash === LOCK_PASSWORD_HASH){
+    localStorage.setItem("t18-lock-ok", hash);
+    document.getElementById("lock-screen").style.display = "none";
+  } else {
+    document.getElementById("lock-error").style.display = "block";
+  }
+}
+document.getElementById("lock-password").addEventListener("keydown", e=>{ if(e.key==="Enter") checkLockPassword(); });
+(async function initLock(){
+  const saved = localStorage.getItem("t18-lock-ok");
+  if(saved === LOCK_PASSWORD_HASH){
+    document.getElementById("lock-screen").style.display = "none";
+  }
+})();
+
+document.querySelectorAll(".overlay").forEach(o=>{
+  // The confirm dialog must be answered via its buttons (which resolve the promise),
+  // so it is intentionally excluded from click-outside-to-dismiss.
+  if(o.id==="modal-confirm") return;
+  o.addEventListener("click", e=>{ if(e.target===o) o.classList.remove("open"); });
+});
+
+loadData();
+</script>
+</body>
+</html>
