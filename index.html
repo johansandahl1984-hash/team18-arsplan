@@ -1077,9 +1077,15 @@ async function loadData(){
   migratePairHistory();
   if(!DATA.periods || DATA.periods.length===0) DATA.periods = JSON.parse(JSON.stringify(DEFAULT_PERIODS));
   migratePairHistoryCounting();
-  if(importAugustLineups()) await saveData();
-  if(mergeDuplicateGroups()) await saveData();
+  // Engångsmigreringar (flaggade i DATA, se importAugustLineups/mergeDuplicateGroups).
+  // Transformen körs alltid i minnet (idempotent, behövs för korrekt vy), men sparningen
+  // av flaggan sker EFTER att sidan redan visas och TYST — ingen "kunde inte spara"-ruta
+  // om just detta bakgrundsförsök misslyckas. Annars fick man en spara-varning vid varje
+  // omladdning bara för att nätverket var långsamt precis vid uppstart.
+  const augustChanged = importAugustLineups();
+  const mergeChanged = mergeDuplicateGroups();
   renderAll();
+  if(augustChanged || mergeChanged) trySaveOnce();
 }
 
 // Lokal säkerhetskopia av senast korrekt inlästa data, som nödutväg om lagringen
