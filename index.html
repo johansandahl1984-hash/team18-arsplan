@@ -438,6 +438,12 @@
     <div class="card" id="mix-history"></div>
 
     <div class="section-title" style="margin-top:30px;">
+      <h2>Målvaktsstatistik</h2>
+      <span class="hint">Bara genomförda pass räknas — hålls isär för träning och match</span>
+    </div>
+    <div class="card" id="goalie-history"></div>
+
+    <div class="section-title" style="margin-top:30px;">
       <h2>Tränarstab</h2>
       <span class="hint">Redigera roll/initialer om mappningen ovan är fel</span>
     </div>
@@ -1024,6 +1030,7 @@ let DATA = {
   sessions: [],
   coaches: JSON.parse(JSON.stringify(DEFAULT_COACHES)),
   pairHistory: {Träning:{}, Match:{}}, // per typ: "playerIdA|playerIdB" (sorted) -> antal gånger tillsammans i samma grupp
+  goalieHistory: {Träning:{}, Match:{}}, // per typ: playerId -> antal gånger som målvakt (samma räkneregler som pairHistory: bara genomförda pass)
   templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
   periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
   pairHistoryCountingMigrated: false,
@@ -1108,6 +1115,10 @@ function migratePairHistory(){
     if(!DATA.pairHistory.Träning) DATA.pairHistory.Träning = {};
     if(!DATA.pairHistory.Match) DATA.pairHistory.Match = {};
   }
+  // goalieHistory är ett nyare fält — säkerställ att det finns även för data som sparades innan detta lades till.
+  if(!DATA.goalieHistory) DATA.goalieHistory = {Träning:{}, Match:{}};
+  if(!DATA.goalieHistory.Träning) DATA.goalieHistory.Träning = {};
+  if(!DATA.goalieHistory.Match) DATA.goalieHistory.Match = {};
 }
 // Engångsmigrering: innan denna uppdatering räknades laguppställningar in i mixhistoriken direkt vid
 // sparning, oavsett om passet var genomfört. Nu ska bara genomförda pass räknas. Det här drar bort
@@ -1372,7 +1383,7 @@ function renderAll(){
   renderExercises();
   renderGroups();
   renderPlayers();
-  renderMixHistory();
+  renderMixHistory(); renderGoalieHistory();
   renderCoaches();
 }
 
@@ -1588,7 +1599,7 @@ async function linkSeasonPlanToTrainings(){
         }
       });
     });
-    renderSessions(); renderMixHistory();
+    renderSessions(); renderMixHistory(); renderGoalieHistory();
     const ok = await saveData();
     const summary = `Klart!\n\n✅ ${linkedWithBlocks} träning(ar) kopplade — övningsblock skapade från säsongsplanens momentdata\n🔗 ${linkedOnly} träning(ar) kopplade till vecka/pass, men ramverket saknade detaljerad momentdata där\n⏭️ ${skippedAlready} träning(ar) hade redan en veckokoppling sedan tidigare — orörda`
       + (notes.length ? `\n\n⚠️ ${notes.join('\n⚠️ ')}` : "");
@@ -1667,7 +1678,7 @@ function toggleArchiveFromCard(id){
   const oldCounted = s.pairHistoryCounted;
   s.archiveOverride = isArchived(s) ? false : true;
   syncPairHistoryCounting(s.lineup, s.type, oldCounted, s);
-  renderSessions(); renderToPlanCallout(); renderMixHistory();
+  renderSessions(); renderToPlanCallout(); renderMixHistory(); renderGoalieHistory();
   saveData();
 }
 let pendingArchiveOverride = null;
@@ -2440,7 +2451,7 @@ async function saveInlineLineup(sid){
   refreshSessionCardSummary(sid);
   const tableEl = document.getElementById("il-shared-table-"+sid);
   if(tableEl) tableEl.innerHTML = lineupTableHTML(s);
-  renderGroups(); renderMixHistory(); renderToPlanCallout();
+  renderGroups(); renderMixHistory(); renderGoalieHistory(); renderToPlanCallout();
   saveData(); // sparas i bakgrunden
 }
 
@@ -2514,14 +2525,31 @@ function adjustPairHistory(lineup, delta, type){
     if(next<=0) delete bucket[k]; else bucket[k] = next;
   });
 }
+function adjustGoalieHistory(lineup, delta, type){
+  const bucketKey = (type==="Match") ? "Match" : "Träning";
+  if(!DATA.goalieHistory) DATA.goalieHistory = {Träning:{}, Match:{}};
+  if(!DATA.goalieHistory[bucketKey]) DATA.goalieHistory[bucketKey] = {};
+  const bucket = DATA.goalieHistory[bucketKey];
+  Object.values(lineup||{}).forEach(g=>{
+    if(!g.goalie) return;
+    const next = (bucket[g.goalie]||0) + delta;
+    if(next<=0) delete bucket[g.goalie]; else bucket[g.goalie] = next;
+  });
+}
+// Håller mixhistorik och målvaktsstatistik synkade — de delar exakt samma livscykel
+// (bara genomförda pass räknas), så de justeras alltid tillsammans via denna funktion.
+function adjustLineupStats(lineup, delta, type){
+  adjustPairHistory(lineup, delta, type);
+  adjustGoalieHistory(lineup, delta, type);
+}
 // Mixhistoriken ska bara spegla GENOMFÖRDA pass. Detta är den enda platsen som (av)registrerar
 // ett pass räkning — allt annat (spara laguppställning, redigera händelse, arkiv-togglar) går via denna.
 // `oldLineup/oldType/oldCounted` beskriver läget INNAN ändringen; `session` är objektet EFTER ändringen
 // (redan tillagt i DATA.sessions, med sitt slutgiltiga lineup/type/archiveOverride satt).
 function syncPairHistoryCounting(oldLineup, oldType, oldCounted, session){
-  if(oldCounted) adjustPairHistory(oldLineup, -1, oldType); // dra bort ev. tidigare registrerad räkning
+  if(oldCounted) adjustLineupStats(oldLineup, -1, oldType); // dra bort ev. tidigare registrerad räkning
   if(isArchived(session)){
-    adjustPairHistory(session.lineup, +1, session.type);
+    adjustLineupStats(session.lineup, +1, session.type);
     session.pairHistoryCounted = true;
   } else {
     session.pairHistoryCounted = false;
@@ -2533,7 +2561,7 @@ function reconcileAutoArchivedPairHistory(){
   let changed = false;
   DATA.sessions.forEach(s=>{
     if(isArchived(s) && !s.pairHistoryCounted){
-      adjustPairHistory(s.lineup, +1, s.type);
+      adjustLineupStats(s.lineup, +1, s.type);
       s.pairHistoryCounted = true;
       changed = true;
     }
@@ -2796,7 +2824,7 @@ async function saveSession(){
   const idx = DATA.sessions.findIndex(x=>x.id===id);
   if(idx>=0) DATA.sessions[idx] = obj; else DATA.sessions.push(obj);
   syncPairHistoryCounting(oldSession?oldSession.lineup:{}, oldSession?oldSession.type:obj.type, oldSession?oldSession.pairHistoryCounted:false, obj);
-  const ok = await saveData(); renderSessions(); renderMixHistory(); renderGroups(); renderToPlanCallout(); if(ok) closeModal("modal-session");
+  const ok = await saveData(); renderSessions(); renderMixHistory(); renderGoalieHistory(); renderGroups(); renderToPlanCallout(); if(ok) closeModal("modal-session");
   } finally { SAVE_BUSY = false; }
 }
 async function deleteSession(){
@@ -2806,9 +2834,9 @@ async function deleteSession(){
   const yes = await confirmDialog(`Ta bort ${s?s.type+" "+d:"händelsen"}? Laguppställning och pass för den försvinner.`, "Ta bort händelse");
   if(!yes) return;
   await guard(async ()=>{
-    if(s && s.pairHistoryCounted) adjustPairHistory(s.lineup, -1, s.type);
+    if(s && s.pairHistoryCounted) adjustLineupStats(s.lineup, -1, s.type);
     DATA.sessions = DATA.sessions.filter(x=>x.id!==id);
-    const ok = await saveData(); renderSessions(); renderMixHistory(); renderGroups(); renderToPlanCallout(); if(ok) closeModal("modal-session");
+    const ok = await saveData(); renderSessions(); renderMixHistory(); renderGoalieHistory(); renderGroups(); renderToPlanCallout(); if(ok) closeModal("modal-session");
   });
 }
 
@@ -3048,7 +3076,7 @@ async function deletePlayer(){
     });
     DATA.players = DATA.players.filter(x=>x.id!==id);
     const ok = await saveData();
-    renderPlayers(); renderGroups(); renderMixHistory(); renderSessions();
+    renderPlayers(); renderGroups(); renderMixHistory(); renderGoalieHistory(); renderSessions();
     if(ok) closeModal("modal-player");
   });
 }
@@ -3073,21 +3101,22 @@ function mixHistorySectionHTML(bucket, verbMest, verbMinst, playerMap){
   </div>`;
 }
 async function recomputeMixHistory(){
-  const yes = await confirmDialog("Räkna om mixhistoriken från grunden, baserat på nuvarande laguppställningar i alla genomförda pass? Rättar till ev. felaktig/gammal data. Kan inte ångras.", "Räkna om");
+  const yes = await confirmDialog("Räkna om mixhistorik och målvaktsstatistik från grunden, baserat på nuvarande laguppställningar i alla genomförda pass? Rättar till ev. felaktig/gammal data. Kan inte ångras.", "Räkna om");
   if(!yes) return;
   await guard(async ()=>{
     DATA.pairHistory = {Träning:{}, Match:{}};
+    DATA.goalieHistory = {Träning:{}, Match:{}};
     DATA.sessions.forEach(s=>{
       if(isArchived(s)){
-        adjustPairHistory(s.lineup, +1, s.type);
+        adjustLineupStats(s.lineup, +1, s.type);
         s.pairHistoryCounted = true;
       } else {
         s.pairHistoryCounted = false;
       }
     });
     const ok = await saveData();
-    renderMixHistory(); renderPlayers();
-    if(ok) alert("Mixhistoriken är omräknad.");
+    renderMixHistory(); renderGoalieHistory(); renderPlayers();
+    if(ok) alert("Mixhistorik och målvaktsstatistik är omräknade.");
   });
 }
 function renderMixHistory(){
@@ -3103,6 +3132,29 @@ function renderMixHistory(){
       <b style="font-size:12.5px;color:var(--pine-dark);">🥅 Matcher</b>
       <div style="margin-top:6px;">${mixHistorySectionHTML(ph.Match, "Spelat mest ihop", "Spelat minst ihop", playerMap)}</div>
     </div>`;
+}
+function renderGoalieHistory(){
+  const el = document.getElementById("goalie-history"); if(!el) return;
+  const gh = DATA.goalieHistory || {Träning:{}, Match:{}};
+  const playerMap = new Map(DATA.players.map(p=>[p.id,p]));
+  el.innerHTML = `
+    <div>
+      <b style="font-size:12.5px;color:var(--pine-dark);">🏒 Träningar</b>
+      <div style="margin-top:6px;">${goalieHistorySectionHTML(gh.Träning, playerMap)}</div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--line);">
+      <b style="font-size:12.5px;color:var(--pine-dark);">🥅 Matcher</b>
+      <div style="margin-top:6px;">${goalieHistorySectionHTML(gh.Match, playerMap)}</div>
+    </div>`;
+}
+function goalieHistorySectionHTML(bucket, playerMap){
+  const entries = Object.entries(bucket||{}).filter(([k,v])=>v>0);
+  if(entries.length===0) return `<p class="empty" style="padding:6px 0;">Ingen data ännu.</p>`;
+  const named = entries.map(([pid,v])=>{
+    const p = playerMap.get(pid);
+    return {name: p ? p.name : null, count:v};
+  }).filter(x=>x.name).sort((a,b)=>b.count-a.count);
+  return `<ul class="event-list">${named.map(m=>`<li><span>${m.name}</span><span class="mono" style="margin-left:auto;color:var(--muted);">${m.count}×</span></li>`).join("")}</ul>`;
 }
 
 /* ---- Laget: tränare ---- */
