@@ -3092,17 +3092,25 @@ async function checkLockPassword(){
   const input = document.getElementById("lock-password").value;
   const hash = simpleHash(input);
   if(hash === LOCK_PASSWORD_HASH){
-    localStorage.setItem("t18-lock-ok", hash);
+    // Dölj låsskärmen oavsett om vi lyckas komma ihåg valet till nästa gång —
+    // vissa inbäddade webvyer (t.ex. WhatsApps egen filförhandsvisning) blockerar
+    // localStorage helt, och det ska aldrig hindra en korrekt inloggning.
+    try{ localStorage.setItem("t18-lock-ok", hash); }
+    catch(e){ console.warn("Kunde inte spara inloggning lokalt (localStorage blockerat i denna vy)", e); }
     document.getElementById("lock-screen").style.display = "none";
   } else {
     document.getElementById("lock-error").style.display = "block";
   }
 }
 document.getElementById("lock-password").addEventListener("keydown", e=>{ if(e.key==="Enter") checkLockPassword(); });
-(async function initLock(){
-  const saved = localStorage.getItem("t18-lock-ok");
-  if(saved === LOCK_PASSWORD_HASH){
-    document.getElementById("lock-screen").style.display = "none";
+(function initLock(){
+  try{
+    const saved = localStorage.getItem("t18-lock-ok");
+    if(saved === LOCK_PASSWORD_HASH){
+      document.getElementById("lock-screen").style.display = "none";
+    }
+  }catch(e){
+    console.warn("Kunde inte läsa sparad inloggning (localStorage blockerat i denna vy)", e);
   }
 })();
 
