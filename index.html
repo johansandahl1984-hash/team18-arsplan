@@ -639,6 +639,12 @@
   </div>
 </div>
 
+<div id="load-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:300;background:#C24A3A;color:#fff;padding:14px 16px;font-size:13.5px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.3);">
+  <b>Kunde inte hämta lagets plan.</b> Det du ser nu är standardinnehåll, inte er sparade plan —
+  och sparning är avstängd så att inget skrivs över. Kontrollera uppkopplingen och ladda om sidan.
+  <button class="btn small" style="background:#fff;color:#C24A3A;margin-left:8px;" onclick="location.reload()">Ladda om</button>
+</div>
+
 <div id="save-toast" style="display:none;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;background:#C24A3A;color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;">
   <span id="save-toast-text">Kunde inte spara.</span>
   <button class="btn small" style="background:#fff;color:#C24A3A;" onclick="retrySave()">Försök igen</button>
@@ -1028,7 +1034,13 @@ let DATA = {
 };
 let activeExCats = new Set();
 
+// Sätts bara när vi säkert vet vad som ligger i Supabase. Så länge den är false får
+// ingenting sparas — annars riskerar vi att skriva över lagets riktiga plan med tomma
+// standardvärden efter ett misslyckat läsanrop.
+let DATA_LOADED_OK = false;
+
 async function loadData(){
+  let loadFailed = false;
   try{
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/team_data?key=eq.${STORAGE_KEY}&select=value`,
@@ -1038,20 +1050,48 @@ async function loadData(){
     const rows = await res.json();
     if(rows && rows.length>0 && rows[0].value){
       DATA = Object.assign(DATA, rows[0].value);
+      DATA_LOADED_OK = true;
+      backupLastKnownGood();
     } else {
+      // Läsningen gick igenom men tabellen är tom — allra första körningen.
+      // Först då är det säkert att seeda och skriva.
+      DATA_LOADED_OK = true;
       seedSessions();
       await saveData();
     }
   }catch(e){
+    loadFailed = true;
     console.error("Kunde inte läsa från Supabase", e);
-    seedSessions();
   }
+
+  if(loadFailed){
+    // Visa något så appen inte står tom, men lås sparning och säg tydligt till.
+    seedSessions();
+    migratePairHistory();
+    if(!DATA.periods || DATA.periods.length===0) DATA.periods = JSON.parse(JSON.stringify(DEFAULT_PERIODS));
+    renderAll();
+    showLoadErrorBanner();
+    return;
+  }
+
   migratePairHistory();
   if(!DATA.periods || DATA.periods.length===0) DATA.periods = JSON.parse(JSON.stringify(DEFAULT_PERIODS));
   migratePairHistoryCounting();
   if(importAugustLineups()) await saveData();
   if(mergeDuplicateGroups()) await saveData();
   renderAll();
+}
+
+// Lokal säkerhetskopia av senast korrekt inlästa data, som nödutväg om lagringen
+// skulle bli överskriven. Best-effort — localStorage kan vara blockerat.
+function backupLastKnownGood(){
+  try{ localStorage.setItem("t18-last-known-good", JSON.stringify(DATA)); }catch(e){}
+}
+
+function showLoadErrorBanner(){
+  let el = document.getElementById("load-error-banner");
+  if(!el) return;
+  el.style.display = "block";
 }
 function migratePairHistory(){
   // Äldre data hade en enda gemensam DATA.pairHistory (träning+match blandat).
@@ -1228,8 +1268,15 @@ function confirmDialog(message, confirmLabel){
 }
 
 async function saveData(){
+  // Skyddsspärr: har vi inte lyckats läsa in vad som redan ligger i Supabase vet vi
+  // inte vad vi skriver över. Då sparar vi inte alls.
+  if(!DATA_LOADED_OK){
+    console.warn("Sparning blockerad — data har inte lästs in korrekt.");
+    showLoadErrorBanner();
+    return false;
+  }
   const ok = await trySaveOnce();
-  if(ok){ hideSaveToast(); return true; }
+  if(ok){ hideSaveToast(); backupLastKnownGood(); return true; }
   // automatic retries with increasing pauses (handles transient server hiccups
   // without immediately bothering the user with the toast)
   const delays = [900, 1800, 3600];
