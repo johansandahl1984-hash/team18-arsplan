@@ -235,6 +235,9 @@
   .checkchips{display:flex; flex-wrap:wrap; gap:6px;}
   .checkchip{border:1px solid var(--line); padding:5px 11px; border-radius:999px; font-size:12px; cursor:pointer; user-select:none;}
   .checkchip.on{background:var(--pine); color:#fff; border-color:var(--pine);}
+  .checkchip.muted{opacity:.45; border-style:dashed;}
+  .chip-remove{margin-left:6px; opacity:.55; font-weight:700;}
+  .chip-remove:hover{opacity:1;}
   .checkchip.selected{background:var(--gold); color:var(--pine-dark); border-color:var(--gold);}
 
   .lineup-pool{border:1.5px dashed var(--line); border-radius:12px; padding:10px 12px; margin:6px 0 12px; background:var(--ice); transition:background .15s;}
@@ -500,12 +503,6 @@
     <div class="field"><label>Ansvariga tränare (för hela träningen)</label><div class="checkchips" id="sess-coaches"></div></div>
 
     <div class="field">
-      <label>Vilka är med idag?</label>
-      <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px;">Bocka av mot laget.se-anmälningarna. Bara de som är med här dyker upp i grupperingen nedan.</p>
-      <div class="checkchips" id="sess-attendance"></div>
-    </div>
-
-    <div class="field">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <label style="margin:0;">Aktiva grupper/färger denna gång</label>
         <button type="button" class="btn ghost small" onclick="quickNewGroup()">+ Ny grupp</button>
@@ -516,15 +513,14 @@
 
     <div class="field">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <label style="margin:0;">Dra spelare till en grupp</label>
+        <label style="margin:0;">Spelare</label>
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
           <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
         </div>
       </div>
-      <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Dra en spelare (håll in och dra på mobil, klicka-och-dra på dator) — eller tryck på spelaren och sedan på gruppen. "Föreslå mix" undviker par som redan tränat mycket ihop denna säsong.</p>
+      <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Gråa/streckade = inte med idag, tryck för att lägga till. Mörka = med och redo att fördelas — dra till en grupp (håll in och dra på mobil), eller tryck på spelaren och sedan på gruppen. Liten × tar bort någon som inte kommer.</p>
       <div class="lineup-pool" id="lineup-pool" ondragover="event.preventDefault()" ondrop="onZoneDrop(event, null)" onclick="onZoneClick(null)">
-        <div class="lineup-pool-label">Ej indelade</div>
         <div class="checkchips" id="lineup-pool-chips"></div>
       </div>
       <div class="lineup-board" id="lineup-board"></div>
@@ -2352,11 +2348,6 @@ function inlineLineupShellHTML(s){
       <button class="btn ghost small" onclick="closeInlineLineup('${sid}')">Stäng</button>
     </div>
     <div class="field">
-      <label style="font-size:12px;">Vilka är med idag?</label>
-      <p style="font-size:11px;color:var(--muted);margin:0 0 6px;">Alla är förvalda — klicka bort de som inte kommer.</p>
-      <div class="checkchips" id="il-attendance-${sid}"></div>
-    </div>
-    <div class="field">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <label style="margin:0;font-size:12px;">Aktiva grupper/färger</label>
         <button type="button" class="btn ghost small" onclick="quickNewGroup()">+ Ny grupp</button>
@@ -2365,15 +2356,14 @@ function inlineLineupShellHTML(s){
     </div>
     <div class="field">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <label style="margin:0;font-size:12px;">Dra spelare till en grupp</label>
+        <label style="margin:0;font-size:12px;">Spelare</label>
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
           <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
         </div>
       </div>
-      <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Dra en spelare, eller tryck på spelaren och sedan på gruppen.</p>
+      <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Gråa/streckade = inte med, tryck för att lägga till. Dra en spelare, eller tryck på spelaren och sedan på gruppen. Liten × tar bort någon.</p>
       <div class="lineup-pool" id="il-pool-${sid}" ondragover="event.preventDefault()" ondrop="onZoneDrop(event, null)" onclick="onZoneClick(null)">
-        <div class="lineup-pool-label">Ej indelade</div>
         <div class="checkchips" id="il-pool-chips-${sid}"></div>
       </div>
       <div class="lineup-board" id="il-board-${sid}"></div>
@@ -2409,7 +2399,7 @@ function openInlineLineup(sid){
   sessionDraft = { attendance, activeGroups, lineup };
   const container = document.getElementById("inline-lineup-container-"+sid);
   container.innerHTML = inlineLineupShellHTML(s);
-  renderAttendanceEditor(); renderActiveGroupsPicker(); renderLineupBoard();
+  renderActiveGroupsPicker(); renderLineupBoard();
   const btn = document.getElementById("lu-toggle-"+sid);
   if(btn) btn.textContent = "Dölj laguppställning";
 }
@@ -2506,9 +2496,9 @@ let lineupSelectedPlayer = null; // för tryck-och-tryck-läge på mobil
 let lineupScope = null; // null = redigera-händelse-modalen, annars ett session-id = inline på kortet
 
 function scopedId(base){
-  const modalIds = { attendance:"sess-attendance", groups:"sess-active-groups", poolChips:"lineup-pool-chips", board:"lineup-board" };
+  const modalIds = { groups:"sess-active-groups", poolChips:"lineup-pool-chips", board:"lineup-board" };
   if(!lineupScope) return modalIds[base];
-  const inlineIds = { attendance:`il-attendance-${lineupScope}`, groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, board:`il-board-${lineupScope}` };
+  const inlineIds = { groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, board:`il-board-${lineupScope}` };
   return inlineIds[base];
 }
 
@@ -2551,12 +2541,6 @@ function reconcileAutoArchivedPairHistory(){
   return changed;
 }
 
-function renderAttendanceEditor(){
-  const el = document.getElementById(scopedId("attendance")); if(!el) return;
-  if(DATA.players.length===0){ el.innerHTML = '<span style="font-size:12px;color:var(--muted);">Inga spelare inlagda i "Laget" än.</span>'; return; }
-  el.innerHTML = [...DATA.players].sort((a,b)=>a.name.localeCompare(b.name,'sv')).map(p=>
-    `<span class="checkchip ${sessionDraft.attendance.includes(p.id)?'on':''}" onclick="toggleAttendance('${p.id}')">${p.name}</span>`).join("");
-}
 function toggleAttendance(pid){
   if(sessionDraft.attendance.includes(pid)){
     sessionDraft.attendance = sessionDraft.attendance.filter(x=>x!==pid);
@@ -2568,7 +2552,7 @@ function toggleAttendance(pid){
   } else {
     sessionDraft.attendance.push(pid);
   }
-  renderAttendanceEditor(); renderLineupBoard();
+  renderLineupBoard();
 }
 
 function renderActiveGroupsPicker(){
@@ -2629,15 +2613,23 @@ function setZoneGoalie(gid, pid){
 }
 
 function renderLineupBoard(){
-  const poolIds = sessionDraft.attendance.filter(pid => !assignedElsewhere(pid));
   const poolEl = document.getElementById(scopedId("poolChips")); if(!poolEl) return;
-  poolEl.innerHTML = poolIds.length===0
+  const sortedPlayers = [...DATA.players].sort((a,b)=>a.name.localeCompare(b.name,'sv'));
+  const poolPlayers = sortedPlayers.filter(p => !(sessionDraft.attendance.includes(p.id) && assignedElsewhere(p.id)));
+  poolEl.innerHTML = DATA.players.length===0
+    ? '<span style="font-size:12px;color:var(--muted);">Inga spelare inlagda i "Laget" än.</span>'
+    : poolPlayers.length===0
     ? '<span style="font-size:12px;color:var(--muted);">Alla närvarande är indelade.</span>'
-    : poolIds.map(pid=>{
-        const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
+    : poolPlayers.map(p=>{
+        const pid = p.id;
+        const attending = sessionDraft.attendance.includes(pid);
+        if(!attending){
+          // Inte med idag — tryck var som helst på chipen för att lägga till dem.
+          return `<span class="checkchip muted" data-pid="${pid}" onclick="toggleAttendance('${pid}')">${p.name}</span>`;
+        }
         const sel = lineupSelectedPlayer===pid ? "selected" : "";
         return `<span class="checkchip lineup-chip ${sel}" draggable="true" data-pid="${pid}"
-          ondragstart="onChipDragStart(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}</span>`;
+          ondragstart="onChipDragStart(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}<span class="chip-remove" onclick="event.stopPropagation();toggleAttendance('${pid}')" title="Inte med idag">×</span></span>`;
       }).join("");
 
   const board = document.getElementById(scopedId("board")); if(!board) return;
@@ -2738,7 +2730,7 @@ function openSessionModal(){
   sessionDraft = { attendance: DATA.players.map(p=>p.id), activeGroups: DATA.groups.slice(0,4).map(g=>g.id), lineup: {} };
   sessionDraft.activeGroups.forEach(gid=> sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""});
   lineupScope = null;
-  renderAttendanceEditor(); renderActiveGroupsPicker(); renderLineupBoard();
+  renderActiveGroupsPicker(); renderLineupBoard();
   openModal("modal-session");
 }
 function editSession(id){
@@ -2770,7 +2762,7 @@ function editSession(id){
   activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:""}; });
   sessionDraft = { attendance, activeGroups, lineup };
   lineupScope = null;
-  renderAttendanceEditor(); renderActiveGroupsPicker(); renderLineupBoard();
+  renderActiveGroupsPicker(); renderLineupBoard();
   document.getElementById("sess-delete-btn").style.display = "inline-block";
   openModal("modal-session");
 }
