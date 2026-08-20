@@ -1241,6 +1241,7 @@ async function saveData(){
   showSaveToast();
   return false;
 }
+let LAST_SAVE_ERROR = "";
 async function trySaveOnce(){
   try{
     const res = await fetch(`${SUPABASE_URL}/rest/v1/team_data?on_conflict=key`, {
@@ -1253,15 +1254,28 @@ async function trySaveOnce(){
       },
       body: JSON.stringify({ key: STORAGE_KEY, value: DATA })
     });
-    return res.ok;
+    if(!res.ok){
+      // Supabase skickar med ett förklarande felmeddelande i svarskroppen — läs det,
+      // annars går orsaken (behörighet? för stor payload? rate limit?) förlorad.
+      let detail = "";
+      try{ detail = (await res.text() || "").slice(0, 300); }catch(_){}
+      LAST_SAVE_ERROR = `HTTP ${res.status}${detail ? " — " + detail : ""}`;
+      console.error("Kunde inte spara:", LAST_SAVE_ERROR);
+      return false;
+    }
+    LAST_SAVE_ERROR = "";
+    return true;
   }catch(e){
+    // Nätverksfel (offline, blockerad förfrågan, timeout) — fetch kastar utan HTTP-status
+    LAST_SAVE_ERROR = "Nätverksfel: " + (e && e.message ? e.message : e);
     console.error("Kunde inte spara", e);
     return false;
   }
 }
 function showSaveToast(){
   document.getElementById("save-toast-text").textContent =
-    "Kunde inte spara till delad lagring just nu (tillfälligt fel hos tjänsten). Din ändring syns här men är inte synkad till de andra tränarna ännu.";
+    "Kunde inte spara — ändringen syns här men är inte synkad till de andra tränarna."
+    + (LAST_SAVE_ERROR ? " (" + LAST_SAVE_ERROR + ")" : "");
   document.getElementById("save-toast").style.display = "flex";
 }
 function hideSaveToast(){ document.getElementById("save-toast").style.display = "none"; }
