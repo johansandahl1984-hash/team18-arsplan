@@ -61,6 +61,11 @@
     .headnote{display:none;}
     nav.tabs{margin-top:10px;}
     nav.tabs button{padding:7px 13px; font-size:12.5px;}
+    /* iOS Safari zoomar automatiskt in sidan när man trycker på ett formulärfält med
+       font-size under 16px. Sidan hamnar då i ett inzoomat läge där innehåll ligger
+       utanför skärmkanten. 16px på alla fält är standardlösningen — !important behövs
+       eftersom flera fält sätter font-size inline (stationer, spelupplägg, rotation). */
+    input, select, textarea{font-size:16px !important;}
   }
 
   nav.tabs{
