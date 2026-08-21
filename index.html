@@ -1263,7 +1263,7 @@ const GROUP_MERGE_PAIRS = [
 function mergeGroupReferences(s, dupId, keepId){
   if(s.lineup && s.lineup[dupId]){
     const dupEntry = s.lineup[dupId];
-    if(!s.lineup[keepId]) s.lineup[keepId] = {coaches:[], players:[], goalie:""};
+    if(!s.lineup[keepId]) s.lineup[keepId] = {coaches:[], players:[], goalie:"", gathering:""};
     const keepEntry = s.lineup[keepId];
     keepEntry.players = [...new Set([...(keepEntry.players||[]), ...(dupEntry.players||[])])];
     keepEntry.coaches = [...new Set([...(keepEntry.coaches||[]), ...(dupEntry.coaches||[])])];
@@ -1792,7 +1792,10 @@ function lineupTableHTML(s){
       ? names.map(n=>`<div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid #eee;">${n}</div>`).join("")
       : `<div style="font-size:12.5px;padding:4px 0;color:#999;">—</div>`;
     return `<div style="border:1px solid #ddd;border-radius:8px;overflow:hidden;background:#fff;">
-      <div style="background:${g.color};color:#fff;padding:6px 10px;font-family:'Oswald';font-weight:700;font-size:13.5px;letter-spacing:.02em;">${g.name}</div>
+      <div style="background:${g.color};color:#fff;padding:6px 10px;font-family:'Oswald';font-weight:700;font-size:13.5px;letter-spacing:.02em;display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+        <span>${g.name}</span>
+        ${lu.gathering ? `<span style="font-family:inherit;font-weight:600;font-size:11px;opacity:.9;">Samling ${lu.gathering}</span>` : ""}
+      </div>
       <div style="padding:4px 10px 8px;">
         <div style="font-size:11px;color:#777;padding:4px 0;border-bottom:1px solid #eee;"><b>Mv</b> ${gp?gp.name:"—"}</div>
         ${playerRows}
@@ -2423,7 +2426,7 @@ function openInlineLineup(sid){
   const attendance = (s.attendance && s.attendance.length) ? s.attendance.slice()
     : hadAnyPlayers ? [...new Set(Object.values(lineup).flatMap(g=>g.players||[]))]
     : DATA.players.map(p=>p.id); // förvalt: alla är med
-  activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:""}; });
+  activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""}; });
   sessionDraft = { attendance, activeGroups, lineup };
   const container = document.getElementById("inline-lineup-container-"+sid);
   container.innerHTML = inlineLineupShellHTML(s);
@@ -2616,7 +2619,7 @@ function toggleActiveGroup(gid){
     if(sessionDraft.lineup[gid]) sessionDraft.lineup[gid].players = [];
   } else {
     sessionDraft.activeGroups.push(gid);
-    if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""};
+    if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""};
   }
   renderActiveGroupsPicker(); renderLineupBoard();
 }
@@ -2635,14 +2638,14 @@ function movePlayerToGroup(pid, targetGid){
     if(sessionDraft.lineup[from].goalie===pid) sessionDraft.lineup[from].goalie = "";
   }
   if(targetGid){
-    if(!sessionDraft.lineup[targetGid]) sessionDraft.lineup[targetGid] = {coaches:[], players:[], goalie:""};
+    if(!sessionDraft.lineup[targetGid]) sessionDraft.lineup[targetGid] = {coaches:[], players:[], goalie:"", gathering:""};
     if(!sessionDraft.lineup[targetGid].players.includes(pid)) sessionDraft.lineup[targetGid].players.push(pid);
   }
   lineupSelectedPlayer = null;
   renderLineupBoard();
 }
 function toggleZoneCoach(gid, coachId){
-  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""};
+  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""};
   const entry = sessionDraft.lineup[gid];
   const current = lineupCoaches(entry);
   entry.coaches = current.includes(coachId) ? current.filter(x=>x!==coachId) : current.concat([coachId]);
@@ -2650,7 +2653,7 @@ function toggleZoneCoach(gid, coachId){
   renderLineupBoard();
 }
 function setZoneGoalie(gid, pid){
-  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""};
+  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""};
   if(pid){
     // en spelare kan inte samtidigt vara utespelare någonstans eller målvakt för ett annat lag
     const from = assignedElsewhere(pid);
@@ -2659,6 +2662,12 @@ function setZoneGoalie(gid, pid){
   }
   sessionDraft.lineup[gid].goalie = pid;
   renderLineupBoard();
+}
+function setZoneGathering(gid, value){
+  if(!sessionDraft.lineup[gid]) sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""};
+  sessionDraft.lineup[gid].gathering = value;
+  // ingen renderLineupBoard() här — ett tidsfält som ritas om vid varje knapptryckning skulle
+  // kunna tappa fokus mitt i inmatningen, samma typ av problem vi löste för Bygg-pass tidigare.
 }
 
 function renderLineupBoard(){
@@ -2685,7 +2694,7 @@ function renderLineupBoard(){
   const activeGroups = sortGroupsGoalieLast(DATA.groups.filter(g=>sessionDraft.activeGroups.includes(g.id)));
   if(activeGroups.length===0){ board.innerHTML = '<p style="font-size:12.5px;color:var(--muted);">Välj minst en aktiv grupp ovan.</p>'; return; }
   board.innerHTML = activeGroups.map(g=>{
-    const lu = sessionDraft.lineup[g.id] || {coaches:[], players:[], goalie:""};
+    const lu = sessionDraft.lineup[g.id] || {coaches:[], players:[], goalie:"", gathering:""};
     const luCoaches = lineupCoaches(lu);
     const coachChips = DATA.coaches.map(c=>{
       const on = luCoaches.includes(c.id);
@@ -2713,6 +2722,10 @@ function renderLineupBoard(){
       <div class="lineup-zone-head">
         <b style="color:${g.color};">${g.name}${g.isGoalieGroup?' 🥅':''}</b>
         ${goalieSelectHTML}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;" onclick="event.stopPropagation()">
+        <label style="font-size:10.5px;color:var(--muted);">Samling</label>
+        <input type="time" value="${lu.gathering||''}" style="font-size:11px;padding:2px 4px;width:90px;" onchange="setZoneGathering('${g.id}',this.value)">
       </div>
       <div class="checkchips" style="margin-bottom:6px;" onclick="event.stopPropagation()">${coachChips}</div>
       <div class="checkchips">${chips}</div>
@@ -2791,7 +2804,7 @@ function openSessionModal(){
   pendingArchiveOverride = null;
   updateArchiveButtonLabel(null);
   sessionDraft = { attendance: DATA.players.map(p=>p.id), activeGroups: DATA.groups.slice(0,4).map(g=>g.id), lineup: {} };
-  sessionDraft.activeGroups.forEach(gid=> sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:""});
+  sessionDraft.activeGroups.forEach(gid=> sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""});
   lineupScope = null;
   renderActiveGroupsPicker(); renderLineupBoard();
   openModal("modal-session");
@@ -2822,7 +2835,7 @@ function editSession(id){
   const attendance = (s.attendance && s.attendance.length) ? s.attendance.slice()
     : hadAnyPlayers ? [...new Set(Object.values(lineup).flatMap(g=>g.players||[]))]
     : []; // ingen gissning här — "alla med" sätts bara i Ny händelse / laguppställnings-editorn, inte tyst vid en vanlig redigering
-  activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:""}; });
+  activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""}; });
   sessionDraft = { attendance, activeGroups, lineup };
   lineupScope = null;
   renderActiveGroupsPicker(); renderLineupBoard();
@@ -3057,7 +3070,7 @@ async function saveGroup(){
   renderGroups(); renderPlayers(); closeModal("modal-group");
   if(sessionDraft){
     if(isNew) sessionDraft.activeGroups.push(id);
-    if(!sessionDraft.lineup[id]) sessionDraft.lineup[id] = {coaches:[], players:[], goalie:""};
+    if(!sessionDraft.lineup[id]) sessionDraft.lineup[id] = {coaches:[], players:[], goalie:"", gathering:""};
     renderActiveGroupsPicker(); renderLineupBoard();
   }
   saveData(); // sparas i bakgrunden
