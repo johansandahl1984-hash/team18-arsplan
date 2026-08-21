@@ -402,8 +402,9 @@
       <h2>Övningsbank</h2>
       <span class="hint" id="ex-count-hint"></span>
     </div>
-    <div class="filter-row">
+    <div class="filter-row" style="justify-content:space-between;">
       <div class="search-box"><input type="text" id="ex-search" placeholder="Sök övning…" oninput="renderExercises()"></div>
+      <button class="btn ghost small" onclick="openExerciseModal()">+ Lägg till egen övning</button>
     </div>
     <div class="filter-row" id="cat-filter"></div>
     <div class="ex-grid" id="ex-grid"></div>
@@ -590,6 +591,31 @@
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('modal-coach')">Avbryt</button>
       <button class="btn" onclick="saveCoach()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-exercise">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('modal-exercise')">✕</button>
+    <h3 id="exercise-modal-title">Ny egen övning</h3>
+    <input type="hidden" id="ex-id">
+    <div class="field"><label>Namn</label><input type="text" id="ex-namn" placeholder="t.ex. Innerskär i par"></div>
+    <div class="field"><label>Kategori</label>
+      <select id="ex-cat"></select>
+    </div>
+    <div class="field"><label>Syfte (vad tränas, varför)</label><textarea id="ex-syfte" rows="2"></textarea></div>
+    <div class="field"><label>Material &amp; antal spelare</label><textarea id="ex-material" rows="2"></textarea></div>
+    <div class="field"><label>Instruktion, steg för steg</label><textarea id="ex-steg" rows="4" placeholder="En rad per steg"></textarea></div>
+    <div class="field"><label>Coachingpunkter (vad tränaren ska säga/titta efter)</label><textarea id="ex-coaching" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Enklare variant</label><textarea id="ex-latt" rows="2"></textarea></div>
+      <div class="field"><label>Svårare variant</label><textarea id="ex-svar" rows="2"></textarea></div>
+    </div>
+    <div class="field"><label>Länk till referens/video (valfritt)</label><input type="text" id="ex-link" placeholder="https://…"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('modal-exercise')">Avbryt</button>
+      <button class="btn" onclick="saveCustomExercise()">Spara</button>
     </div>
   </div>
 </div>
@@ -1029,6 +1055,7 @@ let DATA = {
   coaches: JSON.parse(JSON.stringify(DEFAULT_COACHES)),
   pairHistory: {Träning:{}, Match:{}}, // per typ: "playerIdA|playerIdB" (sorted) -> antal gånger tillsammans i samma grupp
   goalieHistory: {Träning:{}, Match:{}}, // per typ: playerId -> antal gånger som målvakt (samma räkneregler som pairHistory: bara genomförda pass)
+  customExercises: [], // egna, lagspecifika övningar — samma form som EXERCISES-posterna, listas ihop med dem via allExercises()
   templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
   periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
   pairHistoryCountingMigrated: false,
@@ -1117,6 +1144,7 @@ function migratePairHistory(){
   if(!DATA.goalieHistory) DATA.goalieHistory = {Träning:{}, Match:{}};
   if(!DATA.goalieHistory.Träning) DATA.goalieHistory.Träning = {};
   if(!DATA.goalieHistory.Match) DATA.goalieHistory.Match = {};
+  if(!DATA.customExercises) DATA.customExercises = [];
 }
 // Engångsmigrering: innan denna uppdatering räknades laguppställningar in i mixhistoriken direkt vid
 // sparning, oavsett om passet var genomfört. Nu ska bara genomförda pass räknas. Det här drar bort
@@ -1824,11 +1852,12 @@ const BLOCK_THEME_COLORS = {
   // äldre teman (från tidigare version) — behålls så gammal data fortfarande visas med rätt färg
   "Skridskoteknik":"#1F4D3A","Puckteknik":"#B57A3F","Skott":"#C9A24B","Passning":"#C24A3A","Annat":"#8A8F86"
 };
-function exerciseById(id){ return EXERCISES.find(e=>e.id===id); }
+function allExercises(){ return EXERCISES.concat(DATA.customExercises||[]); }
+function exerciseById(id){ return allExercises().find(e=>e.id===id); }
 function exerciseOptionsHTML(selectedId){
   let html = '<option value="">— ingen, bara fritext —</option>';
   EX_CATS.forEach(cat=>{
-    const items = EXERCISES.filter(e=>e.cat===cat.id);
+    const items = allExercises().filter(e=>e.cat===cat.id);
     if(!items.length) return;
     html += `<optgroup label="${cat.label}">` + items.map(e=>
       `<option value="${e.id}" ${selectedId===e.id?'selected':''}>${e.namn}</option>`).join("") + `</optgroup>`;
@@ -1839,11 +1868,11 @@ function exerciseOptionsHTML(selectedId){
 /* =========================================================================
    BYGG PASS — tabellvy: varje rad = ett block, direkt redigerbart
    ========================================================================= */
-const MAIN_THEME_LIST = ["Uppvärmning","Lek","Spel","Fys","Stationer"];
+const MAIN_THEME_LIST = ["Uppvärmning","Skridsko","Lek","Spel","Fys","Stationer"];
 const STATION_SUBTHEMES = ["Skridskoteknik","Puckteknik","Passning","Skott","Spel","Fys","Lek"];
 const SUBTHEME_TO_CAT = {Skridskoteknik:"skridsko", Puckteknik:"puck", Passning:"passning", Skott:"skott", Spel:"spel", Fys:"fys", Lek:"lek"};
-const MAIN_THEME_TO_CAT = {Lek:"lek", Fys:"fys", Spel:"spel"}; // Uppvärmning/Stationer har ingen given kategori
-const SPELYTA_OPTIONS = ["Helplan","Halvplan","Tvärplan (cross-ice)","1/3 plan","Annat"];
+const MAIN_THEME_TO_CAT = {Skridsko:"skridsko", Lek:"lek", Fys:"fys", Spel:"spel"}; // Uppvärmning/Stationer har ingen given kategori
+const SPELYTA_OPTIONS = ["Helplan","Halvplan","Tvärplan (cross-ice)","1/3 plan","1/6 is","Annat"];
 const MALTYP_OPTIONS = ["Fullstora mål","Mellanmål","Småmål","Inget mål/fritt"];
 
 function isStationBlock(b){ return b.theme==="Stationer" || (b.stationMode && !MAIN_THEME_LIST.includes(b.theme)); }
@@ -1857,18 +1886,21 @@ function toggleBlocksPanel(sid){
   else { panel.style.display = "block"; renderBlocksPanel(sid); }
 }
 
-/* ---- spara-debounce så snabba cell-ändringar inte skickar en storage-request per knapptryck ---- */
+/* ---- spara-debounce så snabba cell-ändringar inte skickar en storage-request per knapptryck ----
+   VIKTIGT: rör aldrig renderSessions() här — den bygger om hela sessionskortet från grunden med en
+   FÄRSK, TOM och dold blocks-panel-div, vilket stänger panelen man just satt in ett värde i (buggen
+   "passet kollapsar när man fyller i tid"). Panelen ligger redan öppen sedan tidigare — vi behöver
+   bara uppdatera dess EGET innehåll (t.ex. tidssammanfattningen överst) i samma öppna div. */
 let blockSaveTimer = null;
-let pendingRerenderSids = new Set();
-function scheduleBlockSave(sid, rerender){
-  if(rerender !== false) pendingRerenderSids.add(sid); // OR:a ihop behovet — ett senare anrop med rerender=false ska inte kunna släcka ett tidigare som behövde rita om
+let pendingBlockSids = new Set();
+function scheduleBlockSave(sid){
+  pendingBlockSids.add(sid);
   clearTimeout(blockSaveTimer);
   blockSaveTimer = setTimeout(async ()=>{
-    const sidsToRerender = new Set(pendingRerenderSids);
-    pendingRerenderSids = new Set();
-    const ok = await saveData();
-    renderSessions();
-    sidsToRerender.forEach(id=>{
+    const sids = new Set(pendingBlockSids);
+    pendingBlockSids = new Set();
+    await saveData();
+    sids.forEach(id=>{
       if(document.getElementById("blocks-panel-"+id)) renderBlocksPanel(id);
     });
   }, 500);
@@ -2043,17 +2075,17 @@ function exerciseCellHTML(sid, b, suggestCat, periodCats){
   const shown = new Set();
   if(suggestCat){
     const cat = EX_CATS.find(c=>c.id===suggestCat);
-    const suggested = EXERCISES.filter(e=>e.cat===suggestCat && !ids.includes(e.id));
+    const suggested = allExercises().filter(e=>e.cat===suggestCat && !ids.includes(e.id));
     if(suggested.length){ opts += `<optgroup label="Föreslaget: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`; shown.add(suggestCat); }
   }
   (periodCats||[]).forEach(pc=>{
     if(shown.has(pc)) return;
     const cat = EX_CATS.find(c=>c.id===pc); if(!cat) return;
-    const suggested = EXERCISES.filter(e=>e.cat===pc && !ids.includes(e.id));
+    const suggested = allExercises().filter(e=>e.cat===pc && !ids.includes(e.id));
     if(suggested.length){ opts += `<optgroup label="📅 Periodens fokus: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`; shown.add(pc); }
   });
   EX_CATS.forEach(c=>{
-    const items = EXERCISES.filter(e=>e.cat===c.id && !ids.includes(e.id) && !shown.has(c.id));
+    const items = allExercises().filter(e=>e.cat===c.id && !ids.includes(e.id) && !shown.has(c.id));
     if(!items.length) return;
     opts += `<optgroup label="${c.label}">` + items.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`;
   });
@@ -2171,11 +2203,11 @@ function exerciseCellHTMLForStation(sid, bid, st, suggestCat){
   let opts = '<option value="">+ lägg till övning…</option>';
   if(suggestCat){
     const cat = EX_CATS.find(c=>c.id===suggestCat);
-    const suggested = EXERCISES.filter(e=>e.cat===suggestCat && !ids.includes(e.id));
+    const suggested = allExercises().filter(e=>e.cat===suggestCat && !ids.includes(e.id));
     if(suggested.length) opts += `<optgroup label="Föreslaget: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`;
   }
   EX_CATS.forEach(c=>{
-    const items = EXERCISES.filter(e=>e.cat===c.id && !ids.includes(e.id) && !(suggestCat===c.id));
+    const items = allExercises().filter(e=>e.cat===c.id && !ids.includes(e.id) && !(suggestCat===c.id));
     if(!items.length) return;
     opts += `<optgroup label="${c.label}">` + items.map(e=>`<option value="${e.id}">${e.namn}</option>`).join("") + `</optgroup>`;
   });
@@ -2804,19 +2836,21 @@ function clearCats(){ activeExCats = new Set(); renderCategoryFilter(); renderEx
 
 function renderExercises(){
   const q = (document.getElementById("ex-search").value||"").toLowerCase();
-  const filtered = EXERCISES.filter(e=>{
+  const filtered = allExercises().filter(e=>{
     const catOk = activeExCats.size===0 || activeExCats.has(e.cat);
     const searchOk = !q || e.namn.toLowerCase().includes(q) || e.syfte.toLowerCase().includes(q);
     return catOk && searchOk;
   });
-  document.getElementById("ex-count-hint").textContent = `${EXERCISES.length} övningar i banken · visar ${filtered.length}`;
+  document.getElementById("ex-count-hint").textContent = `${allExercises().length} övningar i banken · visar ${filtered.length}`;
   const grid = document.getElementById("ex-grid");
   if(filtered.length===0){ grid.innerHTML = '<div class="empty">Inga övningar matchade sökningen.</div>'; return; }
   grid.innerHTML = filtered.map(e=>{
     const cat = EX_CATS.find(c=>c.id===e.cat);
+    const isCustom = (DATA.customExercises||[]).some(x=>x.id===e.id);
     return `<div class="ex-card">
       <div class="ex-head" onclick="toggleEx('${e.id}')">
         <span class="ex-cat" style="background:${cat.color}">${cat.label}</span>
+        ${isCustom ? `<span class="ex-cat" style="background:#8A6BAF;">Egen</span>` : ""}
         <h4>${e.namn}</h4>
         <div class="ex-purpose">${e.syfte}</div>
         <div class="expand-hint" id="hint-${e.id}">Tryck för detaljer ▾</div>
@@ -2831,6 +2865,10 @@ function renderExercises(){
           <div class="var-box"><b>Svårare</b>${e.svar}</div>
         </div>
         ${e.link ? `<a class="ex-link" href="${e.link}" target="_blank" rel="noopener">Se referens / video ↗</a>` : ""}
+        ${isCustom ? `<div style="margin-top:10px;display:flex;gap:6px;">
+          <button class="btn ghost small" onclick="event.stopPropagation();openExerciseModal('${e.id}')">Redigera</button>
+          <button class="btn ghost small" onclick="event.stopPropagation();deleteCustomExercise('${e.id}')">Ta bort</button>
+        </div>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -2840,6 +2878,79 @@ function toggleEx(id){
   const hint = document.getElementById("hint-"+id);
   const open = body.classList.toggle("open");
   hint.textContent = open ? "Dölj detaljer ▴" : "Tryck för detaljer ▾";
+}
+function openExerciseModal(id){
+  const catSel = document.getElementById("ex-cat");
+  catSel.innerHTML = EX_CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join("");
+  if(id){
+    const e = (DATA.customExercises||[]).find(x=>x.id===id);
+    if(!e){ alert("Bara egna övningar går att redigera."); return; }
+    document.getElementById("exercise-modal-title").textContent = "Redigera övning";
+    document.getElementById("ex-id").value = e.id;
+    document.getElementById("ex-namn").value = e.namn;
+    catSel.value = e.cat;
+    document.getElementById("ex-syfte").value = e.syfte;
+    document.getElementById("ex-material").value = e.material;
+    document.getElementById("ex-steg").value = (e.steg||[]).join("\n");
+    document.getElementById("ex-coaching").value = e.coaching;
+    document.getElementById("ex-latt").value = e.latt;
+    document.getElementById("ex-svar").value = e.svar;
+    document.getElementById("ex-link").value = e.link||"";
+  } else {
+    document.getElementById("exercise-modal-title").textContent = "Ny egen övning";
+    document.getElementById("ex-id").value = "";
+    document.getElementById("ex-namn").value = "";
+    catSel.value = EX_CATS[0].id;
+    document.getElementById("ex-syfte").value = "";
+    document.getElementById("ex-material").value = "";
+    document.getElementById("ex-steg").value = "";
+    document.getElementById("ex-coaching").value = "";
+    document.getElementById("ex-latt").value = "";
+    document.getElementById("ex-svar").value = "";
+    document.getElementById("ex-link").value = "";
+  }
+  openModal("modal-exercise");
+}
+async function saveCustomExercise(){
+  if(SAVE_BUSY) return; SAVE_BUSY = true;
+  try {
+    const namn = document.getElementById("ex-namn").value.trim();
+    if(!namn){ alert("Ange ett namn på övningen."); return; }
+    const id = document.getElementById("ex-id").value || ("custom-"+Date.now());
+    const steg = document.getElementById("ex-steg").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    const entry = {
+      id, cat: document.getElementById("ex-cat").value,
+      namn, syfte: document.getElementById("ex-syfte").value.trim(),
+      material: document.getElementById("ex-material").value.trim(),
+      steg: steg.length ? steg : ["Fyll i instruktion."],
+      coaching: document.getElementById("ex-coaching").value.trim(),
+      latt: document.getElementById("ex-latt").value.trim() || "—",
+      svar: document.getElementById("ex-svar").value.trim() || "—",
+      link: document.getElementById("ex-link").value.trim() || null,
+    };
+    if(!DATA.customExercises) DATA.customExercises = [];
+    const idx = DATA.customExercises.findIndex(x=>x.id===id);
+    if(idx>=0) DATA.customExercises[idx] = entry; else DATA.customExercises.push(entry);
+    renderExercises(); renderCategoryFilter(); closeModal("modal-exercise");
+    await saveData();
+  } finally { SAVE_BUSY = false; }
+}
+async function deleteCustomExercise(id){
+  const e = (DATA.customExercises||[]).find(x=>x.id===id);
+  const yes = await confirmDialog(`Ta bort övningen "${e?e.namn:''}"? Om den ligger kopplad till ett träningspass försvinner kopplingen där också.`, "Ta bort övning");
+  if(!yes) return;
+  await guard(async ()=>{
+    DATA.customExercises = (DATA.customExercises||[]).filter(x=>x.id!==id);
+    // rensa bort ev. hängande kopplingar i redan byggda pass så inget pekar på en borttagen övning
+    DATA.sessions.forEach(s=>{
+      (s.blocks||[]).forEach(b=>{
+        if(b.exerciseIds) b.exerciseIds = b.exerciseIds.filter(x=>x!==id);
+        (b.stations||[]).forEach(st=>{ if(st.exerciseIds) st.exerciseIds = st.exerciseIds.filter(x=>x!==id); });
+      });
+    });
+    renderExercises(); renderCategoryFilter(); renderSessions();
+    await saveData();
+  });
 }
 
 /* ---- Laget: grupper ---- */
