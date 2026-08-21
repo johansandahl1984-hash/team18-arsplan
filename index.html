@@ -1981,11 +1981,13 @@ function renderSessions(){
         <div class="sess-actions">
           <button class="btn ghost small" onclick="toggleInlineLineup('${s.id}')" id="lu-toggle-${s.id}">${groupsUsed.length?'Redigera laguppställning':'Lägg till laguppställning'}</button>
           ${s.type!=="Match" ? `<button class="btn ghost small" onclick="toggleBlocksPanel('${s.id}')" id="blk-toggle-${s.id}">${(s.blocks&&s.blocks.length)?`Bygg pass (${s.blocks.length})`:'Bygg pass'}</button>` : ""}
+          ${(s.type!=="Match" && s.blocks && s.blocks.length>0) ? `<button class="btn ghost small" onclick="toggleTrainingSummary('${s.id}')" id="ts-toggle-${s.id}">📋 Träningsöversikt</button>` : ""}
           <button class="btn ghost small" onclick="editSession('${s.id}')">Redigera</button>
           <button class="btn ghost small" onclick="toggleArchiveFromCard('${s.id}')">${archived?'↩ Kommande':'✓ Genomförd'}</button>
         </div>
       </div>
       ${s.type!=="Match" ? `<div id="blocks-panel-${s.id}" style="display:none;"></div>` : ""}
+      <div id="training-summary-container-${s.id}" style="display:none;"></div>
       <div id="inline-lineup-container-${s.id}" style="overflow-x:auto;"></div>
     </div>`;
   }).join("");
@@ -1994,7 +1996,7 @@ function renderSessions(){
    BYGG PASS — tabellmotor (se nedan för fullständig implementation)
    ========================================================================= */
 const BLOCK_THEME_COLORS = {
-  "Uppvärmning":"#8A6BAF","Lek":"#8A6BAF","Spel":"#2E6C9E","Fys":"#4C8FA8","Stationer":"#C9A24B",
+  "Uppvärmning":"#8A6BAF","Skridsko":"#1F4D3A","Lek":"#8A6BAF","Spel":"#2E6C9E","Fys":"#4C8FA8","Stationer":"#C9A24B",
   // äldre teman (från tidigare version) — behålls så gammal data fortfarande visas med rätt färg
   "Skridskoteknik":"#1F4D3A","Puckteknik":"#B57A3F","Skott":"#C9A24B","Passning":"#C24A3A","Annat":"#8A8F86"
 };
@@ -2454,6 +2456,118 @@ function spelExtraRowHTML(s, b){
       <tr><td style="border:1px solid var(--line);"></td>${rotHead}</tr>${rotRows}</table></div>
     <button class="btn ghost small" style="margin-top:5px;" onclick="addPlanRound('${s.id}','${b.id}')">+ Byte</button>
   </td></tr>`;
+}
+
+/* =========================================================================
+   TRÄNINGSÖVERSIKT — mobilanpassad, sammanhållen vy av hela det byggda passet
+   (dag, istid, mål/fokus från perioden, samtliga block) — samma stil som
+   "Sparad laguppställning": läsbar, skärmdumpsvänlig, inte tänkt att redigeras i.
+   ========================================================================= */
+function trainingSummaryHTML(s){
+  const period = sessionPeriod(s);
+  const dateObj = new Date(s.date+"T00:00:00");
+  let dayLabel = dateObj.toLocaleDateString("sv-SE", {weekday:"long", day:"numeric", month:"long"});
+  dayLabel = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
+  const totalPlanned = (s.blocks||[]).reduce((n,b)=>n+(+b.duration||0),0);
+  const istid = +s.istid || 0;
+
+  const headerInfo = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12.5px;">
+      <span><b>${dayLabel}</b></span>
+      <span>Is ${s.start||"?"}–${s.end||"?"}${istid?` (${istid} min istid)`:""}</span>
+      ${s.yta ? `<span>Yta ${s.yta}</span>` : ""}
+      ${s.place ? `<span>${s.place}</span>` : ""}
+      ${s.gathering ? `<span>Samling ${s.gathering}</span>` : ""}
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">${totalPlanned} min planerat${istid?` / ${istid} min istid`:""}</div>`;
+
+  const goalBox = period ? `
+    <div style="margin-top:10px;padding:8px 12px;background:${period.color}14;border-left:3px solid ${period.color};border-radius:8px;">
+      <div style="font-size:11px;font-weight:700;color:${period.color};text-transform:uppercase;letter-spacing:.03em;">📅 ${period.label}</div>
+      ${(period.focus||[]).length ? `<div style="font-size:12px;margin-top:3px;"><b>Fokus:</b> ${period.focus.join(", ")}</div>` : ""}
+      ${period.goal ? `<div style="font-size:12px;margin-top:2px;"><b>Mål:</b> ${period.goal}</div>` : ""}
+    </div>` : "";
+
+  const groupNameFor = gid => { const g = DATA.groups.find(x=>x.id===gid); return g ? g.name : "—"; };
+
+  const blockCards = (s.blocks||[]).map(b=>{
+    const color = themeColor(b.theme);
+    const coach = b.coach ? coachById(b.coach) : null;
+    const exNames = (b.exerciseIds||[]).map(id=>{ const e=exerciseById(id); return e?e.namn:null; }).filter(Boolean);
+
+    let subHTML = "";
+    if(isStationBlock(b)){
+      const stations = b.stations||[];
+      subHTML = stations.map(st=>{
+        const stCoach = st.coach ? coachById(st.coach) : null;
+        const stEx = (st.exerciseIds||[]).map(id=>{ const e=exerciseById(id); return e?e.namn:null; }).filter(Boolean);
+        return `<div style="margin:6px 0;padding:6px 9px;background:#F8F8F5;border-radius:6px;">
+          <b style="font-size:12px;">${st.name||"Station"}</b>${st.subtheme?` <span style="font-size:10.5px;color:var(--muted);">(${st.subtheme})</span>`:""}${stCoach?` <span style="font-size:10.5px;color:var(--muted);">· ${stCoach.name}</span>`:""}
+          ${stEx.length?`<div style="font-size:11.5px;margin-top:2px;">${stEx.join(", ")}</div>`:""}
+        </div>`;
+      }).join("");
+      if(stations.length && (b.rounds||[]).length){
+        const headCells = stations.map(st=>`<th style="border:1px solid #ddd;padding:3px 5px;font-size:10.5px;">${st.name}</th>`).join("");
+        const rotRows = b.rounds.map((r,ri)=>{
+          const cells = stations.map(st=>`<td style="border:1px solid #ddd;padding:3px 5px;font-size:10.5px;">${groupNameFor(r.assignments[st.id])}</td>`).join("");
+          return `<tr><td style="border:1px solid #ddd;padding:3px 5px;font-size:10.5px;color:var(--muted);white-space:nowrap;">Byte ${ri+1}</td>${cells}</tr>`;
+        }).join("");
+        subHTML += `<div style="overflow-x:auto;margin-top:6px;"><table style="border-collapse:collapse;width:100%;"><tr><td></td>${headCells}</tr>${rotRows}</table></div>`;
+      }
+    } else if(isSpelBlock(b)){
+      ensurePlanConfigs(b);
+      const numPlans = Math.max(1, +b.numPlans || 1);
+      const planLabels = Array.from({length:numPlans},(_,i)=>"Plan "+String.fromCharCode(65+i));
+      subHTML = planLabels.map((label,pi)=>{
+        const cfg = b.plans[pi] || {};
+        return `<div style="font-size:11.5px;margin:2px 0;"><b>${label}</b> ${cfg.yta||"—"} · ${cfg.maltyp||"—"} · ${cfg.malvakt||"—"}</div>`;
+      }).join("");
+      if((b.planRounds||[]).length){
+        const headCells = planLabels.map(l=>`<th style="border:1px solid #ddd;padding:3px 5px;font-size:10.5px;">${l}</th>`).join("");
+        const rotRows = b.planRounds.map((r,ri)=>{
+          const cells = planLabels.map((_,pi)=>{
+            const a = r.assignments[pi]&&r.assignments[pi].a, bb = r.assignments[pi]&&r.assignments[pi].b;
+            return `<td style="border:1px solid #ddd;padding:3px 5px;font-size:10.5px;">${groupNameFor(a)} – ${groupNameFor(bb)}</td>`;
+          }).join("");
+          const rowLabel = ri===0 ? "Start" : "Byte "+ri;
+          return `<tr><td style="border:1px solid #ddd;padding:3px 5px;font-size:10.5px;color:var(--muted);white-space:nowrap;">${rowLabel}</td>${cells}</tr>`;
+        }).join("");
+        subHTML += `<div style="overflow-x:auto;margin-top:6px;"><table style="border-collapse:collapse;width:100%;"><tr><td></td>${headCells}</tr>${rotRows}</table></div>`;
+      }
+    }
+
+    return `<div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff;margin-top:10px;">
+      <div style="background:${color};color:#fff;padding:7px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+        <b style="font-family:'Oswald';font-size:13.5px;letter-spacing:.02em;">${b.theme}</b>
+        ${b.duration?`<span style="font-size:11.5px;opacity:.9;white-space:nowrap;">${b.duration} min</span>`:""}
+      </div>
+      <div style="padding:8px 12px;">
+        ${coach ? `<div style="font-size:11px;color:#777;"><b>Ansvarig</b> ${coach.name}</div>` : ""}
+        ${exNames.length ? `<div style="font-size:12.5px;margin-top:4px;">${exNames.join(", ")}</div>` : ""}
+        ${b.instruction ? `<div style="font-size:11.5px;color:#555;margin-top:4px;font-style:italic;">${b.instruction}</div>` : ""}
+        ${subHTML}
+      </div>
+    </div>`;
+  }).join("");
+
+  return `<div style="padding:10px 2px 4px;">
+    ${headerInfo}
+    ${goalBox}
+    ${blockCards || '<p style="font-size:12px;color:var(--muted);margin-top:10px;">Inga block byggda ännu.</p>'}
+  </div>`;
+}
+function toggleTrainingSummary(sid){
+  const el = document.getElementById("training-summary-container-"+sid);
+  const btn = document.getElementById("ts-toggle-"+sid);
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s || !el) return;
+  const open = el.style.display !== "none";
+  if(open){
+    el.style.display = "none"; el.innerHTML = "";
+    if(btn) btn.textContent = "📋 Träningsöversikt";
+  } else {
+    el.innerHTML = trainingSummaryHTML(s); el.style.display = "block";
+    if(btn) btn.textContent = "Dölj träningsöversikt";
+  }
 }
 
 /* ---- Mallar: spara ett träningspass block-för-block, återanvänd i en annan träning ---- */
