@@ -365,8 +365,10 @@
 
     <div class="toolbar">
       <button class="btn" onclick="openSessionModal()">+ Ny händelse</button>
+      <button class="btn ghost" onclick="fetchLagetCalendar()" id="ics-fetch-btn">📅 Hämta nya händelser</button>
       <span class="hint" style="margin-left:auto;">Källa för augusti: laget.se — resten fylls i av er</span>
     </div>
+    <div id="ics-import-panel" style="display:none;"></div>
 
     <div class="week-picker" id="sess-mode-tabs">
       <button class="week-btn active" onclick="setSessMode('upcoming')" id="mode-btn-upcoming">Kommande</button>
@@ -1042,6 +1044,7 @@ let DATA = {
   pairHistory: {Träning:{}, Match:{}}, // per typ: "playerIdA|playerIdB" (sorted) -> antal gånger tillsammans i samma grupp
   goalieHistory: {Träning:{}, Match:{}}, // per typ: playerId -> antal gånger som målvakt (samma räkneregler som pairHistory: bara genomförda pass)
   customExercises: [], // egna, lagspecifika övningar — samma form som EXERCISES-posterna, listas ihop med dem via allExercises()
+  icsCalendarUrl: "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics", // lagets kalenderflöde för "Hämta nya händelser"
   templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
   periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
   pairHistoryCountingMigrated: false,
@@ -1132,6 +1135,7 @@ function migratePairHistory(){
   if(!DATA.goalieHistory.Träning) DATA.goalieHistory.Träning = {};
   if(!DATA.goalieHistory.Match) DATA.goalieHistory.Match = {};
   if(!DATA.customExercises) DATA.customExercises = [];
+  if(!DATA.icsCalendarUrl) DATA.icsCalendarUrl = "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics";
 }
 // Engångsmigrering: flaggar automatiskt en befintlig grupp som heter "Målvakter" (skiftläges-
 // okänsligt) som den låsta målvaktsgruppen, om ingen grupp redan har flaggan. Körs bara en gång —
@@ -1378,6 +1382,150 @@ function seedSessions(){
       coaches: [], attendance: [], activeGroups: [], lineup: {}, archiveOverride: null,
       notes: e.label + (e.type==="Match" ? " — kontrollera tid/plats i laget.se." : "")
     };
+  });
+}
+
+/* =========================================================================
+   HÄMTA NYA HÄNDELSER — läser lagets .ics-kalenderflöde (laget.se "Prenumerera")
+   och jämför mot redan sparade pass, så bara faktiskt nya händelser visas för
+   granskning innan de läggs till. Rör aldrig något automatiskt/utan bekräftelse.
+   ========================================================================= */
+function unfoldIcsLines(text){
+  // RFC 5545: en rad som börjar med mellanslag/tab är en fortsättning av föregående rad
+  const rawLines = text.split(/\r\n|\n|\r/);
+  const lines = [];
+  rawLines.forEach(line=>{
+    if((line.startsWith(" ") || line.startsWith("\t")) && lines.length){
+      lines[lines.length-1] += line.slice(1);
+    } else {
+      lines.push(line);
+    }
+  });
+  return lines;
+}
+function parseIcsPropertyLine(line){
+  const colonIdx = line.indexOf(":");
+  if(colonIdx===-1) return null;
+  const left = line.slice(0, colonIdx);
+  const value = line.slice(colonIdx+1);
+  const [name, ...paramParts] = left.split(";");
+  const params = {};
+  paramParts.forEach(p=>{ const eq=p.indexOf("="); if(eq>-1) params[p.slice(0,eq).toUpperCase()] = p.slice(eq+1); });
+  return { name: name.toUpperCase(), params, value };
+}
+function unescapeIcsText(v){
+  return (v||"").replace(/\\n/gi," ").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\").trim();
+}
+function parseIcsDateTime(value){
+  // Stöder: 20260826T183500Z (UTC), 20260826T183500 (lokal/flytande tid), 20260826 (heldag)
+  const m = (value||"").match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
+  if(!m) return null;
+  const [, y, mo, d, hh, mm, ss, z] = m;
+  if(!hh) return { date: `${y}-${mo}-${d}`, time: null }; // heldagshändelse, inget klockslag
+  if(z){
+    // Absolut UTC-tidpunkt — konvertera till svensk lokal tid (hanterar sommar/vintertid automatiskt)
+    const utcDate = new Date(Date.UTC(+y, +mo-1, +d, +hh, +mm, +(ss||0)));
+    const dateStr = utcDate.toLocaleDateString("sv-SE", {timeZone:"Europe/Stockholm"});
+    const timeStr = utcDate.toLocaleTimeString("sv-SE", {timeZone:"Europe/Stockholm", hour:"2-digit", minute:"2-digit", hour12:false});
+    return { date: dateStr, time: timeStr };
+  }
+  return { date: `${y}-${mo}-${d}`, time: `${hh}:${mm}` }; // flytande tid, redan svensk lokal tid i praktiken
+}
+function parseICS(text){
+  const lines = unfoldIcsLines(text);
+  const events = []; let cur = null;
+  lines.forEach(line=>{
+    const t = line.trim();
+    if(t==="BEGIN:VEVENT"){ cur = {}; return; }
+    if(t==="END:VEVENT"){ if(cur) events.push(cur); cur=null; return; }
+    if(!cur) return;
+    const prop = parseIcsPropertyLine(line); if(!prop) return;
+    if(prop.name==="SUMMARY") cur.summary = unescapeIcsText(prop.value);
+    else if(prop.name==="LOCATION") cur.location = unescapeIcsText(prop.value);
+    else if(prop.name==="UID") cur.uid = prop.value.trim();
+    else if(prop.name==="DTSTART") cur.dtstart = parseIcsDateTime(prop.value);
+    else if(prop.name==="DTEND") cur.dtend = parseIcsDateTime(prop.value);
+  });
+  return events.filter(e=>e.summary && e.dtstart && e.dtstart.time); // hoppa heldagshändelser utan klockslag
+}
+let icsFoundEvents = [];
+async function fetchLagetCalendar(){
+  const url = DATA.icsCalendarUrl;
+  if(!url){ alert("Ingen kalenderadress inställd (DATA.icsCalendarUrl)."); return; }
+  const btn = document.getElementById("ics-fetch-btn");
+  const panel = document.getElementById("ics-import-panel");
+  btn.disabled = true; btn.textContent = "Hämtar…";
+  panel.style.display = "block";
+  panel.innerHTML = '<p style="font-size:12.5px;color:var(--muted);padding:8px 0;">Hämtar kalendern…</p>';
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const text = await res.text();
+    const events = parseICS(text);
+    const existingUids = new Set(DATA.sessions.map(s=>s.icsUid).filter(Boolean));
+    const existingDateTime = new Set(DATA.sessions.map(s=>s.date+"|"+s.start));
+    icsFoundEvents = events.filter(e=>{
+      if(e.uid && existingUids.has(e.uid)) return false;
+      if(existingDateTime.has(e.dtstart.date+"|"+e.dtstart.time)) return false;
+      return true;
+    }).sort((a,b)=>(a.dtstart.date+a.dtstart.time).localeCompare(b.dtstart.date+b.dtstart.time));
+    renderIcsImportPanel();
+  }catch(e){
+    panel.innerHTML = `<div class="note-box" style="border-color:#C24A3A;background:#FBE7E3;">
+      <b>Kunde inte hämta kalendern.</b> ${String((e&&e.message)||e)}
+      <p style="font-size:11.5px;color:var(--muted);margin:6px 0 0;">Om detta är ett direkt nätverksfel kan laget.se blockera hämtning från appar utifrån (CORS). Hör av dig till Claude om felet står kvar — det finns en alternativ lösning via Supabase.</p>
+    </div>`;
+    console.error("Kunde inte hämta laget.se-kalendern", e);
+  } finally {
+    btn.disabled = false; btn.textContent = "📅 Hämta nya händelser";
+  }
+}
+function renderIcsImportPanel(){
+  const panel = document.getElementById("ics-import-panel");
+  if(icsFoundEvents.length===0){
+    panel.innerHTML = '<div class="note-box">Inga nya händelser hittades — allt i kalendern verkar redan finnas i appen.</div>';
+    return;
+  }
+  const rows = icsFoundEvents.map((e,i)=>{
+    const isMatch = !/tr[äa]ning/i.test(e.summary||"");
+    const dLabel = new Date(e.dtstart.date+"T00:00:00").toLocaleDateString("sv-SE",{day:"numeric",month:"short"});
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer;">
+      <input type="checkbox" checked data-ics-idx="${i}">
+      <span class="evt-tag ${isMatch?'tag-match':'tag-träning'}">${isMatch?'MATCH':'TRÄNING'}</span>
+      <span style="flex:1;font-size:12.5px;">${dLabel} · ${e.summary||'(utan titel)'} · ${e.dtstart.time}${e.dtend&&e.dtend.time?'–'+e.dtend.time:''}${e.location?' · '+e.location:''}</span>
+    </label>`;
+  }).join("");
+  panel.innerHTML = `<div class="card" style="margin-top:8px;">
+    <b style="font-size:12.5px;">Nya händelser hittade (${icsFoundEvents.length})</b>
+    <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Bocka ur det du inte vill lägga till. Träning/Match gissas från titeln — stämmer det inte, redigera händelsen efteråt så du kan ändra typ.</p>
+    <div>${rows}</div>
+    <div class="modal-actions" style="margin-top:10px;">
+      <button class="btn ghost" onclick="document.getElementById('ics-import-panel').style.display='none'">Stäng</button>
+      <button class="btn" onclick="importSelectedIcsEvents()">Lägg till valda</button>
+    </div>
+  </div>`;
+}
+async function importSelectedIcsEvents(){
+  const checked = Array.from(document.querySelectorAll('#ics-import-panel input[data-ics-idx]:checked'))
+    .map(el=>icsFoundEvents[+el.dataset.icsIdx]);
+  if(checked.length===0){ alert("Inget valt."); return; }
+  await guard(async ()=>{
+    checked.forEach((e,i)=>{
+      const isMatch = !/tr[äa]ning/i.test(e.summary||"");
+      DATA.sessions.push({
+        id: "ics-"+Date.now()+"-"+i, date: e.dtstart.date, start: e.dtstart.time,
+        end: (e.dtend&&e.dtend.time) || "", type: isMatch ? "Match" : "Träning",
+        place: e.location || "", week: "", pass: "", yta: "", istid: "",
+        coaches: [], attendance: [], activeGroups: [], lineup: {}, archiveOverride: null,
+        notes: e.summary || "", icsUid: e.uid || null,
+      });
+    });
+    icsFoundEvents = [];
+    document.getElementById("ics-import-panel").innerHTML = "";
+    document.getElementById("ics-import-panel").style.display = "none";
+    renderSessions(); renderToPlanCallout();
+    const ok = await saveData();
+    if(ok) alert(`${checked.length} händelse${checked.length===1?'':'r'} tillagd${checked.length===1?'':'a'}.`);
   });
 }
 
