@@ -570,6 +570,12 @@
     <div class="field"><label>Färg</label>
       <div class="checkchips" id="group-color-picker"></div>
     </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="group-is-goalie" style="width:auto;"> Detta är målvaktsgruppen
+      </label>
+      <p style="font-size:11.5px;color:var(--muted);margin:4px 0 0;">Spelare här räknas i Målvaktsstatistiken, gruppen kan inte tas bort, och den ligger alltid sist i lagindelningen oavsett i vilken ordning grupperna skapades. Bara en grupp åt gången kan vara målvaktsgruppen.</p>
+    </div>
     <div class="modal-actions">
       <button class="btn danger" id="group-delete-btn" style="display:none;" onclick="deleteGroup()">Ta bort</button>
       <button class="btn ghost" onclick="closeModal('modal-group')">Avbryt</button>
@@ -1105,6 +1111,7 @@ async function loadData(){
   migratePairHistory();
   if(!DATA.periods || DATA.periods.length===0) DATA.periods = JSON.parse(JSON.stringify(DEFAULT_PERIODS));
   migratePairHistoryCounting();
+  migrateGoalieGroupFlag();
   // Engångsmigreringar (flaggade i DATA, se importAugustLineups/mergeDuplicateGroups).
   // Transformen körs alltid i minnet (idempotent, behövs för korrekt vy), men sparningen
   // av flaggan sker EFTER att sidan redan visas och TYST — ingen "kunde inte spara"-ruta
@@ -1145,6 +1152,15 @@ function migratePairHistory(){
   if(!DATA.goalieHistory.Träning) DATA.goalieHistory.Träning = {};
   if(!DATA.goalieHistory.Match) DATA.goalieHistory.Match = {};
   if(!DATA.customExercises) DATA.customExercises = [];
+}
+// Engångsmigrering: flaggar automatiskt en befintlig grupp som heter "Målvakter" (skiftläges-
+// okänsligt) som den låsta målvaktsgruppen, om ingen grupp redan har flaggan. Körs bara en gång —
+// efter det spåras gruppen via sin flagga (isGoalieGroup), inte via namnet, så ett senare byte av
+// namn inte tappar bort låsningen.
+function migrateGoalieGroupFlag(){
+  if(DATA.groups.some(g=>g.isGoalieGroup)) return;
+  const g = DATA.groups.find(x=>(x.name||"").trim().toLowerCase()==="målvakter");
+  if(g) g.isGoalieGroup = true;
 }
 // Engångsmigrering: innan denna uppdatering räknades laguppställningar in i mixhistoriken direkt vid
 // sparning, oavsett om passet var genomfört. Nu ska bara genomförda pass räknas. Det här drar bort
@@ -2523,10 +2539,19 @@ function adjustGoalieHistory(lineup, delta, type){
   if(!DATA.goalieHistory) DATA.goalieHistory = {Träning:{}, Match:{}};
   if(!DATA.goalieHistory[bucketKey]) DATA.goalieHistory[bucketKey] = {};
   const bucket = DATA.goalieHistory[bucketKey];
-  Object.values(lineup||{}).forEach(g=>{
-    if(!g.goalie) return;
-    const next = (bucket[g.goalie]||0) + delta;
-    if(next<=0) delete bucket[g.goalie]; else bucket[g.goalie] = next;
+  // Samla alla spelare som räknas som målvakt denna gång — dels via det vanliga per-grupp
+  // Målvakt-fältet, dels som medlem av den låsta Målvaktsgruppen. En spelare kan bara ha EN
+  // tilldelning åt gången (assignedElsewhere hindrar dubbel-placering), så det finns ingen risk
+  // att någon räknas två gånger — Set används ändå som extra skydd.
+  const goalieIds = new Set();
+  Object.entries(lineup||{}).forEach(([gid, g])=>{
+    if(g.goalie) goalieIds.add(g.goalie);
+    const groupDef = DATA.groups.find(x=>x.id===gid);
+    if(groupDef && groupDef.isGoalieGroup){ (g.players||[]).forEach(pid=>goalieIds.add(pid)); }
+  });
+  goalieIds.forEach(pid=>{
+    const next = (bucket[pid]||0) + delta;
+    if(next<=0) delete bucket[pid]; else bucket[pid] = next;
   });
 }
 // Håller mixhistorik och målvaktsstatistik synkade — de delar exakt samma livscykel
@@ -2576,10 +2601,13 @@ function toggleAttendance(pid){
   renderLineupBoard();
 }
 
+function sortGroupsGoalieLast(groups){
+  return [...groups].sort((a,b)=> (a.isGoalieGroup?1:0) - (b.isGoalieGroup?1:0));
+}
 function renderActiveGroupsPicker(){
   const el = document.getElementById(scopedId("groups")); if(!el) return;
-  el.innerHTML = DATA.groups.map(g=>
-    `<span class="checkchip ${sessionDraft.activeGroups.includes(g.id)?'on':''}" style="${sessionDraft.activeGroups.includes(g.id)?`background:${g.color};border-color:${g.color};`:''}" onclick="toggleActiveGroup('${g.id}')">${g.name}</span>`).join("");
+  el.innerHTML = sortGroupsGoalieLast(DATA.groups).map(g=>
+    `<span class="checkchip ${sessionDraft.activeGroups.includes(g.id)?'on':''}" style="${sessionDraft.activeGroups.includes(g.id)?`background:${g.color};border-color:${g.color};`:''}" onclick="toggleActiveGroup('${g.id}')">${g.name}${g.isGoalieGroup?' 🥅':''}</span>`).join("");
 }
 function toggleActiveGroup(gid){
   if(sessionDraft.activeGroups.includes(gid)){
@@ -2654,7 +2682,7 @@ function renderLineupBoard(){
       }).join("");
 
   const board = document.getElementById(scopedId("board")); if(!board) return;
-  const activeGroups = DATA.groups.filter(g=>sessionDraft.activeGroups.includes(g.id));
+  const activeGroups = sortGroupsGoalieLast(DATA.groups.filter(g=>sessionDraft.activeGroups.includes(g.id)));
   if(activeGroups.length===0){ board.innerHTML = '<p style="font-size:12.5px;color:var(--muted);">Välj minst en aktiv grupp ovan.</p>'; return; }
   board.innerHTML = activeGroups.map(g=>{
     const lu = sessionDraft.lineup[g.id] || {coaches:[], players:[], goalie:""};
@@ -2667,6 +2695,10 @@ function renderLineupBoard(){
       const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
       return `<option value="${pid}" ${lu.goalie===pid?'selected':''}>${p.name}</option>`;
     }).join("");
+    // Målvaktsgruppens EGNA zon behöver ingen "Målvakt —"-väljare inom sig själv — det vore att
+    // peka ut en målvakt bland målvakterna. Den zonen visar bara medlemmarna direkt.
+    const goalieSelectHTML = g.isGoalieGroup ? "" :
+      `<select style="font-size:11px;max-width:120px;" onclick="event.stopPropagation()" onchange="event.stopPropagation();setZoneGoalie('${g.id}',this.value)">${goalieOpts}</select>`;
     const chips = lu.players.map(pid=>{
       const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
       const sel = lineupSelectedPlayer===pid ? "selected" : "";
@@ -2679,8 +2711,8 @@ function renderLineupBoard(){
         ondrop="this.classList.remove('dragover'); onZoneDrop(event,'${g.id}')"
         onclick="onZoneClick('${g.id}')">
       <div class="lineup-zone-head">
-        <b style="color:${g.color};">${g.name}</b>
-        <select style="font-size:11px;max-width:120px;" onclick="event.stopPropagation()" onchange="event.stopPropagation();setZoneGoalie('${g.id}',this.value)">${goalieOpts}</select>
+        <b style="color:${g.color};">${g.name}${g.isGoalieGroup?' 🥅':''}</b>
+        ${goalieSelectHTML}
       </div>
       <div class="checkchips" style="margin-bottom:6px;" onclick="event.stopPropagation()">${coachChips}</div>
       <div class="checkchips">${chips}</div>
@@ -2712,8 +2744,13 @@ function currentSessionType(){
   const el = document.getElementById("sess-type"); return el ? el.value : "Träning";
 }
 function suggestMix(){
-  const groups = sessionDraft.activeGroups;
-  if(groups.length===0){ alert("Välj minst en aktiv grupp först."); return; }
+  // Målvaktsgruppen ska inte få slumpmässiga utespelare tilldelade — bara de grupper som faktiskt
+  // är avsedda för utespelarfördelning blandas om.
+  const groups = sessionDraft.activeGroups.filter(gid=>{
+    const g = DATA.groups.find(x=>x.id===gid);
+    return !(g && g.isGoalieGroup);
+  });
+  if(groups.length===0){ alert("Välj minst en aktiv grupp först (utöver ev. målvaktsgruppen)."); return; }
   const pool = sessionDraft.attendance.filter(pid => !assignedElsewhere(pid));
   if(pool.length===0){ alert("Alla närvarande är redan indelade — tryck Nollställ om du vill blanda om."); return; }
   const bucketKey = currentSessionType()==="Match" ? "Match" : "Träning";
@@ -2973,7 +3010,7 @@ function renderGroups(){
   grid.innerHTML = DATA.groups.map(g=>{
     const usedIn = DATA.sessions.filter(s => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie)).length;
     return `<div class="group-card" style="background:${g.color}" onclick="openGroupModal('${g.id}')">
-      <h3>${g.name}</h3><div class="cnt">Använd i ${usedIn} träning${usedIn===1?'':'ar'}</div>
+      <h3>${g.name}${g.isGoalieGroup?' 🥅':''}</h3><div class="cnt">Använd i ${usedIn} träning${usedIn===1?'':'ar'}</div>
     </div>`;
   }).join("");
 }
@@ -2984,11 +3021,13 @@ function openGroupModal(id){
     const g = DATA.groups.find(x=>x.id===id);
     document.getElementById("group-id").value = g.id;
     document.getElementById("group-name").value = g.name;
+    document.getElementById("group-is-goalie").checked = !!g.isGoalieGroup;
     pickGroupColor(g.color);
-    document.getElementById("group-delete-btn").style.display = "inline-block";
+    document.getElementById("group-delete-btn").style.display = g.isGoalieGroup ? "none" : "inline-block";
   } else {
     document.getElementById("group-id").value = "";
     document.getElementById("group-name").value = "";
+    document.getElementById("group-is-goalie").checked = false;
     pickGroupColor(GROUP_COLOR_OPTIONS[DATA.groups.length % GROUP_COLOR_OPTIONS.length]);
     document.getElementById("group-delete-btn").style.display = "none";
   }
@@ -3007,10 +3046,14 @@ async function saveGroup(){
   const id = document.getElementById("group-id").value || ("g-"+Date.now());
   const name = document.getElementById("group-name").value.trim();
   const color = document.getElementById("group-color-picker").dataset.selected || GROUP_COLOR_OPTIONS[0];
+  const isGoalieGroup = document.getElementById("group-is-goalie").checked;
   if(!name){ alert("Ange ett namn."); return; }
   const isNew = !DATA.groups.some(x=>x.id===id);
   const idx = DATA.groups.findIndex(x=>x.id===id);
-  if(idx>=0) DATA.groups[idx] = {id,name,color}; else DATA.groups.push({id,name,color});
+  // bara en grupp åt gången kan vara flaggad — ta bort flaggan från ev. tidigare innehavare
+  if(isGoalieGroup) DATA.groups.forEach(g=>{ if(g.id!==id) delete g.isGoalieGroup; });
+  if(idx>=0) DATA.groups[idx] = Object.assign({}, DATA.groups[idx], {name, color, isGoalieGroup});
+  else DATA.groups.push({id, name, color, isGoalieGroup});
   renderGroups(); renderPlayers(); closeModal("modal-group");
   if(sessionDraft){
     if(isNew) sessionDraft.activeGroups.push(id);
@@ -3023,6 +3066,7 @@ async function saveGroup(){
 async function deleteGroup(){
   const id = document.getElementById("group-id").value;
   const g = DATA.groups.find(x=>x.id===id);
+  if(g && g.isGoalieGroup){ alert("Målvaktsgruppen kan inte tas bort. Kryssa ur \"Detta är målvaktsgruppen\" på en annan grupp för att flytta rollen dit först, om du vill ta bort den här."); return; }
   const usedIn = DATA.sessions.filter(s => s.lineup && s.lineup[id] && (s.lineup[id].players||[]).length>0).length;
   const extra = usedIn ? ` Gruppen används i ${usedIn} tränings laguppställningar; spelarna där hamnar som oindelade.` : "";
   const yes = await confirmDialog(`Ta bort ${g?g.name:"gruppen"}?${extra}`, "Ta bort grupp");
