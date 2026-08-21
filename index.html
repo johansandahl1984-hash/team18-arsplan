@@ -504,8 +504,6 @@
       <div class="field"><label>Istid (min på is, kan skilja sig från start–sluttid ovan)</label><input type="number" id="sess-istid" min="0" step="5" placeholder="t.ex. 50"></div>
     </div>
 
-    <div id="sess-pass-ref"></div>
-
     <div class="field"><label>Ansvariga tränare (för hela träningen)</label><div class="checkchips" id="sess-coaches"></div></div>
 
     <div class="field">
@@ -1710,26 +1708,6 @@ function openExerciseCat(catId){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-function renderPassCard(title, pass){
-  if(!pass) return "";
-  const moments = pass.moment.map(m=>{
-    const cid = momentSuggestLink(m.n);
-    const color = COACH_COLORS[m.c] || "#999";
-    return `<div class="moment-row">
-      <span class="moment-name">${m.n}</span>
-      <span class="moment-time">${m.t ? m.t+" min" : "—"}</span>
-      ${m.c ? `<span class="chip" style="background:${color}22;color:${color}"><span class="dot" style="background:${color}"></span>${m.c}</span>` : `<span class="chip" style="background:#eee;color:#999">ej tilldelad</span>`}
-      ${cid ? `<span class="suggest-link" onclick="openExerciseCat('${cid}')">→ förslag på övningar</span>` : ""}
-    </div>`;
-  }).join("");
-  return `<div class="pass-card">
-    <div class="pass-head">
-      <h3>${title}</h3>
-      <div class="pass-meta"><span><b>${pass.typ}</b></span><span>Yta: <b>${pass.yta}</b></span><span>Istid: <b>${pass.istid} min</b></span></div>
-    </div>
-    ${moments || '<p style="font-size:13px;color:var(--muted);">Inga detaljerade moment i ramverket ännu — fyll i själva.</p>'}
-  </div>`;
-}
 function passTemplateFor(week, passKey){
   const t = WEEK_TEMPLATES[week]; if(!t) return null;
   return t[passKey] || null;
@@ -1811,7 +1789,7 @@ function renderSessions(){
       const mv = s.lineup[g.id].goalie ? " +Mv" : "";
       return `<span class="chip" style="background:${g.color}22;color:${g.color}"><span class="dot" style="background:${g.color}"></span>${g.name} (${cnt}${mv})</span>`;
     }).join("");
-    const passLabel = s.week ? `· vecka ${s.week}${s.pass?' · '+passDisplayLabel(s.pass):''}` : "";
+    const passLabel = s.week ? `· vecka ${s.week}` : "";
     const ytaIstidLabel = (s.yta||s.istid) ? `· ${s.yta||'yta ej angiven'}${s.istid?', '+s.istid+' min istid':''}` : "";
     const archived = isArchived(s);
     return `<div class="sess-card" style="flex-direction:column;align-items:stretch;${archived?'opacity:.75;':''}">
@@ -1829,29 +1807,15 @@ function renderSessions(){
         <div class="sess-actions">
           <button class="btn ghost small" onclick="toggleInlineLineup('${s.id}')" id="lu-toggle-${s.id}">${groupsUsed.length?'Redigera laguppställning':'Lägg till laguppställning'}</button>
           ${s.type!=="Match" ? `<button class="btn ghost small" onclick="toggleBlocksPanel('${s.id}')" id="blk-toggle-${s.id}">${(s.blocks&&s.blocks.length)?`Bygg pass (${s.blocks.length})`:'Bygg pass'}</button>` : ""}
-          ${s.week ? `<button class="btn ghost small" onclick="togglePassRef('${s.id}')" id="pr-toggle-${s.id}">Säsongsreferens</button>` : ""}
           <button class="btn ghost small" onclick="editSession('${s.id}')">Redigera</button>
           <button class="btn ghost small" onclick="toggleArchiveFromCard('${s.id}')">${archived?'↩ Kommande':'✓ Genomförd'}</button>
         </div>
       </div>
-      ${s.week ? `<div id="pr-panel-${s.id}" style="display:none;">${renderPassCard((s.pass?passDisplayLabel(s.pass):"Passdetaljer")+" (referens från säsongsplanen — inspiration, ej redigerbar)", passTemplateFor(s.week, s.pass))}</div>` : ""}
       ${s.type!=="Match" ? `<div id="blocks-panel-${s.id}" style="display:none;"></div>` : ""}
       <div id="inline-lineup-container-${s.id}" style="overflow-x:auto;"></div>
     </div>`;
   }).join("");
 }
-function passDisplayLabel(passKey){
-  const map = {pass1:"Pass 1", pass2:"Pass 2", pass2special:"Pass 2", pass3:"Pass 3", pass3special:"Pass 3"};
-  return map[passKey] || "";
-}
-function togglePassRef(id){
-  const panel = document.getElementById("pr-panel-"+id);
-  const btn = document.getElementById("pr-toggle-"+id);
-  const open = panel.style.display !== "none";
-  panel.style.display = open ? "none" : "block";
-  btn.textContent = open ? "Säsongsreferens" : "Dölj referens";
-}
-
 /* =========================================================================
    BYGG PASS — tabellmotor (se nedan för fullständig implementation)
    ========================================================================= */
@@ -2476,7 +2440,6 @@ function refreshPassOptions(selectedPass){
 }
 function onSessWeekChange(){
   refreshPassOptions("");
-  renderPassRefInModal();
 }
 function onSessPassChange(){
   const week = document.getElementById("sess-week").value;
@@ -2486,16 +2449,6 @@ function onSessPassChange(){
     document.getElementById("sess-yta").value = tpl.yta || "";
     document.getElementById("sess-istid").value = tpl.istid || "";
   }
-  renderPassRefInModal();
-}
-function renderPassRefInModal(){
-  const week = document.getElementById("sess-week").value;
-  const passKey = document.getElementById("sess-pass").value;
-  const el = document.getElementById("sess-pass-ref");
-  if(!week || !passKey){ el.innerHTML = ""; return; }
-  const tpl = passTemplateFor(+week, passKey);
-  el.innerHTML = tpl ? renderPassCard(passDisplayLabel(passKey)+" — referens från säsongsplanen", tpl) :
-    '<p style="font-size:12px;color:var(--muted);">Specialhändelse utan detaljerade moment i ramverket.</p>';
 }
 function quickNewGroup(){
   openGroupModal(); // stacks on top of the session modal; saveGroup() refreshes sess-active-groups after
@@ -2752,7 +2705,7 @@ function openSessionModal(){
   document.getElementById("sess-delete-btn").style.display = "none";
   document.getElementById("sess-template-field").style.display = "block";
   document.getElementById("sess-template").value = "";
-  refreshPassOptions(""); renderPassRefInModal();
+  refreshPassOptions("");
   pendingArchiveOverride = null;
   updateArchiveButtonLabel(null);
   sessionDraft = { attendance: DATA.players.map(p=>p.id), activeGroups: DATA.groups.slice(0,4).map(g=>g.id), lineup: {} };
@@ -2777,7 +2730,7 @@ function editSession(id){
   document.getElementById("sess-istid").value = s.istid||"";
   document.getElementById("sess-notes").value = s.notes||"";
   document.getElementById("sess-template-field").style.display = "none";
-  refreshPassOptions(s.pass||""); renderPassRefInModal();
+  refreshPassOptions(s.pass||"");
   pendingArchiveOverride = null;
   updateArchiveButtonLabel(s);
   (s.coaches||[]).forEach(cid=>{ const el=document.querySelector(`#sess-coaches [data-id="${cid}"]`); if(el) el.classList.add("on"); });
