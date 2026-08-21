@@ -2750,7 +2750,15 @@ async function clearLineupAssignments(){
     sessionDraft.lineup[gid].goalie = "";
   });
   lineupSelectedPlayer = null;
-  renderLineupBoard();
+  renderLineupBoard(); // rita om redigerarens boxar direkt oavsett kontext
+  if(lineupScope){
+    // Redigerar inline på ett redan sparat pass — den sparade/delade tabellen under redigeraren
+    // (som läser s.lineup, inte arbetskopian) ska nollställas direkt också, inte bara boxarna
+    // man drar spelare i. Samma spara-väg som "Spara laguppställning"-knappen använder.
+    await saveInlineLineup(lineupScope);
+  }
+  // I redigera-händelse-modalen (lineupScope null) finns ingen separat sparad/delad förhandsvisning
+  // att hålla i synk — hela formuläret (inklusive laguppställningen) sparas när modalens Spara trycks.
 }
 function currentSessionType(){
   if(lineupScope){ const s = DATA.sessions.find(x=>x.id===lineupScope); return s ? s.type : "Träning"; }
