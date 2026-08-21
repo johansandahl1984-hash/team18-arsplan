@@ -1760,32 +1760,28 @@ function lineupTableHTML(s){
   const groupsUsed = DATA.groups.filter(g => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
   if(groupsUsed.length===0) return '<p style="font-size:12.5px;color:var(--muted);margin:8px 0 0;">Ingen laguppställning inlagd ännu.</p>';
   const matchInfoRow = (s.type==="Match" && (s.gathering || s.place)) ? `
-    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;">
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;background:#F4F6F1;padding:8px 12px;border-radius:8px;">
       ${s.gathering ? `<span><b>Samling:</b> ${s.gathering}</span>` : ""}
       ${s.place ? `<span><b>Plats:</b> ${s.place}</span>` : ""}
     </div>` : "";
-  const heads = groupsUsed.map(g=>`<th style="background:${g.color};color:#fff;border:1px solid #999;padding:6px 8px;font-family:'Oswald';">${g.name}</th>`).join("");
-  const goalieRow = groupsUsed.map(g=>{
-    const lu = s.lineup[g.id]; const gp = lu.goalie ? DATA.players.find(p=>p.id===lu.goalie) : null;
-    return `<td style="border:1px solid #999;padding:6px 8px;font-size:12.5px;">${gp?gp.name:"—"}</td>`;
-  }).join("");
-  const cols = groupsUsed.map(g=>{
+  // Staplade grupp-kort (istället för en bred sida-vid-sida-tabell) — en kolumn per grupp blir
+  // oläsligt smal när vyn krymps ner till en mobil skärmdump för delning i WhatsApp. Ett kort i
+  // taget, uppifrån och ner, nyttjar hela bredden på en portalskärmdump med betydligt större text.
+  const groupCards = groupsUsed.map(g=>{
     const lu = s.lineup[g.id];
+    const gp = lu.goalie ? DATA.players.find(p=>p.id===lu.goalie) : null;
     const names = (lu.players||[]).map(pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean);
-    return `<td style="vertical-align:top;border:1px solid #999;padding:6px 8px;min-width:110px;">
-      <div style="font-weight:700;font-size:12.5px;">${names.map(n=>`<div>${n}</div>`).join("") || "—"}</div>
-    </td>`;
-  });
-  const coachRow = groupsUsed.map(g=>{
-    const lu = s.lineup[g.id]; const coaches = lineupCoaches(lu).map(cid=>coachById(cid)).filter(Boolean);
-    return `<td style="vertical-align:top;border:1px solid #999;padding:6px 8px;font-size:12.5px;">${coaches.length?coaches.map(c=>`<div>${c.name}</div>`).join(""):"—"}</td>`;
+    const coaches = lineupCoaches(lu).map(cid=>coachById(cid)).filter(Boolean);
+    return `<div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff;">
+      <div style="background:${g.color};color:#fff;padding:8px 14px;font-family:'Oswald';font-weight:700;font-size:15px;letter-spacing:.02em;">${g.name}</div>
+      <div style="padding:10px 14px;">
+        <div style="font-size:12px;color:#777;margin-bottom:6px;"><b>Mv:</b> ${gp?gp.name:"—"}</div>
+        <div style="font-size:14px;font-weight:600;line-height:1.65;">${names.join(", ") || "—"}</div>
+        <div style="font-size:12px;color:#777;margin-top:8px;"><b>Tr:</b> ${coaches.length?coaches.map(c=>c.name).join(", "):"—"}</div>
+      </div>
+    </div>`;
   }).join("");
-  return `<table style="border-collapse:collapse;width:100%;margin-top:10px;background:#fff;">
-    <tr><td style="border:1px solid #999;background:#F4F6F1;"></td>${heads}</tr>
-    <tr><td style="border:1px solid #999;padding:6px 8px;font-weight:700;background:#F4F6F1;">Mv</td>${goalieRow}</tr>
-    <tr><td style="border:1px solid #999;padding:6px 8px;font-weight:700;background:#F4F6F1;vertical-align:top;">Spelare</td>${cols.join("")}</tr>
-    <tr><td style="border:1px solid #999;padding:6px 8px;font-weight:700;background:#F4F6F1;vertical-align:top;">Tr</td>${coachRow}</tr>
-  </table>${matchInfoRow}`;
+  return `<div style="margin-top:10px;">${matchInfoRow}<div style="display:flex;flex-direction:column;gap:10px;">${groupCards}</div></div>`;
 }
 
 function renderSessions(){
