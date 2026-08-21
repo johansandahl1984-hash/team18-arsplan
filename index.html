@@ -350,24 +350,6 @@
 
     <div class="toolbar" style="margin:12px 0 4px;"><button class="btn" onclick="openPeriodModal(null)">+ Ny period</button></div>
     <div class="period-grid" id="period-grid"></div>
-
-    <div class="note-box">
-      <b>Från ramverket:</b> Fys ska läggas till som eget pass, 1 gång/vecka (utöver ispassen). Ej schemalagt ännu — lägg in via Kalender-fliken när dag/tid är bestämd.
-    </div>
-
-    <div class="section-title">
-      <h2>Kända händelser (från laget.se, augusti 2026)</h2>
-      <span class="hint">Uppdateras manuellt — be Claude "kolla kalendern" för nästa avstämning</span>
-    </div>
-    <div class="card">
-      <ul class="event-list" id="known-events"></ul>
-    </div>
-
-    <div class="section-title"><h2>Tränarstabens initialer i mallen</h2></div>
-    <div class="card">
-      <p style="font-size:12.5px;color:var(--muted);margin:0 0 8px;">Bekräftat: <b>OF</b>=Olof, <b>JS</b>=Johan, <b>FB</b>=Frank, <b>MJ</b>=Mathias, <b>PH</b>=Patrik, <b>KN</b>=Kalle (ungdomsansvarig). Ändra i fliken <b>Laget</b> om något behöver justeras framöver.</p>
-      <div class="coach-legend" id="coach-legend-mini"></div>
-    </div>
   </section>
 
   <!-- ============ KALENDER & PLANERING ============ -->
@@ -1557,7 +1539,7 @@ async function deletePeriod(){
 }
 
 function renderKnownEvents(){
-  const list = document.getElementById("known-events");
+  const list = document.getElementById("known-events"); if(!list) return; // borttagen ur Årsöversikt, funktionen kan ändå anropas ofarligt
   const sorted = [...KNOWN_EVENTS].sort((a,b)=>a.date.localeCompare(b.date)+(a.time>b.time?1:-1));
   list.innerHTML = sorted.map(e=>{
     const d = new Date(e.date+"T00:00:00");
@@ -1650,7 +1632,7 @@ async function linkSeasonPlanToTrainings(){
 }
 
 function renderCoachLegendMini(){
-  const el = document.getElementById("coach-legend-mini");
+  const el = document.getElementById("coach-legend-mini"); if(!el) return; // borttagen ur Årsöversikt, funktionen kan ändå anropas ofarligt (spara tränare/period)
   el.innerHTML = DATA.coaches.map(c=>{
     const color = COACH_COLORS[c.initials] || "#999";
     return `<span class="chip" style="background:${color}22;color:${color}"><span class="dot" style="background:${color}"></span>${c.initials||"—"} · ${c.name}</span>`;
