@@ -1764,24 +1764,27 @@ function lineupTableHTML(s){
       ${s.gathering ? `<span><b>Samling:</b> ${s.gathering}</span>` : ""}
       ${s.place ? `<span><b>Plats:</b> ${s.place}</span>` : ""}
     </div>` : "";
-  // Staplade grupp-kort (istället för en bred sida-vid-sida-tabell) — en kolumn per grupp blir
-  // oläsligt smal när vyn krymps ner till en mobil skärmdump för delning i WhatsApp. Ett kort i
-  // taget, uppifrån och ner, nyttjar hela bredden på en portalskärmdump med betydligt större text.
+  // Två kolumner, ett grupp-kort per cell — varje spelare på egen rad (läsbart), men två grupper
+  // bredvid varandra så vyn inte blir orimligt hög med många grupper. Grid radbryter automatiskt
+  // efter varannan grupp, exakt som i mockupen (par: 1+2, 3+4, 5+6...).
   const groupCards = groupsUsed.map(g=>{
     const lu = s.lineup[g.id];
     const gp = lu.goalie ? DATA.players.find(p=>p.id===lu.goalie) : null;
     const names = (lu.players||[]).map(pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean);
     const coaches = lineupCoaches(lu).map(cid=>coachById(cid)).filter(Boolean);
-    return `<div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff;">
-      <div style="background:${g.color};color:#fff;padding:8px 14px;font-family:'Oswald';font-weight:700;font-size:15px;letter-spacing:.02em;">${g.name}</div>
-      <div style="padding:10px 14px;">
-        <div style="font-size:12px;color:#777;margin-bottom:6px;"><b>Mv:</b> ${gp?gp.name:"—"}</div>
-        <div style="font-size:14px;font-weight:600;line-height:1.65;">${names.join(", ") || "—"}</div>
-        <div style="font-size:12px;color:#777;margin-top:8px;"><b>Tr:</b> ${coaches.length?coaches.map(c=>c.name).join(", "):"—"}</div>
+    const playerRows = names.length
+      ? names.map(n=>`<div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid #eee;">${n}</div>`).join("")
+      : `<div style="font-size:12.5px;padding:4px 0;color:#999;">—</div>`;
+    return `<div style="border:1px solid #ddd;border-radius:8px;overflow:hidden;background:#fff;">
+      <div style="background:${g.color};color:#fff;padding:6px 10px;font-family:'Oswald';font-weight:700;font-size:13.5px;letter-spacing:.02em;">${g.name}</div>
+      <div style="padding:4px 10px 8px;">
+        <div style="font-size:11px;color:#777;padding:4px 0;border-bottom:1px solid #eee;"><b>Mv</b> ${gp?gp.name:"—"}</div>
+        ${playerRows}
+        <div style="font-size:11px;color:#777;padding:5px 0 0;"><b>Tr</b> ${coaches.length?coaches.map(c=>c.name).join(", "):"—"}</div>
       </div>
     </div>`;
   }).join("");
-  return `<div style="margin-top:10px;">${matchInfoRow}<div style="display:flex;flex-direction:column;gap:10px;">${groupCards}</div></div>`;
+  return `<div style="margin-top:10px;">${matchInfoRow}<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;">${groupCards}</div></div>`;
 }
 
 function renderSessions(){
