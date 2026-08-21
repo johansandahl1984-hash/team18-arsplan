@@ -2389,9 +2389,15 @@ function toggleInlineLineup(sid){
   if(isOpen) closeInlineLineup(sid); else openInlineLineup(sid);
 }
 function openInlineLineup(sid){
-  // bara en inline-redigerare öppen åt gången
+  // bara en inline-redigerare öppen åt gången — stäng ev. andra öppna, och återställ DERAS
+  // knapptext till korrekt läge (annars blir knappen kvar på "Dölj laguppställning" trots
+  // att panelen faktiskt stängdes, om man hoppar direkt från en öppen laguppställning till en annan)
   document.querySelectorAll('[id^="inline-lineup-container-"]').forEach(el=>{
-    if(el.id !== "inline-lineup-container-"+sid) el.innerHTML = "";
+    if(el.id !== "inline-lineup-container-"+sid && el.innerHTML.trim() !== ""){
+      const otherSid = el.id.replace("inline-lineup-container-", "");
+      el.innerHTML = "";
+      resetLineupToggleLabel(otherSid);
+    }
   });
   const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
   lineupScope = sid;
@@ -2409,14 +2415,17 @@ function openInlineLineup(sid){
   const btn = document.getElementById("lu-toggle-"+sid);
   if(btn) btn.textContent = "Dölj laguppställning";
 }
-function closeInlineLineup(sid){
-  const container = document.getElementById("inline-lineup-container-"+sid);
-  if(container) container.innerHTML = "";
-  if(lineupScope===sid) lineupScope = null;
+function resetLineupToggleLabel(sid){
   const s = DATA.sessions.find(x=>x.id===sid);
   const used = s && DATA.groups.filter(g=>s.lineup&&s.lineup[g.id]&&((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
   const btn = document.getElementById("lu-toggle-"+sid);
   if(btn) btn.textContent = (used&&used.length) ? "Redigera laguppställning" : "Lägg till laguppställning";
+}
+function closeInlineLineup(sid){
+  const container = document.getElementById("inline-lineup-container-"+sid);
+  if(container) container.innerHTML = "";
+  if(lineupScope===sid) lineupScope = null;
+  resetLineupToggleLabel(sid);
 }
 function refreshSessionCardSummary(sid){
   const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
