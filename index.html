@@ -2688,8 +2688,13 @@ function onChipClick(ev, pid){
 function onZoneClick(gid){
   if(lineupSelectedPlayer) movePlayerToGroup(lineupSelectedPlayer, gid);
 }
-function clearLineupAssignments(){
-  Object.keys(sessionDraft.lineup).forEach(gid=>{ sessionDraft.lineup[gid].players = []; });
+async function clearLineupAssignments(){
+  const yes = await confirmDialog("Nollställ alla grupper — alla spelare (och målvakter) flyttas tillbaka till \"Ej indelade\"?", "Nollställ");
+  if(!yes) return;
+  Object.keys(sessionDraft.lineup).forEach(gid=>{
+    sessionDraft.lineup[gid].players = [];
+    sessionDraft.lineup[gid].goalie = "";
+  });
   lineupSelectedPlayer = null;
   renderLineupBoard();
 }
