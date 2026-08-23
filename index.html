@@ -25,6 +25,13 @@
     --grey:#8A8F86;
   }
   *{box-sizing:border-box;}
+  select, input, textarea{min-width:0; max-width:100%;}
+  /* Skyddsnät mot samma buggmönster som orsakade sidledsscroll i Bygg-pass mallval: ett
+     formulärelement med lång textinnehåll (t.ex. en lång <option>) ska aldrig kunna tvinga sig
+     bredare än sin container. Element med egen explicit bredd (style="width:...") påverkas inte. */
+  html{overflow-x:hidden; max-width:100vw;}
+  /* iOS Safari kan låta sidan scrolla i sidled ändå om bara <body> har overflow-x:hidden —
+     spärren behöver sitta på BÅDA <html> och <body> för att fungera pålitligt där. */
   body{
     margin:0; background:var(--ice); color:var(--ink);
     font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
