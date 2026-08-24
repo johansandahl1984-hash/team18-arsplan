@@ -196,6 +196,11 @@
 
   .ex-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
   .ex-card{border:1px solid var(--line); border-radius:14px; background:#fff; overflow:hidden;}
+  .diag-toolbar{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .diag-tool{border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; background:#fff; cursor:pointer; display:flex; align-items:center; gap:5px;}
+  .diag-tool.active{background:var(--pine); color:#fff; border-color:var(--pine);}
+  .diag-canvas{width:100%; height:auto; border:1px solid var(--line); border-radius:10px; background:var(--ice); cursor:crosshair; touch-action:none;}
+  .diag-thumb{width:100%; max-width:260px; border:1px solid var(--line); border-radius:8px; background:var(--ice); display:block; margin-top:6px;}
   .ex-head{padding:14px 16px 10px; cursor:pointer;}
   .ex-cat{display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:999px; margin-bottom:7px; color:#fff;}
   .ex-head h4{font-size:15.5px; color:var(--pine-dark);}
@@ -596,6 +601,29 @@
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('modal-coach')">Avbryt</button>
       <button class="btn" onclick="saveCoach()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-diagram">
+  <div class="modal" style="max-width:640px;">
+    <button class="close-x" onclick="closeDiagramEditor()">✕</button>
+    <h3>Rita diagram — <span id="diagram-ex-name"></span></h3>
+    <p style="font-size:11.5px;color:var(--muted);margin:0 0 10px;">Klicka på ett verktyg, sedan på isen för att placera. Dra ett placerat objekt för att flytta det. Pil: klicka start, sedan slutpunkt.</p>
+    <div class="diag-toolbar">
+      <button type="button" class="diag-tool" data-tool="player" onclick="setDiagramTool('player')"><span style="width:12px;height:12px;border-radius:50%;background:#2E6C9E;display:inline-block;"></span>Spelare</button>
+      <button type="button" class="diag-tool" data-tool="opponent" onclick="setDiagramTool('opponent')"><span style="width:12px;height:12px;border-radius:50%;background:#C24A3A;display:inline-block;"></span>Motst.</button>
+      <button type="button" class="diag-tool" data-tool="cone" onclick="setDiagramTool('cone')">🔺 Kon</button>
+      <button type="button" class="diag-tool" data-tool="puck" onclick="setDiagramTool('puck')">⚫ Puck/boll</button>
+      <button type="button" class="diag-tool" data-tool="arrow" onclick="setDiagramTool('arrow')">↗ Pil</button>
+      <button type="button" class="diag-tool" data-tool="erase" onclick="setDiagramTool('erase')">🗑 Radera</button>
+      <div style="flex:1;"></div>
+      <button type="button" class="diag-tool" onclick="clearDiagram()">Rensa allt</button>
+    </div>
+    <svg id="diagram-svg" viewBox="0 0 600 340" class="diag-canvas"></svg>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="btn ghost" onclick="closeDiagramEditor()">Avbryt</button>
+      <button class="btn" onclick="saveDiagram()">Spara diagram</button>
     </div>
   </div>
 </div>
@@ -1061,6 +1089,7 @@ let DATA = {
   pairHistory: {Träning:{}, Match:{}}, // per typ: "playerIdA|playerIdB" (sorted) -> antal gånger tillsammans i samma grupp
   goalieHistory: {Träning:{}, Match:{}}, // per typ: playerId -> antal gånger som målvakt (samma räkneregler som pairHistory: bara genomförda pass)
   customExercises: [], // egna, lagspecifika övningar — samma form som EXERCISES-posterna, listas ihop med dem via allExercises()
+  exerciseDiagrams: {}, // ritade diagram per övnings-id (bygga/inbyggd): {"ex-id": [{type,x,y,x2,y2}, ...]}
   icsCalendarUrl: "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics", // lagets kalenderflöde för "Hämta nya händelser"
   templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
   periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
@@ -1152,6 +1181,7 @@ function migratePairHistory(){
   if(!DATA.goalieHistory.Träning) DATA.goalieHistory.Träning = {};
   if(!DATA.goalieHistory.Match) DATA.goalieHistory.Match = {};
   if(!DATA.customExercises) DATA.customExercises = [];
+  if(!DATA.exerciseDiagrams) DATA.exerciseDiagrams = {};
   if(!DATA.icsCalendarUrl) DATA.icsCalendarUrl = "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics";
 }
 // Engångsmigrering: flaggar automatiskt en befintlig grupp som heter "Målvakter" (skiftläges-
@@ -3195,6 +3225,11 @@ function renderExercises(){
           <div class="var-box"><b>Svårare</b>${e.svar}</div>
         </div>
         ${e.link ? `<a class="ex-link" href="${e.link}" target="_blank" rel="noopener">Se referens / video ↗</a>` : ""}
+        <div style="margin-top:10px;">
+          <h5>Diagram</h5>
+          ${(DATA.exerciseDiagrams||{})[e.id] ? diagramThumbSVG(DATA.exerciseDiagrams[e.id]) : ""}
+          <button class="btn ghost small" style="margin-top:6px;" onclick="event.stopPropagation();openDiagramEditor('${e.id}')">${(DATA.exerciseDiagrams||{})[e.id] ? "🖊 Redigera diagram" : "🖊 Rita diagram"}</button>
+        </div>
         ${isCustom ? `<div style="margin-top:10px;display:flex;gap:6px;">
           <button class="btn ghost small" onclick="event.stopPropagation();openExerciseModal('${e.id}')">Redigera</button>
           <button class="btn ghost small" onclick="event.stopPropagation();deleteCustomExercise('${e.id}')">Ta bort</button>
@@ -3281,6 +3316,135 @@ async function deleteCustomExercise(id){
     renderExercises(); renderCategoryFilter(); renderSessions();
     await saveData();
   });
+}
+
+/* =========================================================================
+   ÖVNINGSDIAGRAM — enkel 2D-ritare (spelare/motståndare/kon/puck/pil) kopplad
+   till valfri övning (inbyggd eller egen), lagras i DATA.exerciseDiagrams
+   ========================================================================= */
+const RINK_BACKGROUND_SVG = `
+  <rect x="10" y="10" width="580" height="320" rx="60" fill="none" stroke="#8A8F86" stroke-width="2"></rect>
+  <line x1="300" y1="10" x2="300" y2="330" stroke="#8A8F86" stroke-width="2"></line>
+  <circle cx="300" cy="170" r="35" fill="none" stroke="#8A8F86" stroke-width="1.5"></circle>
+`;
+const DIAGRAM_TOOL_HINTS = {
+  player: "Klicka på planen för att placera en spelare.",
+  opponent: "Klicka på planen för att placera en motståndare.",
+  cone: "Klicka på planen för att placera en kon.",
+  puck: "Klicka på planen för att placera puck/boll.",
+  arrow: "Klicka en startpunkt, sedan en slutpunkt för att rita en pil.",
+  erase: "Klicka på ett objekt för att ta bort det.",
+};
+let diagramExId = null;
+let diagramObjects = [];
+let diagramIdCounter = 0;
+let diagramTool = null;
+let diagramArrowStart = null;
+let diagramDragging = null;
+let diagramListenersBound = false;
+
+function diagramSvgPoint(evt){
+  const svg = document.getElementById("diagram-svg");
+  const rect = svg.getBoundingClientRect();
+  const scaleX = 600 / rect.width, scaleY = 340 / rect.height;
+  return { x: (evt.clientX - rect.left) * scaleX, y: (evt.clientY - rect.top) * scaleY };
+}
+function setDiagramTool(tool){
+  diagramTool = tool;
+  diagramArrowStart = null;
+  document.querySelectorAll(".diag-tool[data-tool]").forEach(b=>b.classList.toggle("active", b.dataset.tool===tool));
+}
+function openDiagramEditor(exId){
+  const e = exerciseById(exId); if(!e) return;
+  diagramExId = exId;
+  diagramObjects = JSON.parse(JSON.stringify((DATA.exerciseDiagrams||{})[exId] || []));
+  diagramIdCounter = diagramObjects.length ? Math.max(...diagramObjects.map(o=>o.id||0))+1 : 0;
+  diagramTool = null; diagramArrowStart = null; diagramDragging = null;
+  document.getElementById("diagram-ex-name").textContent = e.namn;
+  document.querySelectorAll(".diag-tool[data-tool]").forEach(b=>b.classList.remove("active"));
+  const svg = document.getElementById("diagram-svg");
+  svg.innerHTML = `<defs><marker id="arrowhead-d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0C447C"></path></marker></defs>${RINK_BACKGROUND_SVG}<g id="diagram-objects-layer"></g>`;
+  if(!diagramListenersBound){
+    svg.addEventListener("pointerdown", onDiagramCanvasPointerDown);
+    document.addEventListener("pointermove", onDiagramPointerMove);
+    document.addEventListener("pointerup", onDiagramPointerUp);
+    diagramListenersBound = true;
+  }
+  renderDiagramObjects();
+  openModal("modal-diagram");
+}
+function closeDiagramEditor(){ closeModal("modal-diagram"); diagramExId = null; }
+function clearDiagram(){ diagramObjects = []; diagramArrowStart = null; renderDiagramObjects(); }
+function onDiagramCanvasPointerDown(evt){
+  if(evt.target.closest(".diag-obj")) return; // hanteras av objektets egen pointerdown
+  if(!diagramTool || diagramTool==="erase") return;
+  const p = diagramSvgPoint(evt);
+  if(diagramTool==="arrow"){
+    if(!diagramArrowStart){ diagramArrowStart = p; }
+    else {
+      diagramObjects.push({id:diagramIdCounter++, type:"arrow", x:diagramArrowStart.x, y:diagramArrowStart.y, x2:p.x, y2:p.y});
+      diagramArrowStart = null;
+      renderDiagramObjects();
+    }
+    return;
+  }
+  diagramObjects.push({id:diagramIdCounter++, type:diagramTool, x:p.x, y:p.y});
+  renderDiagramObjects();
+}
+function onDiagramObjectPointerDown(obj, evt){
+  evt.stopPropagation();
+  if(diagramTool==="erase"){
+    diagramObjects = diagramObjects.filter(o=>o.id!==obj.id);
+    renderDiagramObjects();
+    return;
+  }
+  diagramDragging = obj;
+}
+function onDiagramPointerMove(evt){
+  if(!diagramDragging) return;
+  const p = diagramSvgPoint(evt);
+  diagramDragging.x = p.x; diagramDragging.y = p.y;
+  renderDiagramObjects();
+}
+function onDiagramPointerUp(){ diagramDragging = null; }
+function diagramObjectMarkup(o, arrowMarkerId){
+  if(o.type==="player" || o.type==="opponent"){
+    return `<circle cx="${o.x}" cy="${o.y}" r="11" fill="${o.type==='player'?'#2E6C9E':'#C24A3A'}" class="diag-obj" data-id="${o.id}"></circle>`;
+  }
+  if(o.type==="cone"){
+    return `<polygon points="${o.x-9},${o.y+9} ${o.x+9},${o.y+9} ${o.x},${o.y-11}" fill="#EF9F27" class="diag-obj" data-id="${o.id}"></polygon>`;
+  }
+  if(o.type==="puck"){
+    return `<circle cx="${o.x}" cy="${o.y}" r="6" fill="#2C2C2A" class="diag-obj" data-id="${o.id}"></circle>`;
+  }
+  if(o.type==="arrow"){
+    return `<line x1="${o.x}" y1="${o.y}" x2="${o.x2}" y2="${o.y2}" stroke="#0C447C" stroke-width="2.5" marker-end="url(#${arrowMarkerId})" class="diag-obj" data-id="${o.id}"></line>`;
+  }
+  return "";
+}
+function renderDiagramObjects(){
+  const layer = document.getElementById("diagram-objects-layer"); if(!layer) return;
+  layer.innerHTML = diagramObjects.map(o=>diagramObjectMarkup(o,"arrowhead-d")).join("");
+  layer.querySelectorAll(".diag-obj").forEach(el=>{
+    const id = +el.dataset.id;
+    const obj = diagramObjects.find(o=>o.id===id);
+    el.style.cursor = "grab";
+    el.addEventListener("pointerdown", ev=>onDiagramObjectPointerDown(obj, ev));
+  });
+}
+async function saveDiagram(){
+  if(!diagramExId) return;
+  if(!DATA.exerciseDiagrams) DATA.exerciseDiagrams = {};
+  if(diagramObjects.length===0) delete DATA.exerciseDiagrams[diagramExId];
+  else DATA.exerciseDiagrams[diagramExId] = diagramObjects;
+  closeDiagramEditor();
+  renderExercises();
+  await saveData();
+}
+function diagramThumbSVG(objects){
+  const arrowId = "ah-"+Math.random().toString(36).slice(2,8);
+  const objs = objects.map(o=>diagramObjectMarkup(o, arrowId)).join("");
+  return `<svg viewBox="0 0 600 340" class="diag-thumb"><defs><marker id="${arrowId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0C447C"></path></marker></defs>${RINK_BACKGROUND_SVG}${objs}</svg>`;
 }
 
 /* ---- Laget: grupper ---- */
