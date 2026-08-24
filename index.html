@@ -1961,7 +1961,7 @@ function lineupTableHTML(s){
   const groupCards = groupsUsed.map(g=>{
     const lu = s.lineup[g.id];
     const gp = lu.goalie ? DATA.players.find(p=>p.id===lu.goalie) : null;
-    const names = (lu.players||[]).map(pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean);
+    const names = (lu.players||[]).map(pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean).sort((a,b)=>a.localeCompare(b,"sv"));
     const coaches = lineupCoaches(lu).map(cid=>coachById(cid)).filter(Boolean);
     const playerRows = names.length
       ? names.map(n=>`<div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid #eee;">${n}</div>`).join("")
