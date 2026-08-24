@@ -3323,9 +3323,30 @@ async function deleteCustomExercise(id){
    till valfri övning (inbyggd eller egen), lagras i DATA.exerciseDiagrams
    ========================================================================= */
 const RINK_BACKGROUND_SVG = `
-  <rect x="10" y="10" width="580" height="320" rx="60" fill="none" stroke="#8A8F86" stroke-width="2"></rect>
-  <line x1="300" y1="10" x2="300" y2="330" stroke="#8A8F86" stroke-width="2"></line>
-  <circle cx="300" cy="170" r="35" fill="none" stroke="#8A8F86" stroke-width="1.5"></circle>
+  <rect x="10" y="10" width="580" height="320" rx="58" fill="none" stroke="#8A8F86" stroke-width="2.5"></rect>
+  <line x1="215" y1="10" x2="215" y2="330" stroke="#7FA8D4" stroke-width="3"></line>
+  <line x1="385" y1="10" x2="385" y2="330" stroke="#7FA8D4" stroke-width="3"></line>
+  <line x1="300" y1="10" x2="300" y2="330" stroke="#D08B8B" stroke-width="3"></line>
+  <line x1="58" y1="28" x2="58" y2="312" stroke="#D08B8B" stroke-width="1.5"></line>
+  <line x1="542" y1="28" x2="542" y2="312" stroke="#D08B8B" stroke-width="1.5"></line>
+  <circle cx="300" cy="170" r="42" fill="none" stroke="#7FA8D4" stroke-width="1.5"></circle>
+  <circle cx="300" cy="170" r="3.5" fill="#D08B8B"></circle>
+  <circle cx="130" cy="92" r="36" fill="none" stroke="#D08B8B" stroke-width="1.5"></circle>
+  <circle cx="130" cy="92" r="3" fill="#D08B8B"></circle>
+  <circle cx="130" cy="248" r="36" fill="none" stroke="#D08B8B" stroke-width="1.5"></circle>
+  <circle cx="130" cy="248" r="3" fill="#D08B8B"></circle>
+  <circle cx="470" cy="92" r="36" fill="none" stroke="#D08B8B" stroke-width="1.5"></circle>
+  <circle cx="470" cy="92" r="3" fill="#D08B8B"></circle>
+  <circle cx="470" cy="248" r="36" fill="none" stroke="#D08B8B" stroke-width="1.5"></circle>
+  <circle cx="470" cy="248" r="3" fill="#D08B8B"></circle>
+  <circle cx="248" cy="92" r="3" fill="#D08B8B"></circle>
+  <circle cx="248" cy="248" r="3" fill="#D08B8B"></circle>
+  <circle cx="352" cy="92" r="3" fill="#D08B8B"></circle>
+  <circle cx="352" cy="248" r="3" fill="#D08B8B"></circle>
+  <path d="M58,150 A22,22 0 0,1 58,190" fill="none" stroke="#7FA8D4" stroke-width="1.5"></path>
+  <path d="M542,150 A22,22 0 0,0 542,190" fill="none" stroke="#7FA8D4" stroke-width="1.5"></path>
+  <rect x="47" y="157" width="11" height="26" fill="none" stroke="#8A8F86" stroke-width="1.5"></rect>
+  <rect x="542" y="157" width="11" height="26" fill="none" stroke="#8A8F86" stroke-width="1.5"></rect>
 `;
 const DIAGRAM_TOOL_HINTS = {
   player: "Klicka på planen för att placera en spelare.",
