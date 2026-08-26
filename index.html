@@ -3668,6 +3668,30 @@ function tourAddMinutes(hhmm, mins){
   const hh = Math.floor((total%1440)/60), mm = total%60;
   return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");
 }
+function tourTimeToMinutes(hhmm){ const [h,m] = hhmm.split(":").map(Number); return h*60+m; }
+// Klipper bort omgångar (och allt efter dem) som inte hinner AVSLUTAS innan turneringens
+// sluttid. Körs varje gång schemats tidsåtgång kan ha ändrats (pauslängd redigerad, block
+// flyttat/tillagt) — eftersom paus-block läggs till EFTER att omgångarna redan genererats
+// utifrån den råa tidsramen, kan en tillagd/förlängd paus knuffa senare matcher förbi
+// sluttiden. En match som inte hinner både börja OCH sluta innan sluttiden ska inte finnas
+// kvar i schemat alls.
+function trimScheduleToEndTime(t){
+  if(!t.endTime) return; // äldre turnering utan sluttidsfält — inget att klippa mot
+  const endMin = tourTimeToMinutes(t.endTime);
+  let clockMin = tourTimeToMinutes(t.startTime);
+  let cutIndex = -1;
+  for(let i=0; i<t.schedule.length; i++){
+    const row = t.schedule[i];
+    if(row.type==="matches"){
+      const matchEndMin = clockMin + t.matchMinutes;
+      if(matchEndMin > endMin){ cutIndex = i; break; }
+      clockMin = matchEndMin;
+    } else {
+      clockMin += (row.minutes||0);
+    }
+  }
+  if(cutIndex > -1) t.schedule = t.schedule.slice(0, cutIndex);
+}
 
 let tourListDraft = { courts:[], clubs:[] }; // arbetskopia medan modalen är öppen
 function openTournamentModal(id){
@@ -3752,6 +3776,7 @@ async function saveTournament(){
   }
   const schedule = generateTournamentSchedule(teams, courts.length, teamClub, numRounds);
   const t = { id: id || ("tour-"+Date.now()), name, date, startTime, endTime, matchMinutes, courts, clubs, teams, teamClub, schedule };
+  trimScheduleToEndTime(t); // defensivt säkerhetsnät — genereringen ska redan passa exakt
   if(existing){ Object.assign(existing, t); }
   else { DATA.tournaments.push(t); }
   closeModal("modal-tournament");
@@ -3784,6 +3809,7 @@ async function regenerateTournament(tourId){
 function addBreakBlock(tourId){
   const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
   t.schedule.push({type:"break", label:"Paus", minutes:15});
+  trimScheduleToEndTime(t);
   renderTournaments(); saveData();
 }
 function removeScheduleRow(tourId, rowIndex){
@@ -3794,7 +3820,13 @@ function removeScheduleRow(tourId, rowIndex){
 function updateBreakField(tourId, rowIndex, field, value){
   const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
   t.schedule[rowIndex][field] = field==="minutes" ? (+value||0) : value;
-  saveData(); // ingen omritning — samma resonemang som andra fritext/tidsfält i appen (undviker fokusförlust)
+  // Trimning + omritning behövs här (till skillnad från t.ex. Bygg-pass fritextfält) eftersom en
+  // ändrad pauslängd kan knuffa senare matcher förbi sluttiden och de då ska försvinna helt.
+  // onchange (inte oninput) betyder att fältet redan lämnats/committats — ingen risk för
+  // fokusförlust mitt i skrivandet av en omritning här.
+  if(field==="minutes") trimScheduleToEndTime(t);
+  renderTournaments();
+  saveData();
 }
 /* ---- Flytta ett pausblock mellan omgångar via Pointer Events-drag (samma mönster som
    matchbytet och lagindelningen) — ett grepp-handtag (⠿) startar draget, ett spöke följer
@@ -3860,6 +3892,7 @@ function moveScheduleRow(tourId, fromIndex, targetIndex, insertAfter){
   let insertAt = targetIndex > fromIndex ? targetIndex-1 : targetIndex;
   if(insertAfter) insertAt += 1;
   t.schedule.splice(insertAt, 0, block);
+  trimScheduleToEndTime(t);
   renderTournaments(); saveData();
 }
 
