@@ -271,7 +271,8 @@
   .lineup-zone-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px;}
   .lineup-zone-head b{font-family:'Oswald'; font-size:13px;}
   .lineup-zone select{font-size:11.5px; padding:4px 6px; max-width:100px;}
-  .lineup-chip{cursor:grab;}
+  .lineup-chip{cursor:grab; touch-action:none;}
+  .lineup-chip-ghost{box-shadow:0 6px 16px rgba(0,0,0,.25); transform:scale(1.05);}
   .lineup-chip:active{cursor:grabbing;}
 
   .blk-table{border-collapse:collapse; width:100%; min-width:560px;}
@@ -529,7 +530,7 @@
         </div>
       </div>
       <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Gråa/streckade = inte med idag, tryck för att lägga till. Mörka = med och redo att fördelas — dra till en grupp (håll in och dra på mobil), eller tryck på spelaren och sedan på gruppen. Liten × tar bort någon som inte kommer.</p>
-      <div class="lineup-pool" id="lineup-pool" ondragover="event.preventDefault()" ondrop="onZoneDrop(event, null)" onclick="onZoneClick(null)">
+      <div class="lineup-pool" id="lineup-pool" onclick="onZoneClick(null)">
         <div class="checkchips" id="lineup-pool-chips"></div>
       </div>
       <div class="lineup-board" id="lineup-board"></div>
@@ -2677,7 +2678,7 @@ function inlineLineupShellHTML(s){
         </div>
       </div>
       <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Gråa/streckade = inte med, tryck för att lägga till. Dra en spelare, eller tryck på spelaren och sedan på gruppen. Liten × tar bort någon.</p>
-      <div class="lineup-pool" id="il-pool-${sid}" ondragover="event.preventDefault()" ondrop="onZoneDrop(event, null)" onclick="onZoneClick(null)">
+      <div class="lineup-pool" id="il-pool-${sid}" onclick="onZoneClick(null)">
         <div class="checkchips" id="il-pool-chips-${sid}"></div>
       </div>
       <div class="lineup-board" id="il-board-${sid}"></div>
@@ -2975,8 +2976,8 @@ function renderLineupBoard(){
           return `<span class="checkchip muted" data-pid="${pid}" onclick="toggleAttendance('${pid}')">${p.name}</span>`;
         }
         const sel = lineupSelectedPlayer===pid ? "selected" : "";
-        return `<span class="checkchip lineup-chip ${sel}" draggable="true" data-pid="${pid}"
-          ondragstart="onChipDragStart(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}<span class="chip-remove" onclick="event.stopPropagation();toggleAttendance('${pid}')" title="Inte med idag">×</span></span>`;
+        return `<span class="checkchip lineup-chip ${sel}" data-pid="${pid}"
+          onpointerdown="onChipPointerDown(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}<span class="chip-remove" onclick="event.stopPropagation();toggleAttendance('${pid}')" title="Inte med idag">×</span></span>`;
       }).join("");
 
   const board = document.getElementById(scopedId("board")); if(!board) return;
@@ -3000,13 +3001,10 @@ function renderLineupBoard(){
     const chips = lu.players.map(pid=>{
       const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
       const sel = lineupSelectedPlayer===pid ? "selected" : "";
-      return `<span class="checkchip lineup-chip ${sel}" draggable="true" data-pid="${pid}"
-        ondragstart="onChipDragStart(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}</span>`;
+      return `<span class="checkchip lineup-chip ${sel}" data-pid="${pid}"
+        onpointerdown="onChipPointerDown(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}</span>`;
     }).join("") || '<span style="font-size:11.5px;color:var(--muted);">Tomt — dra hit spelare</span>';
-    return `<div class="lineup-zone" style="--lz-color:${g.color};--lz-color22:${g.color}22;"
-        ondragover="event.preventDefault(); this.classList.add('dragover')"
-        ondragleave="this.classList.remove('dragover')"
-        ondrop="this.classList.remove('dragover'); onZoneDrop(event,'${g.id}')"
+    return `<div class="lineup-zone" data-gid="${g.id}" style="--lz-color:${g.color};--lz-color22:${g.color}22;"
         onclick="onZoneClick('${g.id}')">
       <div class="lineup-zone-head">
         <b style="color:${g.color};">${g.name}${g.isGoalieGroup?' 🥅':''}</b>
@@ -3021,10 +3019,70 @@ function renderLineupBoard(){
     </div>`;
   }).join("");
 }
-function onChipDragStart(ev, pid){ ev.dataTransfer.setData("text/plain", pid); }
-function onZoneDrop(ev, gid){ ev.preventDefault(); const pid = ev.dataTransfer.getData("text/plain"); if(pid) movePlayerToGroup(pid, gid); }
+/* ---- Lagindelning: dra-och-släpp via Pointer Events ----
+   Webbläsarens inbyggda HTML5-drag (draggable/ondragstart/dataTransfer) saknar touch-stöd på
+   iOS Safari helt och är opålitligt på Android — det gjorde att draget kändes pilligt/ryckigt
+   på mobil, med "tryck-välj-tryck-mål" som enda pålitliga väg. Pointer Events ger en enda
+   kodväg som fungerar identiskt för mus, touch och penna, med ett flytande "spöke" som följer
+   fingret/muspekaren och markerar rätt zon medan man drar. Tryck-välj-tryck-mål finns kvar som
+   fallback (onChipClick/onZoneClick nedan, orörda) — ett kort tryck utan rörelse fungerar precis
+   som förut. */
+let lineupDragState = null;
+const LINEUP_DRAG_THRESHOLD = 6; // px rörelse innan ett tryck räknas som ett drag istället för ett klick
+
+function onChipPointerDown(ev, pid){
+  if(ev.pointerType==="mouse" && ev.button!==0) return; // bara vänsterklick med mus
+  lineupDragState = { pid, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null, origChipEl:ev.currentTarget };
+  document.addEventListener("pointermove", onLineupDragPointerMove);
+  document.addEventListener("pointerup", onLineupDragPointerUp, {once:true});
+}
+function onLineupDragPointerMove(ev){
+  if(!lineupDragState) return;
+  const dx = ev.clientX - lineupDragState.startX, dy = ev.clientY - lineupDragState.startY;
+  if(!lineupDragState.moved){
+    if(Math.hypot(dx,dy) < LINEUP_DRAG_THRESHOLD) return;
+    lineupDragState.moved = true;
+    const orig = lineupDragState.origChipEl;
+    const ghost = orig.cloneNode(true);
+    ghost.classList.add("lineup-chip-ghost");
+    ghost.style.position = "fixed";
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = "500";
+    ghost.style.width = orig.offsetWidth+"px";
+    document.body.appendChild(ghost);
+    lineupDragState.ghostEl = ghost;
+    orig.style.opacity = "0.35";
+  }
+  const ghost = lineupDragState.ghostEl;
+  ghost.style.left = (ev.clientX - ghost.offsetWidth/2) + "px";
+  ghost.style.top = (ev.clientY - ghost.offsetHeight/2) + "px";
+  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
+  ghost.style.display = "none"; // dölj tillfälligt så elementFromPoint inte träffar spöket självt
+  const under = document.elementFromPoint(ev.clientX, ev.clientY);
+  ghost.style.display = "";
+  const zone = under && under.closest(".lineup-zone, .lineup-pool");
+  if(zone) zone.classList.add("dragover");
+}
+function onLineupDragPointerUp(ev){
+  document.removeEventListener("pointermove", onLineupDragPointerMove);
+  if(!lineupDragState) return;
+  const state = lineupDragState;
+  lineupDragState = null;
+  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
+  if(state.ghostEl) state.ghostEl.remove();
+  if(state.origChipEl) state.origChipEl.style.opacity = "";
+  if(!state.moved) return; // bara ett tryck utan rörelse — låt click-eventet sköta tryck-välj som vanligt
+  if(state.origChipEl) state.origChipEl.dataset.dragHandled = "1"; // förhindra att click-eventet EFTER detta även växlar val
+  const under = document.elementFromPoint(ev.clientX, ev.clientY);
+  const zone = under && under.closest(".lineup-zone, .lineup-pool");
+  if(!zone) return; // släppt utanför en giltig zon — spelaren ligger kvar där den var
+  const targetGid = zone.classList.contains("lineup-pool") ? null : zone.dataset.gid;
+  movePlayerToGroup(state.pid, targetGid);
+}
 function onChipClick(ev, pid){
   ev.stopPropagation();
+  const el = ev.currentTarget;
+  if(el && el.dataset.dragHandled){ delete el.dataset.dragHandled; return; } // ett drag just avslutades på detta chip, inte ett nytt klick
   if(lineupSelectedPlayer===pid){ lineupSelectedPlayer=null; renderLineupBoard(); return; }
   lineupSelectedPlayer = pid; renderLineupBoard();
 }
