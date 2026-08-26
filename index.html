@@ -3892,6 +3892,7 @@ function renderTournaments(){
         <table class="tour-grid">
           <tr><th>Starttid</th>${t.courts.map(c=>`<th>${c}</th>`).join("")}</tr>
           ${rowsHTML}
+          <tr class="tour-break-row"><td colspan="${t.courts.length+1}">Sluttid ${clock}</td></tr>
         </table>
       </div>
       <h4 style="margin:16px 0 4px;font-size:13px;">Sammanställning</h4>
