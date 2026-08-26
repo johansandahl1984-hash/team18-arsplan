@@ -2001,6 +2001,7 @@ function renderSessions(){
     const d = new Date(s.date+"T00:00:00");
     const dayNum = d.getDate();
     const monStr = d.toLocaleDateString("sv-SE",{month:"short"}).replace(".","");
+    const weekdayStr = d.toLocaleDateString("sv-SE",{weekday:"short"}).replace(".","");
     const weekNum = isoWeekNumber(d); // beräknas alltid från datumet, oavsett om s.week är satt manuellt — visas då konsekvent för ALLA pass, inklusive de hämtade via kalenderimport
     const coachChips = (s.coaches||[]).map(cid=>{
       const c = coachById(cid); if(!c) return "";
@@ -2018,7 +2019,7 @@ function renderSessions(){
     const archived = isArchived(s);
     return `<div class="sess-card" style="flex-direction:column;align-items:stretch;${archived?'opacity:.75;':''}">
       <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
-        <div class="sess-date"><span class="d">${dayNum}</span><span class="m">${monStr}</span><span class="w">v.${weekNum}</span></div>
+        <div class="sess-date"><span class="d">${dayNum}</span><span class="m">${weekdayStr} ${monStr}</span><span class="w">v.${weekNum}</span></div>
         <div class="sess-body">
           <div class="sess-title-row">
             <span class="evt-tag tag-${s.type.toLowerCase()}">${s.type}</span>
