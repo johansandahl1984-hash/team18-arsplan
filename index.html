@@ -697,8 +697,10 @@
     </div>
     <div class="field-row">
       <div class="field"><label>Starttid</label><input type="time" id="tour-start" value="09:30"></div>
-      <div class="field"><label>Matchlängd (min)</label><input type="number" id="tour-minutes" value="20" min="5" step="5"></div>
+      <div class="field"><label>Sluttid</label><input type="time" id="tour-end" value="11:50"></div>
     </div>
+    <div class="field"><label>Matchlängd (min)</label><input type="number" id="tour-minutes" value="20" min="5" step="5" style="max-width:140px;"></div>
+    <p style="font-size:11px;color:var(--muted);margin:-6px 0 12px;">Start- och sluttid avgör hur många omgångar som ryms — inte alla lag behöver mötas. Prioritetsordning vid lottning: 1) nya föreningar för båda lagen, 2) förening ni redan mött (men inte just det laget), 3) lag inom samma förening — bara om tiden räcker efter att alla mött alla.</p>
     <div class="field">
       <label>Planer</label>
       <div id="tour-courts-list"></div>
@@ -3600,36 +3602,60 @@ function diagramThumbSVG(objects){
    (t.ex. en cupdag), fristående från er egen tränings-/matchplanering.
    ========================================================================= */
 
-// Alla möjliga par bland lagen (varje par exakt en gång — fullständigt poolspel).
+// Beräknar hur många omgångar (matcher i följd) som ryms mellan start- och sluttid.
+// Inte alla lag behöver mötas — tidsramen avgör hur mycket poolspel som hinns med.
+function computeNumRounds(startTime, endTime, matchMinutes){
+  if(!startTime || !endTime || !matchMinutes) return 0;
+  const [sh,sm] = startTime.split(":").map(Number);
+  const [eh,em] = endTime.split(":").map(Number);
+  let diff = (eh*60+em) - (sh*60+sm);
+  if(diff < 0) diff += 24*60; // sluttid tolkas som efter midnatt om den är "före" starttiden
+  return Math.max(0, Math.floor(diff / matchMinutes));
+}
 function generateAllPairs(teams){
   const pairs = [];
   for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) pairs.push([teams[i],teams[j]]);
   return pairs;
 }
-// Packar paren i tidsluckor (max en match per lag per lucka, upp till antal planer) MED
-// preferens: par mellan olika föreningar prioriteras alltid före par inom samma förening när
-// båda är giltiga val för samma lucka. Föreningsinterna möten skjuts därmed så långt fram som
-// möjligt — men försvinner aldrig, det är matematiskt omöjligt vid fullständigt poolspel om en
-// förening har fler än ett lag (alla lag måste ändå mötas exakt en gång vardera).
-function assignToTimeSlotsClubAware(pairs, numCourts, teamClub){
-  const sameClub = (a,b) => teamClub[a] && teamClub[b] && teamClub[a]===teamClub[b];
-  let remaining = pairs.slice();
+// Två strikt separata "pooler" av möjliga par: korsförenings-par MÅSTE tömmas helt (bland de
+// lag som fortfarande är otilldelade i en given omgång) innan föreningsinterna par
+// överhuvudtaget blir valbara — inte bara nedprioriterade. Inom respektive pool prioriteras
+// par där ingen av parterna mött motståndarens förening förut. Genererar bara så många
+// omgångar som ryms inom den angivna tidsramen (numRounds), inte tills alla mötts.
+function generateTieredSchedule(teams, numCourts, teamClub, numRounds){
+  const allPairs = generateAllPairs(teams);
+  let crossPool = allPairs.filter(([a,b])=>teamClub[a]!==teamClub[b]);
+  let samePool  = allPairs.filter(([a,b])=>teamClub[a]===teamClub[b]);
+  const facedClubs = {}; teams.forEach(tm=>facedClubs[tm]=new Set());
+  const removeFromPool = (pool,a,b) => {
+    const idx = pool.findIndex(([x,y])=>(x===a&&y===b)||(x===b&&y===a));
+    if(idx>-1) pool.splice(idx,1);
+  };
   const slots = [];
-  while(remaining.length > 0){
-    remaining.sort((a,b)=> (sameClub(a[0],a[1])?1:0) - (sameClub(b[0],b[1])?1:0));
-    const slot = []; const teamsUsed = new Set(); const stillRemaining = [];
-    for(const m of remaining){
-      if(slot.length < numCourts && !teamsUsed.has(m[0]) && !teamsUsed.has(m[1])){
-        slot.push(m); teamsUsed.add(m[0]); teamsUsed.add(m[1]);
-      } else stillRemaining.push(m);
+  for(let r=0; r<numRounds; r++){
+    let available = teams.slice();
+    const slot = [];
+    while(slot.length < numCourts && available.length>=2){
+      let candidates = crossPool.filter(([a,b])=>available.includes(a)&&available.includes(b));
+      if(candidates.length===0) candidates = samePool.filter(([a,b])=>available.includes(a)&&available.includes(b));
+      if(candidates.length===0) break; // inget mer går att para denna omgång — resterande lag får bye
+      candidates.sort((x,y)=>{
+        const xNew = !(facedClubs[x[0]].has(teamClub[x[1]]) || facedClubs[x[1]].has(teamClub[x[0]]));
+        const yNew = !(facedClubs[y[0]].has(teamClub[y[1]]) || facedClubs[y[1]].has(teamClub[y[0]]));
+        return (yNew?1:0) - (xNew?1:0);
+      });
+      const [a,b] = candidates[0];
+      slot.push([a,b]);
+      facedClubs[a].add(teamClub[b]); facedClubs[b].add(teamClub[a]);
+      available = available.filter(tm=>tm!==a && tm!==b);
+      removeFromPool(crossPool,a,b); removeFromPool(samePool,a,b);
     }
-    slots.push(slot); remaining = stillRemaining;
+    slots.push(slot);
   }
   return slots;
 }
-function generateTournamentSchedule(teams, numCourts, teamClub){
-  const pairs = generateAllPairs(teams);
-  const slots = assignToTimeSlotsClubAware(pairs, numCourts, teamClub||{});
+function generateTournamentSchedule(teams, numCourts, teamClub, numRounds){
+  const slots = generateTieredSchedule(teams, numCourts, teamClub||{}, numRounds);
   return slots.map(slot=>{
     const matches = new Array(numCourts).fill(null);
     slot.forEach((m,i)=>{ matches[i] = {teamA:m[0], teamB:m[1]}; });
@@ -3651,6 +3677,7 @@ function openTournamentModal(id){
   document.getElementById("tour-name").value = t ? t.name : "";
   document.getElementById("tour-date").value = t ? t.date : todayStr();
   document.getElementById("tour-start").value = t ? t.startTime : "09:30";
+  document.getElementById("tour-end").value = t ? (t.endTime||"11:50") : "11:50";
   document.getElementById("tour-minutes").value = t ? t.matchMinutes : 20;
   tourListDraft = {
     courts: t ? t.courts.slice() : ["Plan 1","Plan 2"],
@@ -3706,6 +3733,7 @@ async function saveTournament(){
   const name = document.getElementById("tour-name").value.trim();
   const date = document.getElementById("tour-date").value;
   const startTime = document.getElementById("tour-start").value;
+  const endTime = document.getElementById("tour-end").value;
   const matchMinutes = +document.getElementById("tour-minutes").value || 20;
   const courts = tourListDraft.courts.map(v=>v.trim()).filter(Boolean);
   const clubs = tourListDraft.clubs
@@ -3715,13 +3743,15 @@ async function saveTournament(){
   if(!name){ alert("Ange ett namn på turneringen."); return; }
   if(courts.length===0){ alert("Lägg till minst en plan."); return; }
   if(teams.length<2){ alert("Lägg till minst två lag totalt (räknat över alla föreningar)."); return; }
+  const numRounds = computeNumRounds(startTime, endTime, matchMinutes);
+  if(numRounds===0){ alert("Sluttiden ger inga omgångar alls med den matchlängden — kontrollera start-/sluttid."); return; }
   const existing = id ? DATA.tournaments.find(x=>x.id===id) : null;
   if(existing){
-    const yes = await confirmDialog("Spara ändringarna? Om lag eller planer ändrats byggs schemat om från grunden — eventuella manuella justeringar i det gamla schemat försvinner då.", "Spara turnering");
+    const yes = await confirmDialog("Spara ändringarna? Om lag, planer eller tider ändrats byggs schemat om från grunden — eventuella manuella justeringar i det gamla schemat försvinner då.", "Spara turnering");
     if(!yes) return;
   }
-  const schedule = generateTournamentSchedule(teams, courts.length, teamClub);
-  const t = { id: id || ("tour-"+Date.now()), name, date, startTime, matchMinutes, courts, clubs, teams, teamClub, schedule };
+  const schedule = generateTournamentSchedule(teams, courts.length, teamClub, numRounds);
+  const t = { id: id || ("tour-"+Date.now()), name, date, startTime, endTime, matchMinutes, courts, clubs, teams, teamClub, schedule };
   if(existing){ Object.assign(existing, t); }
   else { DATA.tournaments.push(t); }
   closeModal("modal-tournament");
@@ -3742,10 +3772,11 @@ async function deleteTournament(){
 }
 async function regenerateTournament(tourId){
   const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
+  if(!t.endTime){ alert("Den här turneringen skapades innan sluttid fanns som fält. Öppna \"Redigera\" och sätt en sluttid först, spara — då byggs schemat om automatiskt med rätt antal omgångar."); return; }
   const yes = await confirmDialog("Bygg om schemat från grunden? Alla manuella justeringar i det nuvarande schemat försvinner.", "Bygg om schema");
   if(!yes) return;
   await guard(async ()=>{
-    t.schedule = generateTournamentSchedule(t.teams, t.courts.length, t.teamClub);
+    t.schedule = generateTournamentSchedule(t.teams, t.courts.length, t.teamClub, computeNumRounds(t.startTime, t.endTime, t.matchMinutes));
     renderTournaments();
     await saveData();
   });
@@ -3975,7 +4006,7 @@ function renderTournaments(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div>
           <h3 style="margin:0;">${t.name}</h3>
-          <span style="font-size:12px;color:var(--muted);">${t.date||"inget datum"} · ${t.teams.length} lag · ${t.courts.length} plan${t.courts.length===1?"":"er"} · ${t.matchMinutes} min/match</span>
+          <span style="font-size:12px;color:var(--muted);">${t.date||"inget datum"} · ${t.startTime||"?"}–${t.endTime||"?"} · ${t.teams.length} lag · ${t.courts.length} plan${t.courts.length===1?"":"er"} · ${t.matchMinutes} min/match</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn ghost small" onclick="addBreakBlock('${t.id}')">+ Ny paus/block</button>
