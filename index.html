@@ -705,9 +705,10 @@
       <button type="button" class="btn ghost small" onclick="addTourListItem('courts')">+ Lägg till plan</button>
     </div>
     <div class="field">
-      <label>Lag</label>
-      <div id="tour-teams-list"></div>
-      <button type="button" class="btn ghost small" onclick="addTourListItem('teams')">+ Lägg till lag</button>
+      <label>Föreningar</label>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 8px;">Lägg till en förening i taget, sedan namnen på deras lag (t.ex. Vit/Röd/Blå) för att skilja dem åt. Matcher mellan lag från samma förening skjuts automatiskt så långt fram som möjligt i schemat.</p>
+      <div id="tour-clubs-list"></div>
+      <button type="button" class="btn ghost small" onclick="addClub()">+ Ny förening</button>
     </div>
     <div class="modal-actions">
       <button class="btn danger" id="tour-delete-btn" style="display:none;" onclick="deleteTournament()">Ta bort</button>
@@ -3599,34 +3600,23 @@ function diagramThumbSVG(objects){
    (t.ex. en cupdag), fristående från er egen tränings-/matchplanering.
    ========================================================================= */
 
-// Round-robin med "circle method": alla lag möter alla exakt en gång. Returnerar en lista av
-// "ronder" där varje rond är konfliktfri (inget lag två gånger i samma rond).
-function generateRoundRobinRounds(teams){
-  let list = teams.slice();
-  const hasBye = list.length % 2 !== 0;
-  if(hasBye) list.push(null); // BYE — laget vilar den ronden
-  const n = list.length;
-  const rounds = [];
-  const fixed = list[0];
-  let rotating = list.slice(1);
-  for(let r=0; r<n-1; r++){
-    const roundTeams = [fixed, ...rotating];
-    const roundMatches = [];
-    for(let i=0; i<n/2; i++){
-      const a = roundTeams[i], b = roundTeams[n-1-i];
-      if(a!==null && b!==null) roundMatches.push([a,b]);
-    }
-    rounds.push(roundMatches);
-    rotating.unshift(rotating.pop());
-  }
-  return rounds;
+// Alla möjliga par bland lagen (varje par exakt en gång — fullständigt poolspel).
+function generateAllPairs(teams){
+  const pairs = [];
+  for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) pairs.push([teams[i],teams[j]]);
+  return pairs;
 }
-// Packar ronderna i tidsluckor: max en match per lag per lucka, upp till antal planer.
-function assignToTimeSlots(rounds, numCourts){
-  const allMatches = rounds.flat();
+// Packar paren i tidsluckor (max en match per lag per lucka, upp till antal planer) MED
+// preferens: par mellan olika föreningar prioriteras alltid före par inom samma förening när
+// båda är giltiga val för samma lucka. Föreningsinterna möten skjuts därmed så långt fram som
+// möjligt — men försvinner aldrig, det är matematiskt omöjligt vid fullständigt poolspel om en
+// förening har fler än ett lag (alla lag måste ändå mötas exakt en gång vardera).
+function assignToTimeSlotsClubAware(pairs, numCourts, teamClub){
+  const sameClub = (a,b) => teamClub[a] && teamClub[b] && teamClub[a]===teamClub[b];
+  let remaining = pairs.slice();
   const slots = [];
-  let remaining = allMatches.slice();
   while(remaining.length > 0){
+    remaining.sort((a,b)=> (sameClub(a[0],a[1])?1:0) - (sameClub(b[0],b[1])?1:0));
     const slot = []; const teamsUsed = new Set(); const stillRemaining = [];
     for(const m of remaining){
       if(slot.length < numCourts && !teamsUsed.has(m[0]) && !teamsUsed.has(m[1])){
@@ -3637,9 +3627,9 @@ function assignToTimeSlots(rounds, numCourts){
   }
   return slots;
 }
-function generateTournamentSchedule(teams, numCourts){
-  const rounds = generateRoundRobinRounds(teams);
-  const slots = assignToTimeSlots(rounds, numCourts);
+function generateTournamentSchedule(teams, numCourts, teamClub){
+  const pairs = generateAllPairs(teams);
+  const slots = assignToTimeSlotsClubAware(pairs, numCourts, teamClub||{});
   return slots.map(slot=>{
     const matches = new Array(numCourts).fill(null);
     slot.forEach((m,i)=>{ matches[i] = {teamA:m[0], teamB:m[1]}; });
@@ -3653,7 +3643,7 @@ function tourAddMinutes(hhmm, mins){
   return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");
 }
 
-let tourListDraft = { courts:[], teams:[] }; // arbetskopia medan modalen är öppen
+let tourListDraft = { courts:[], clubs:[] }; // arbetskopia medan modalen är öppen
 function openTournamentModal(id){
   const t = id ? DATA.tournaments.find(x=>x.id===id) : null;
   document.getElementById("tournament-modal-title").textContent = t ? "Redigera turnering" : "Ny turnering";
@@ -3662,7 +3652,12 @@ function openTournamentModal(id){
   document.getElementById("tour-date").value = t ? t.date : todayStr();
   document.getElementById("tour-start").value = t ? t.startTime : "09:30";
   document.getElementById("tour-minutes").value = t ? t.matchMinutes : 20;
-  tourListDraft = { courts: t ? t.courts.slice() : ["Plan 1","Plan 2"], teams: t ? t.teams.slice() : ["","",""] };
+  tourListDraft = {
+    courts: t ? t.courts.slice() : ["Plan 1","Plan 2"],
+    clubs: t && t.clubs ? JSON.parse(JSON.stringify(t.clubs))
+      : t && t.teams ? t.teams.map(name=>({name, subteams:[""]})) // äldre turnering utan föreningsstruktur — varje gammalt lagnamn blir en egen "förening" med ett lag, så inget namn tappas bort
+      : [{name:"", subteams:[""]}, {name:"", subteams:[""]}],
+  };
   document.getElementById("tour-delete-btn").style.display = t ? "inline-block" : "none";
   renderTourLists();
   openModal("modal-tournament");
@@ -3671,12 +3666,40 @@ function renderTourLists(){
   document.getElementById("tour-courts-list").innerHTML = tourListDraft.courts.map((v,i)=>
     `<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="text" value="${v}" oninput="tourListDraft.courts[${i}]=this.value" placeholder="Plan ${i+1}" style="flex:1;">
       <button type="button" class="btn ghost small" onclick="removeTourListItem('courts',${i})">✕</button></div>`).join("");
-  document.getElementById("tour-teams-list").innerHTML = tourListDraft.teams.map((v,i)=>
-    `<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="text" value="${v}" oninput="tourListDraft.teams[${i}]=this.value" placeholder="Lagnamn" style="flex:1;">
-      <button type="button" class="btn ghost small" onclick="removeTourListItem('teams',${i})">✕</button></div>`).join("");
+  document.getElementById("tour-clubs-list").innerHTML = tourListDraft.clubs.map((club,ci)=>`
+    <div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--ice);">
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <input type="text" value="${club.name}" oninput="tourListDraft.clubs[${ci}].name=this.value" placeholder="Föreningsnamn, t.ex. Trelleborg" style="flex:1;font-weight:600;">
+        <button type="button" class="btn ghost small" onclick="removeClub(${ci})">✕ Ta bort förening</button>
+      </div>
+      <div style="padding-left:10px;">
+        ${club.subteams.map((s,si)=>`<div style="display:flex;gap:6px;margin-bottom:5px;">
+          <input type="text" value="${s}" oninput="tourListDraft.clubs[${ci}].subteams[${si}]=this.value" placeholder="Lagnamn, t.ex. Vit (lämna tomt om bara ett lag)" style="flex:1;font-size:12.5px;">
+          <button type="button" class="btn ghost small" onclick="removeSubteam(${ci},${si})">✕</button>
+        </div>`).join("")}
+        <button type="button" class="btn ghost small" style="font-size:11px;" onclick="addSubteam(${ci})">+ Lägg till lag i denna förening</button>
+      </div>
+    </div>`).join("");
 }
 function addTourListItem(kind){ tourListDraft[kind].push(""); renderTourLists(); }
 function removeTourListItem(kind, i){ tourListDraft[kind].splice(i,1); renderTourLists(); }
+function addClub(){ tourListDraft.clubs.push({name:"", subteams:[""]}); renderTourLists(); }
+function removeClub(i){ tourListDraft.clubs.splice(i,1); renderTourLists(); }
+function addSubteam(clubIndex){ tourListDraft.clubs[clubIndex].subteams.push(""); renderTourLists(); }
+function removeSubteam(clubIndex, subIndex){ tourListDraft.clubs[clubIndex].subteams.splice(subIndex,1); renderTourLists(); }
+// Bygger den platta lag-listan ("Trelleborg Vit") + en lag->förening-karta utifrån
+// föreningarna i modalen. Ett lag utan angivet lagnamn (bara föreningen har ett enda lag)
+// blir bara föreningens namn, t.ex. "BK Flagg" istället för "BK Flagg ".
+function deriveTeamsFromClubs(clubs){
+  const teams = []; const teamClub = {};
+  clubs.forEach(club=>{
+    const clubName = club.name.trim(); if(!clubName) return;
+    const subs = club.subteams.map(s=>s.trim()).filter(Boolean);
+    if(subs.length===0){ teams.push(clubName); teamClub[clubName]=clubName; return; }
+    subs.forEach(sub=>{ const full = `${clubName} ${sub}`; teams.push(full); teamClub[full]=clubName; });
+  });
+  return { teams, teamClub };
+}
 
 async function saveTournament(){
   const id = document.getElementById("tour-id").value;
@@ -3685,17 +3708,20 @@ async function saveTournament(){
   const startTime = document.getElementById("tour-start").value;
   const matchMinutes = +document.getElementById("tour-minutes").value || 20;
   const courts = tourListDraft.courts.map(v=>v.trim()).filter(Boolean);
-  const teams = tourListDraft.teams.map(v=>v.trim()).filter(Boolean);
+  const clubs = tourListDraft.clubs
+    .map(c=>({ name:c.name.trim(), subteams:c.subteams.map(s=>s.trim()).filter(Boolean) }))
+    .filter(c=>c.name);
+  const { teams, teamClub } = deriveTeamsFromClubs(clubs);
   if(!name){ alert("Ange ett namn på turneringen."); return; }
   if(courts.length===0){ alert("Lägg till minst en plan."); return; }
-  if(teams.length<2){ alert("Lägg till minst två lag."); return; }
+  if(teams.length<2){ alert("Lägg till minst två lag totalt (räknat över alla föreningar)."); return; }
   const existing = id ? DATA.tournaments.find(x=>x.id===id) : null;
   if(existing){
     const yes = await confirmDialog("Spara ändringarna? Om lag eller planer ändrats byggs schemat om från grunden — eventuella manuella justeringar i det gamla schemat försvinner då.", "Spara turnering");
     if(!yes) return;
   }
-  const schedule = generateTournamentSchedule(teams, courts.length);
-  const t = { id: id || ("tour-"+Date.now()), name, date, startTime, matchMinutes, courts, teams, schedule };
+  const schedule = generateTournamentSchedule(teams, courts.length, teamClub);
+  const t = { id: id || ("tour-"+Date.now()), name, date, startTime, matchMinutes, courts, clubs, teams, teamClub, schedule };
   if(existing){ Object.assign(existing, t); }
   else { DATA.tournaments.push(t); }
   closeModal("modal-tournament");
@@ -3719,7 +3745,7 @@ async function regenerateTournament(tourId){
   const yes = await confirmDialog("Bygg om schemat från grunden? Alla manuella justeringar i det nuvarande schemat försvinner.", "Bygg om schema");
   if(!yes) return;
   await guard(async ()=>{
-    t.schedule = generateTournamentSchedule(t.teams, t.courts.length);
+    t.schedule = generateTournamentSchedule(t.teams, t.courts.length, t.teamClub);
     renderTournaments();
     await saveData();
   });
