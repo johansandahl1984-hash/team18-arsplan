@@ -177,6 +177,7 @@
   .sess-date{min-width:92px; text-align:center; background:var(--ice); border-radius:10px; padding:8px 6px; font-family:'IBM Plex Mono';}
   .sess-date .d{font-size:19px; font-weight:700; color:var(--pine-dark); display:block;}
   .sess-date .m{font-size:10px; text-transform:uppercase; color:var(--muted);}
+  .sess-date .w{font-size:9.5px; color:var(--muted); display:block; margin-top:2px; letter-spacing:.02em;}
   .sess-body{flex:1; min-width:200px;}
   .sess-title-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   .sess-title{font-weight:700; font-size:14.5px;}
@@ -2000,6 +2001,7 @@ function renderSessions(){
     const d = new Date(s.date+"T00:00:00");
     const dayNum = d.getDate();
     const monStr = d.toLocaleDateString("sv-SE",{month:"short"}).replace(".","");
+    const weekNum = isoWeekNumber(d); // beräknas alltid från datumet, oavsett om s.week är satt manuellt — visas då konsekvent för ALLA pass, inklusive de hämtade via kalenderimport
     const coachChips = (s.coaches||[]).map(cid=>{
       const c = coachById(cid); if(!c) return "";
       const color = COACH_COLORS[c.initials] || "#999";
@@ -2011,12 +2013,12 @@ function renderSessions(){
       const mv = s.lineup[g.id].goalie ? " +Mv" : "";
       return `<span class="chip" style="background:${g.color}22;color:${g.color}"><span class="dot" style="background:${g.color}"></span>${g.name} (${cnt}${mv})</span>`;
     }).join("");
-    const passLabel = s.week ? `· vecka ${s.week}` : "";
+    const passLabel = `· vecka ${weekNum}`;
     const ytaIstidLabel = (s.yta||s.istid) ? `· ${s.yta||'yta ej angiven'}${s.istid?', '+s.istid+' min istid':''}` : "";
     const archived = isArchived(s);
     return `<div class="sess-card" style="flex-direction:column;align-items:stretch;${archived?'opacity:.75;':''}">
       <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
-        <div class="sess-date"><span class="d">${dayNum}</span><span class="m">${monStr}</span></div>
+        <div class="sess-date"><span class="d">${dayNum}</span><span class="m">${monStr}</span><span class="w">v.${weekNum}</span></div>
         <div class="sess-body">
           <div class="sess-title-row">
             <span class="evt-tag tag-${s.type.toLowerCase()}">${s.type}</span>
