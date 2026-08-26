@@ -274,6 +274,26 @@
   .lineup-zone select{font-size:11.5px; padding:4px 6px; max-width:100px;}
   .lineup-chip{cursor:grab; touch-action:none;}
   .lineup-chip-ghost{box-shadow:0 6px 16px rgba(0,0,0,.25); transform:scale(1.05);}
+
+  /* ---------- Turnering ---------- */
+  .tour-card{border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; margin-bottom:18px;}
+  .tour-grid-wrap{overflow-x:auto; margin-top:12px;}
+  .tour-grid{border-collapse:collapse; width:100%; min-width:480px;}
+  .tour-grid th{background:var(--pine-dark); color:#fff; font-family:'Oswald'; font-size:12px; padding:6px 8px; text-align:left; white-space:nowrap;}
+  .tour-grid td{border:1px solid var(--line); padding:0; vertical-align:top;}
+  .tour-time-cell{font-family:'IBM Plex Mono'; font-size:12.5px; font-weight:600; padding:8px; white-space:nowrap; background:var(--ice); text-align:right;}
+  .tour-match-cell{padding:4px;}
+  .tour-match{border-radius:7px; padding:5px 7px; font-size:11.5px; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line);}
+  .tour-match.selected{background:var(--pine); color:#fff; border-color:var(--pine);}
+  .tour-match .vs{color:var(--muted); font-size:10px; display:block; text-align:center; margin:1px 0;}
+  .tour-match.selected .vs{color:#DCE8DF;}
+  .tour-empty-slot{font-size:10.5px; color:var(--muted); text-align:center; padding:8px 0;}
+  .tour-break-row td{background:#FBF3E3; text-align:center; font-weight:700; font-size:12.5px; padding:8px; color:#6B5326;}
+  .tour-match-ghost{box-shadow:0 6px 16px rgba(0,0,0,.3); z-index:500;}
+  .tour-dragover{outline:2px dashed var(--pine); outline-offset:-2px;}
+  .tour-summary-grid{display:grid; grid-template-columns:1fr; gap:8px; margin-top:10px;}
+  @media(min-width:640px){ .tour-summary-grid{grid-template-columns:1fr 1fr;} }
+  .tour-summary-item{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12.5px;}
   .lineup-chip:active{cursor:grabbing;}
 
   .blk-table{border-collapse:collapse; width:100%; min-width:560px;}
@@ -354,6 +374,7 @@
     <button data-view="oversikt" class="active">Årsöversikt</button>
     <button data-view="kalender">Kalender</button>
     <button data-view="ovningar">Övningsbank</button>
+    <button data-view="turnering">Turnering</button>
     <button data-view="laget">Laget</button>
   </nav>
 </header>
@@ -420,6 +441,15 @@
   </section>
 
   <!-- ============ LAGET ============ -->
+  <section class="view" id="view-turnering">
+    <div class="section-title">
+      <h2>Turnering / poolspel</h2>
+      <span class="hint">Schemalägg matcher mellan andra lag, t.ex. en cupdag — separat från er egen träningsplanering</span>
+    </div>
+    <div class="toolbar"><button class="btn" onclick="openTournamentModal()">+ Ny turnering</button></div>
+    <div id="tournament-list"></div>
+  </section>
+
   <section class="view" id="view-laget">
     <div class="section-title">
       <h2>Färggrupper</h2>
@@ -651,6 +681,37 @@
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('modal-exercise')">Avbryt</button>
       <button class="btn" onclick="saveCustomExercise()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-tournament">
+  <div class="modal" style="max-width:600px;">
+    <button class="close-x" onclick="closeModal('modal-tournament')">✕</button>
+    <h3 id="tournament-modal-title">Ny turnering</h3>
+    <input type="hidden" id="tour-id">
+    <div class="field-row">
+      <div class="field"><label>Namn</label><input type="text" id="tour-name" placeholder="t.ex. Höstpoolen"></div>
+      <div class="field"><label>Datum</label><input type="date" id="tour-date"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Starttid</label><input type="time" id="tour-start" value="09:30"></div>
+      <div class="field"><label>Matchlängd (min)</label><input type="number" id="tour-minutes" value="20" min="5" step="5"></div>
+    </div>
+    <div class="field">
+      <label>Planer</label>
+      <div id="tour-courts-list"></div>
+      <button type="button" class="btn ghost small" onclick="addTourListItem('courts')">+ Lägg till plan</button>
+    </div>
+    <div class="field">
+      <label>Lag</label>
+      <div id="tour-teams-list"></div>
+      <button type="button" class="btn ghost small" onclick="addTourListItem('teams')">+ Lägg till lag</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="tour-delete-btn" style="display:none;" onclick="deleteTournament()">Ta bort</button>
+      <button class="btn ghost" onclick="closeModal('modal-tournament')">Avbryt</button>
+      <button class="btn" onclick="saveTournament()">Spara & generera schema</button>
     </div>
   </div>
 </div>
@@ -1092,6 +1153,7 @@ let DATA = {
   goalieHistory: {Träning:{}, Match:{}}, // per typ: playerId -> antal gånger som målvakt (samma räkneregler som pairHistory: bara genomförda pass)
   customExercises: [], // egna, lagspecifika övningar — samma form som EXERCISES-posterna, listas ihop med dem via allExercises()
   exerciseDiagrams: {}, // ritade diagram per övnings-id (bygga/inbyggd): {"ex-id": [{type,x,y,x2,y2}, ...]}
+  tournaments: [], // turneringar/poolspel — separat från er egen träningsplanering, se genererarTournamentSchedule()
   icsCalendarUrl: "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics", // lagets kalenderflöde för "Hämta nya händelser"
   templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
   periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
@@ -1184,6 +1246,7 @@ function migratePairHistory(){
   if(!DATA.goalieHistory.Match) DATA.goalieHistory.Match = {};
   if(!DATA.customExercises) DATA.customExercises = [];
   if(!DATA.exerciseDiagrams) DATA.exerciseDiagrams = {};
+  if(!DATA.tournaments) DATA.tournaments = [];
   if(!DATA.icsCalendarUrl) DATA.icsCalendarUrl = "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics";
 }
 // Engångsmigrering: flaggar automatiskt en befintlig grupp som heter "Målvakter" (skiftläges-
@@ -1604,6 +1667,7 @@ function renderAll(){
   renderPlayers();
   renderMixHistory(); renderGoalieHistory();
   renderCoaches();
+  renderTournaments();
 }
 
 /* ---- Timeline (signature SVG) ---- */
@@ -3527,6 +3591,313 @@ function diagramThumbSVG(objects){
   const arrowId = "ah-"+Math.random().toString(36).slice(2,8);
   const objs = objects.map(o=>diagramObjectMarkup(o, arrowId)).join("");
   return `<svg viewBox="0 0 600 340" class="diag-thumb"><defs><marker id="${arrowId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0C447C"></path></marker></defs>${RINK_BACKGROUND_SVG}${objs}</svg>`;
+}
+
+/* =========================================================================
+   TURNERING / POOLSPEL — separat schemaläggning för matcher mellan ANDRA lag
+   (t.ex. en cupdag), fristående från er egen tränings-/matchplanering.
+   ========================================================================= */
+
+// Round-robin med "circle method": alla lag möter alla exakt en gång. Returnerar en lista av
+// "ronder" där varje rond är konfliktfri (inget lag två gånger i samma rond).
+function generateRoundRobinRounds(teams){
+  let list = teams.slice();
+  const hasBye = list.length % 2 !== 0;
+  if(hasBye) list.push(null); // BYE — laget vilar den ronden
+  const n = list.length;
+  const rounds = [];
+  const fixed = list[0];
+  let rotating = list.slice(1);
+  for(let r=0; r<n-1; r++){
+    const roundTeams = [fixed, ...rotating];
+    const roundMatches = [];
+    for(let i=0; i<n/2; i++){
+      const a = roundTeams[i], b = roundTeams[n-1-i];
+      if(a!==null && b!==null) roundMatches.push([a,b]);
+    }
+    rounds.push(roundMatches);
+    rotating.unshift(rotating.pop());
+  }
+  return rounds;
+}
+// Packar ronderna i tidsluckor: max en match per lag per lucka, upp till antal planer.
+function assignToTimeSlots(rounds, numCourts){
+  const allMatches = rounds.flat();
+  const slots = [];
+  let remaining = allMatches.slice();
+  while(remaining.length > 0){
+    const slot = []; const teamsUsed = new Set(); const stillRemaining = [];
+    for(const m of remaining){
+      if(slot.length < numCourts && !teamsUsed.has(m[0]) && !teamsUsed.has(m[1])){
+        slot.push(m); teamsUsed.add(m[0]); teamsUsed.add(m[1]);
+      } else stillRemaining.push(m);
+    }
+    slots.push(slot); remaining = stillRemaining;
+  }
+  return slots;
+}
+function generateTournamentSchedule(teams, numCourts){
+  const rounds = generateRoundRobinRounds(teams);
+  const slots = assignToTimeSlots(rounds, numCourts);
+  return slots.map(slot=>{
+    const matches = new Array(numCourts).fill(null);
+    slot.forEach((m,i)=>{ matches[i] = {teamA:m[0], teamB:m[1]}; });
+    return {type:"matches", matches};
+  });
+}
+function tourAddMinutes(hhmm, mins){
+  const [h,m] = hhmm.split(":").map(Number);
+  const total = h*60+m+mins;
+  const hh = Math.floor((total%1440)/60), mm = total%60;
+  return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");
+}
+
+let tourListDraft = { courts:[], teams:[] }; // arbetskopia medan modalen är öppen
+function openTournamentModal(id){
+  const t = id ? DATA.tournaments.find(x=>x.id===id) : null;
+  document.getElementById("tournament-modal-title").textContent = t ? "Redigera turnering" : "Ny turnering";
+  document.getElementById("tour-id").value = t ? t.id : "";
+  document.getElementById("tour-name").value = t ? t.name : "";
+  document.getElementById("tour-date").value = t ? t.date : todayStr();
+  document.getElementById("tour-start").value = t ? t.startTime : "09:30";
+  document.getElementById("tour-minutes").value = t ? t.matchMinutes : 20;
+  tourListDraft = { courts: t ? t.courts.slice() : ["Plan 1","Plan 2"], teams: t ? t.teams.slice() : ["","",""] };
+  document.getElementById("tour-delete-btn").style.display = t ? "inline-block" : "none";
+  renderTourLists();
+  openModal("modal-tournament");
+}
+function renderTourLists(){
+  document.getElementById("tour-courts-list").innerHTML = tourListDraft.courts.map((v,i)=>
+    `<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="text" value="${v}" oninput="tourListDraft.courts[${i}]=this.value" placeholder="Plan ${i+1}" style="flex:1;">
+      <button type="button" class="btn ghost small" onclick="removeTourListItem('courts',${i})">✕</button></div>`).join("");
+  document.getElementById("tour-teams-list").innerHTML = tourListDraft.teams.map((v,i)=>
+    `<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="text" value="${v}" oninput="tourListDraft.teams[${i}]=this.value" placeholder="Lagnamn" style="flex:1;">
+      <button type="button" class="btn ghost small" onclick="removeTourListItem('teams',${i})">✕</button></div>`).join("");
+}
+function addTourListItem(kind){ tourListDraft[kind].push(""); renderTourLists(); }
+function removeTourListItem(kind, i){ tourListDraft[kind].splice(i,1); renderTourLists(); }
+
+async function saveTournament(){
+  const id = document.getElementById("tour-id").value;
+  const name = document.getElementById("tour-name").value.trim();
+  const date = document.getElementById("tour-date").value;
+  const startTime = document.getElementById("tour-start").value;
+  const matchMinutes = +document.getElementById("tour-minutes").value || 20;
+  const courts = tourListDraft.courts.map(v=>v.trim()).filter(Boolean);
+  const teams = tourListDraft.teams.map(v=>v.trim()).filter(Boolean);
+  if(!name){ alert("Ange ett namn på turneringen."); return; }
+  if(courts.length===0){ alert("Lägg till minst en plan."); return; }
+  if(teams.length<2){ alert("Lägg till minst två lag."); return; }
+  const existing = id ? DATA.tournaments.find(x=>x.id===id) : null;
+  if(existing){
+    const yes = await confirmDialog("Spara ändringarna? Om lag eller planer ändrats byggs schemat om från grunden — eventuella manuella justeringar i det gamla schemat försvinner då.", "Spara turnering");
+    if(!yes) return;
+  }
+  const schedule = generateTournamentSchedule(teams, courts.length);
+  const t = { id: id || ("tour-"+Date.now()), name, date, startTime, matchMinutes, courts, teams, schedule };
+  if(existing){ Object.assign(existing, t); }
+  else { DATA.tournaments.push(t); }
+  closeModal("modal-tournament");
+  renderTournaments();
+  await saveData();
+}
+async function deleteTournament(){
+  const id = document.getElementById("tour-id").value;
+  const t = DATA.tournaments.find(x=>x.id===id); if(!t) return;
+  const yes = await confirmDialog(`Ta bort turneringen "${t.name}"? Går inte att ångra.`, "Ta bort turnering");
+  if(!yes) return;
+  await guard(async ()=>{
+    DATA.tournaments = DATA.tournaments.filter(x=>x.id!==id);
+    closeModal("modal-tournament");
+    renderTournaments();
+    await saveData();
+  });
+}
+async function regenerateTournament(tourId){
+  const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
+  const yes = await confirmDialog("Bygg om schemat från grunden? Alla manuella justeringar i det nuvarande schemat försvinner.", "Bygg om schema");
+  if(!yes) return;
+  await guard(async ()=>{
+    t.schedule = generateTournamentSchedule(t.teams, t.courts.length);
+    renderTournaments();
+    await saveData();
+  });
+}
+function insertBreakAfter(tourId, rowIndex){
+  const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
+  t.schedule.splice(rowIndex+1, 0, {type:"break", label:"Paus", minutes:15});
+  renderTournaments(); saveData();
+}
+function removeScheduleRow(tourId, rowIndex){
+  const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
+  t.schedule.splice(rowIndex,1);
+  renderTournaments(); saveData();
+}
+function updateBreakField(tourId, rowIndex, field, value){
+  const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
+  t.schedule[rowIndex][field] = field==="minutes" ? (+value||0) : value;
+  saveData(); // ingen omritning — samma resonemang som andra fritext/tidsfält i appen (undviker fokusförlust)
+}
+
+/* ---- Matchredigering: klick-välj-klick-byt (alltid fungerar) + Pointer Events-drag
+   (samma mönster som lagindelningen, för en smidigare känsla på touch) ---- */
+let tourSelectedMatch = null; // {tourId, rowIndex, court}
+let tourDragState = null;
+function matchRefEq(a,b){ return a && b && a.tourId===b.tourId && a.rowIndex===b.rowIndex && a.court===b.court; }
+function onTourMatchClick(ev, tourId, rowIndex, court){
+  const el = ev.currentTarget;
+  if(el && el.dataset.dragHandled){ delete el.dataset.dragHandled; return; }
+  ev.stopPropagation();
+  const ref = {tourId, rowIndex, court};
+  if(tourSelectedMatch && matchRefEq(tourSelectedMatch, ref)){ tourSelectedMatch = null; renderTournaments(); return; }
+  if(tourSelectedMatch && tourSelectedMatch.tourId===tourId){
+    swapTournamentMatches(tourId, tourSelectedMatch.rowIndex, tourSelectedMatch.court, rowIndex, court);
+    tourSelectedMatch = null;
+    return;
+  }
+  tourSelectedMatch = ref; renderTournaments();
+}
+function swapTournamentMatches(tourId, r1, c1, r2, c2){
+  const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
+  if(r1===r2 && c1===c2) return;
+  const row1 = t.schedule[r1], row2 = t.schedule[r2];
+  if(!row1 || !row2 || row1.type!=="matches" || row2.type!=="matches") return;
+  const m1 = row1.matches[c1], m2 = row2.matches[c2];
+  // Validera: byte får inte skapa en krock (samma lag två gånger i samma tidslucka)
+  const teamsInRowExcl = (row, excludeCourt, incomingMatch) => {
+    const teams = new Set();
+    row.matches.forEach((m,i)=>{ if(i!==excludeCourt && m){ teams.add(m.teamA); teams.add(m.teamB); } });
+    if(incomingMatch){ if(teams.has(incomingMatch.teamA) || teams.has(incomingMatch.teamB)) return true; }
+    return false;
+  };
+  if(r1!==r2){
+    if(teamsInRowExcl(row1, c1, m2)){ alert("Kan inte byta — ett av lagen skulle spela på två planer samtidigt."); return; }
+    if(teamsInRowExcl(row2, c2, m1)){ alert("Kan inte byta — ett av lagen skulle spela på två planer samtidigt."); return; }
+  }
+  row1.matches[c1] = m2; row2.matches[c2] = m1;
+  renderTournaments(); saveData();
+}
+function onTourMatchPointerDown(ev, tourId, rowIndex, court){
+  if(ev.pointerType==="mouse" && ev.button!==0) return;
+  tourDragState = { tourId, rowIndex, court, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null, origEl:ev.currentTarget };
+  document.addEventListener("pointermove", onTourDragPointerMove);
+  document.addEventListener("pointerup", onTourDragPointerUp, {once:true});
+}
+function onTourDragPointerMove(ev){
+  if(!tourDragState) return;
+  const dx = ev.clientX-tourDragState.startX, dy = ev.clientY-tourDragState.startY;
+  if(!tourDragState.moved){
+    if(Math.hypot(dx,dy) < 6) return;
+    tourDragState.moved = true;
+    const orig = tourDragState.origEl;
+    const ghost = orig.cloneNode(true);
+    ghost.classList.add("tour-match-ghost");
+    ghost.style.position="fixed"; ghost.style.pointerEvents="none"; ghost.style.width=orig.offsetWidth+"px";
+    document.body.appendChild(ghost);
+    tourDragState.ghostEl = ghost;
+    orig.style.opacity = "0.35";
+  }
+  const ghost = tourDragState.ghostEl;
+  ghost.style.left = (ev.clientX-ghost.offsetWidth/2)+"px";
+  ghost.style.top = (ev.clientY-ghost.offsetHeight/2)+"px";
+  document.querySelectorAll(".tour-dragover").forEach(z=>z.classList.remove("tour-dragover"));
+  ghost.style.display="none";
+  const under = document.elementFromPoint(ev.clientX, ev.clientY);
+  ghost.style.display="";
+  const cell = under && under.closest(".tour-match, .tour-empty-slot");
+  if(cell) cell.classList.add("tour-dragover");
+}
+function onTourDragPointerUp(ev){
+  document.removeEventListener("pointermove", onTourDragPointerMove);
+  if(!tourDragState) return;
+  const state = tourDragState; tourDragState = null;
+  document.querySelectorAll(".tour-dragover").forEach(z=>z.classList.remove("tour-dragover"));
+  if(state.ghostEl) state.ghostEl.remove();
+  if(state.origEl) state.origEl.style.opacity = "";
+  if(!state.moved) return;
+  if(state.origEl) state.origEl.dataset.dragHandled = "1";
+  const under = document.elementFromPoint(ev.clientX, ev.clientY);
+  const cell = under && under.closest("[data-tour-row][data-tour-court]");
+  if(!cell) return;
+  const targetRow = +cell.dataset.tourRow, targetCourt = +cell.dataset.tourCourt;
+  swapTournamentMatches(state.tourId, state.rowIndex, state.court, targetRow, targetCourt);
+}
+
+function tournamentSummary(t){
+  const stats = {}; t.teams.forEach(team=>{ stats[team] = {count:0, opponents:[]}; });
+  t.schedule.forEach(row=>{
+    if(row.type!=="matches") return;
+    row.matches.forEach(m=>{
+      if(!m) return;
+      if(stats[m.teamA]){ stats[m.teamA].count++; stats[m.teamA].opponents.push(m.teamB); }
+      if(stats[m.teamB]){ stats[m.teamB].count++; stats[m.teamB].opponents.push(m.teamA); }
+    });
+  });
+  return stats;
+}
+function renderTournaments(){
+  const el = document.getElementById("tournament-list"); if(!el) return;
+  if(DATA.tournaments.length===0){
+    el.innerHTML = '<p style="font-size:12.5px;color:var(--muted);">Ingen turnering skapad än.</p>';
+    return;
+  }
+  el.innerHTML = DATA.tournaments.map(t=>{
+    let clock = t.startTime;
+    const rowsHTML = t.schedule.map((row,ri)=>{
+      let html;
+      if(row.type==="break"){
+        html = `<tr class="tour-break-row"><td colspan="${t.courts.length+1}">
+          <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
+            <input type="text" value="${row.label}" onchange="updateBreakField('${t.id}',${ri},'label',this.value)" style="max-width:160px;text-align:center;font-weight:700;">
+            <span>(</span><input type="number" value="${row.minutes}" min="0" step="5" onchange="updateBreakField('${t.id}',${ri},'minutes',this.value)" style="width:60px;text-align:center;"><span>min)</span>
+            <button type="button" class="btn ghost small" onclick="removeScheduleRow('${t.id}',${ri})">Ta bort block</button>
+          </div>
+        </td></tr>`;
+        clock = tourAddMinutes(clock, row.minutes);
+      } else {
+        const timeLabel = clock;
+        const cells = row.matches.map((m,ci)=>{
+          if(!m) return `<td class="tour-match-cell" data-tour-row="${ri}" data-tour-court="${ci}"><div class="tour-empty-slot">—</div></td>`;
+          const sel = matchRefEq(tourSelectedMatch,{tourId:t.id,rowIndex:ri,court:ci}) ? "selected" : "";
+          return `<td class="tour-match-cell" data-tour-row="${ri}" data-tour-court="${ci}">
+            <div class="tour-match ${sel}" onpointerdown="onTourMatchPointerDown(event,'${t.id}',${ri},${ci})" onclick="onTourMatchClick(event,'${t.id}',${ri},${ci})">
+              <div style="display:flex;justify-content:space-between;gap:4px;"><span>${m.teamA}</span><span style="opacity:.6;">–</span><span>${m.teamB}</span></div>
+            </div>
+          </td>`;
+        }).join("");
+        html = `<tr><td class="tour-time-cell">${timeLabel}</td>${cells}</tr>`;
+        clock = tourAddMinutes(clock, t.matchMinutes);
+      }
+      return html + `<tr><td colspan="${t.courts.length+1}" style="border:none;padding:2px 0;text-align:center;">
+        <button type="button" class="btn ghost small" style="font-size:10px;padding:2px 8px;" onclick="insertBreakAfter('${t.id}',${ri})">+ Lägg till block (paus/förberedelser/slut) här</button>
+      </td></tr>`;
+    }).join("");
+    const stats = tournamentSummary(t);
+    const summaryHTML = t.teams.map(team=>{
+      const s = stats[team] || {count:0,opponents:[]};
+      return `<div class="tour-summary-item"><b>${team}</b> — ${s.count} match${s.count===1?"":"er"}<br><span style="color:var(--muted);">${s.opponents.length?s.opponents.join(", "):"inga matcher"}</span></div>`;
+    }).join("");
+    return `<div class="tour-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+        <div>
+          <h3 style="margin:0;">${t.name}</h3>
+          <span style="font-size:12px;color:var(--muted);">${t.date||"inget datum"} · ${t.teams.length} lag · ${t.courts.length} plan${t.courts.length===1?"":"er"} · ${t.matchMinutes} min/match</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn ghost small" onclick="openTournamentModal('${t.id}')">Redigera</button>
+          <button class="btn ghost small" onclick="regenerateTournament('${t.id}')">🔄 Bygg om schema</button>
+        </div>
+      </div>
+      <div class="tour-grid-wrap">
+        <table class="tour-grid">
+          <tr><th>Starttid</th>${t.courts.map(c=>`<th>${c}</th>`).join("")}</tr>
+          ${rowsHTML}
+        </table>
+      </div>
+      <h4 style="margin:16px 0 4px;font-size:13px;">Sammanställning</h4>
+      <div class="tour-summary-grid">${summaryHTML}</div>
+    </div>`;
+  }).join("");
 }
 
 /* ---- Laget: grupper ---- */
