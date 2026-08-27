@@ -3069,10 +3069,11 @@ function renderLineupBoard(){
       const on = luCoaches.includes(c.id);
       return `<span class="checkchip ${on?'on':''}" style="font-size:10.5px;padding:2px 8px;" onclick="event.stopPropagation();toggleZoneCoach('${g.id}','${c.id}')">${c.name}</span>`;
     }).join("");
-    const goalieOpts = '<option value="">Målvakt —</option>' + sessionDraft.attendance.map(pid=>{
-      const p = DATA.players.find(x=>x.id===pid); if(!p) return "";
-      return `<option value="${pid}" ${lu.goalie===pid?'selected':''}>${p.name}</option>`;
-    }).join("");
+    const goalieOpts = '<option value="">Målvakt —</option>' + sessionDraft.attendance
+      .map(pid=>DATA.players.find(x=>x.id===pid))
+      .filter(Boolean)
+      .sort((a,b)=>a.name.localeCompare(b.name,"sv"))
+      .map(p=>`<option value="${p.id}" ${lu.goalie===p.id?'selected':''}>${p.name}</option>`).join("");
     // Målvaktsgruppens EGNA zon behöver ingen "Målvakt —"-väljare inom sig själv — det vore att
     // peka ut en målvakt bland målvakterna. Den zonen visar bara medlemmarna direkt.
     const goalieSelectHTML = g.isGoalieGroup ? "" :
