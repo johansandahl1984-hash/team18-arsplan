@@ -714,6 +714,7 @@
     <div class="field">
       <label>Föreningar</label>
       <p style="font-size:11px;color:var(--muted);margin:0 0 8px;">Lägg till en förening i taget, sedan namnen på deras lag (t.ex. Vit/Röd/Blå) för att skilja dem åt. Matcher mellan lag från samma förening skjuts automatiskt så långt fram som möjligt i schemat.</p>
+      <div id="tour-saved-clubs"></div>
       <div id="tour-clubs-list"></div>
       <button type="button" class="btn ghost small" onclick="addClub()">+ Ny förening</button>
     </div>
@@ -1163,6 +1164,7 @@ let DATA = {
   customExercises: [], // egna, lagspecifika övningar — samma form som EXERCISES-posterna, listas ihop med dem via allExercises()
   exerciseDiagrams: {}, // ritade diagram per övnings-id (bygga/inbyggd): {"ex-id": [{type,x,y,x2,y2}, ...]}
   tournaments: [], // turneringar/poolspel — separat från er egen träningsplanering, se genererarTournamentSchedule()
+  savedClubs: [], // bibliotek av föreningar (namn + kända lagnamn) som växer varje gång en turnering sparas — återanvänds som snabbval i nya turneringar
   icsCalendarUrl: "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics", // lagets kalenderflöde för "Hämta nya händelser"
   templates: [], // sparade träningsmallar: {id, name, blocks, yta, istid, savedAt}
   periods: [], // säsongens block/perioder: {id, label, weekStart, weekEnd, color, description, focus, goal, goalStatus, goalNotes}
@@ -1256,6 +1258,7 @@ function migratePairHistory(){
   if(!DATA.customExercises) DATA.customExercises = [];
   if(!DATA.exerciseDiagrams) DATA.exerciseDiagrams = {};
   if(!DATA.tournaments) DATA.tournaments = [];
+  if(!DATA.savedClubs) DATA.savedClubs = [];
   if(!DATA.icsCalendarUrl) DATA.icsCalendarUrl = "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics";
 }
 // Engångsmigrering: flaggar automatiskt en befintlig grupp som heter "Målvakter" (skiftläges-
@@ -3733,8 +3736,25 @@ function openTournamentModal(id){
       : [{name:"", subteams:[""]}, {name:"", subteams:[""]}],
   };
   document.getElementById("tour-delete-btn").style.display = t ? "inline-block" : "none";
+  renderSavedClubsChips();
   renderTourLists();
   openModal("modal-tournament");
+}
+function renderSavedClubsChips(){
+  const el = document.getElementById("tour-saved-clubs");
+  const saved = DATA.savedClubs||[];
+  if(saved.length===0){ el.innerHTML = ""; return; }
+  el.innerHTML = `<p style="font-size:11px;color:var(--muted);margin:0 0 6px;">Sparade föreningar — tryck för att lägga till direkt:</p>
+    <div class="checkchips" style="margin-bottom:10px;">
+      ${saved.map(c=>`<span class="checkchip" onclick="addSavedClub('${c.name.replace(/'/g,"\\'")}')">${c.name}</span>`).join("")}
+    </div>`;
+}
+function addSavedClub(clubName){
+  const already = tourListDraft.clubs.some(c=>c.name.trim().toLowerCase()===clubName.toLowerCase());
+  if(already){ alert(`"${clubName}" är redan tillagd i den här turneringen.`); return; }
+  const saved = (DATA.savedClubs||[]).find(c=>c.name===clubName);
+  tourListDraft.clubs.push({ name: clubName, subteams: saved ? saved.subteams.slice() : [""] });
+  renderTourLists();
 }
 function renderTourLists(){
   document.getElementById("tour-courts-list").innerHTML = tourListDraft.courts.map((v,i)=>
@@ -3775,6 +3795,21 @@ function deriveTeamsFromClubs(clubs){
   return { teams, teamClub };
 }
 
+// Slår ihop föreningarna från en sparad turnering in i det växande biblioteket (DATA.savedClubs)
+// så de går att välja som snabbval nästa gång. Matchar på föreningsnamn (skiftläges-okänsligt):
+// befintlig förening får sina lagnamn kompletterade (union, inte överskrivning) med eventuella
+// nya lagnamn, en helt ny förening läggs till som ny post.
+function mergeIntoSavedClubs(clubs){
+  if(!DATA.savedClubs) DATA.savedClubs = [];
+  clubs.forEach(club=>{
+    const existing = DATA.savedClubs.find(c=>c.name.toLowerCase()===club.name.toLowerCase());
+    if(existing){
+      club.subteams.forEach(s=>{ if(!existing.subteams.some(es=>es.toLowerCase()===s.toLowerCase())) existing.subteams.push(s); });
+    } else {
+      DATA.savedClubs.push({ name: club.name, subteams: club.subteams.slice() });
+    }
+  });
+}
 async function saveTournament(){
   const id = document.getElementById("tour-id").value;
   const name = document.getElementById("tour-name").value.trim();
@@ -3800,6 +3835,7 @@ async function saveTournament(){
   const schedule = generateTournamentSchedule(teams, courts.length, teamClub, numRounds);
   const t = { id: id || ("tour-"+Date.now()), name, date, startTime, endTime, matchMinutes, courts, clubs, teams, teamClub, schedule };
   trimScheduleToEndTime(t); // defensivt säkerhetsnät — genereringen ska redan passa exakt
+  mergeIntoSavedClubs(clubs);
   if(existing){ Object.assign(existing, t); }
   else { DATA.tournaments.push(t); }
   closeModal("modal-tournament");
