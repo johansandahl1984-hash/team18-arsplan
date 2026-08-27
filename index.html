@@ -3622,50 +3622,63 @@ function generateAllPairs(teams){
   for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) pairs.push([teams[i],teams[j]]);
   return pairs;
 }
-// Två strikt separata "pooler" av möjliga par: korsförenings-par MÅSTE tömmas helt (bland de
-// lag som fortfarande är otilldelade i en given omgång) innan föreningsinterna par
-// överhuvudtaget blir valbara — inte bara nedprioriterade. Inom respektive pool prioriteras
-// par där ingen av parterna mött motståndarens förening förut. Genererar bara så många
-// omgångar som ryms inom den angivna tidsramen (numRounds), inte tills alla mötts.
-function generateTieredSchedule(teams, numCourts, teamClub, numRounds){
-  const allPairs = generateAllPairs(teams);
-  let crossPool = allPairs.filter(([a,b])=>teamClub[a]!==teamClub[b]);
-  let samePool  = allPairs.filter(([a,b])=>teamClub[a]===teamClub[b]);
-  const facedClubs = {}; teams.forEach(tm=>facedClubs[tm]=new Set());
-  const removeFromPool = (pool,a,b) => {
-    const idx = pool.findIndex(([x,y])=>(x===a&&y===b)||(x===b&&y===a));
-    if(idx>-1) pool.splice(idx,1);
-  };
+function generateAllPairs(teams){
+  const pairs = [];
+  for(let i=0;i<teams.length;i++) for(let j=i+1;j<teams.length;j++) pairs.push([teams[i],teams[j]]);
+  return pairs;
+}
+function pairTier(a,b,teamClub,facedClubs){
+  if(teamClub[a]===teamClub[b]) return 2; // samma förening
+  if(facedClubs[a].has(teamClub[b]) || facedClubs[b].has(teamClub[a])) return 1; // redan mött föreningen, annat lag
+  return 0; // ny förening för båda
+}
+// Balanserar TVÅ saker samtidigt: 1) att alla lag spelar lika många matcher (ingen ska halka
+// efter — det lag med FÄRST spelade matcher denna omgång får alltid välja motståndare först),
+// och 2) föreningsmix (ny förening prioriteras, föreningsinternt sist). Genererar bara så många
+// omgångar som ryms inom tidsramen (numRounds) — inte tills alla lag mötts.
+function generateBalancedSchedule(teams, numCourts, teamClub, numRounds){
+  const facedClubs = {}; const matchCount = {};
+  teams.forEach(tm=>{ facedClubs[tm]=new Set(); matchCount[tm]=0; });
+  const playedPairs = new Set();
+  const pairKey = (a,b)=>[a,b].sort().join("|");
   const slots = [];
   for(let r=0; r<numRounds; r++){
     let available = teams.slice();
     const slot = [];
     while(slot.length < numCourts && available.length>=2){
-      let candidates = crossPool.filter(([a,b])=>available.includes(a)&&available.includes(b));
-      if(candidates.length===0) candidates = samePool.filter(([a,b])=>available.includes(a)&&available.includes(b));
-      if(candidates.length===0) break; // inget mer går att para denna omgång — resterande lag får bye
-      candidates.sort((x,y)=>{
-        const xNew = !(facedClubs[x[0]].has(teamClub[x[1]]) || facedClubs[x[1]].has(teamClub[x[0]]));
-        const yNew = !(facedClubs[y[0]].has(teamClub[y[1]]) || facedClubs[y[1]].has(teamClub[y[0]]));
-        return (yNew?1:0) - (xNew?1:0);
-      });
-      const [a,b] = candidates[0];
-      slot.push([a,b]);
-      facedClubs[a].add(teamClub[b]); facedClubs[b].add(teamClub[a]);
-      available = available.filter(tm=>tm!==a && tm!==b);
-      removeFromPool(crossPool,a,b); removeFromPool(samePool,a,b);
+      available.sort((a,b)=>matchCount[a]-matchCount[b]);
+      const anchor = available[0];
+      let best = null, bestScore = null;
+      for(let i=1;i<available.length;i++){
+        const cand = available[i];
+        const tier = pairTier(anchor,cand,teamClub,facedClubs);
+        const repeat = playedPairs.has(pairKey(anchor,cand)) ? 1 : 0;
+        const score = tier*100 + repeat*10 + matchCount[cand];
+        if(bestScore===null || score < bestScore){ bestScore = score; best = cand; }
+      }
+      if(!best) break;
+      slot.push([anchor, best]);
+      matchCount[anchor]++; matchCount[best]++;
+      facedClubs[anchor].add(teamClub[best]); facedClubs[best].add(teamClub[anchor]);
+      playedPairs.add(pairKey(anchor,best));
+      available = available.filter(tm=>tm!==anchor && tm!==best);
     }
     slots.push(slot);
   }
   return slots;
 }
 function generateTournamentSchedule(teams, numCourts, teamClub, numRounds){
-  const slots = generateTieredSchedule(teams, numCourts, teamClub||{}, numRounds);
-  return slots.map(slot=>{
+  const slots = generateBalancedSchedule(teams, numCourts, teamClub||{}, numRounds);
+  const schedule = slots.map(slot=>{
     const matches = new Array(numCourts).fill(null);
     slot.forEach((m,i)=>{ matches[i] = {teamA:m[0], teamB:m[1]}; });
     return {type:"matches", matches};
   });
+  // Sluttiden läggs alltid till som ett eget, tydligt block sist i schemat (som "Slut"-raden
+  // i Johans referensbild) — inte bara en osynlig beräkning i bakgrunden. 0 minuter lång, den
+  // lägger inte till någon tid, bara markerar var gränsen går.
+  schedule.push({type:"break", label:"Slut", minutes:0, isEndMarker:true});
+  return schedule;
 }
 function tourAddMinutes(hhmm, mins){
   const [h,m] = hhmm.split(":").map(Number);
@@ -3687,6 +3700,7 @@ function trimScheduleToEndTime(t){
   let cutIndex = -1;
   for(let i=0; i<t.schedule.length; i++){
     const row = t.schedule[i];
+    if(row.isEndMarker) continue; // Slut-markören är alltid giltig oavsett var den råkar hamna — aldrig ett klippmål i sig
     if(row.type==="matches"){
       const matchEndMin = clockMin + t.matchMinutes;
       if(matchEndMin > endMin){ cutIndex = i; break; }
@@ -3695,7 +3709,11 @@ function trimScheduleToEndTime(t){
       clockMin += (row.minutes||0);
     }
   }
-  if(cutIndex > -1) t.schedule = t.schedule.slice(0, cutIndex);
+  if(cutIndex > -1){
+    const endMarker = t.schedule.find(r=>r.isEndMarker);
+    t.schedule = t.schedule.slice(0, cutIndex);
+    if(endMarker) t.schedule.push(endMarker); // bevara Slut-markören även om allt efter den klipptes bort
+  }
 }
 
 let tourListDraft = { courts:[], clubs:[] }; // arbetskopia medan modalen är öppen
@@ -3813,7 +3831,10 @@ async function regenerateTournament(tourId){
 }
 function addBreakBlock(tourId){
   const t = DATA.tournaments.find(x=>x.id===tourId); if(!t) return;
-  t.schedule.push({type:"break", label:"Paus", minutes:15});
+  const endIdx = t.schedule.findIndex(r=>r.isEndMarker);
+  const newBreak = {type:"break", label:"Paus", minutes:15};
+  if(endIdx>-1) t.schedule.splice(endIdx, 0, newBreak); // in före Slut-markören, aldrig efter
+  else t.schedule.push(newBreak); // äldre turnering utan Slut-markör
   trimScheduleToEndTime(t);
   renderTournaments(); saveData();
 }
@@ -4008,16 +4029,24 @@ function renderTournaments(){
     const rowsHTML = t.schedule.map((row,ri)=>{
       let html;
       if(row.type==="break"){
-        html = `<tr class="tour-break-row" data-tour-schedule-row="${ri}">
-          <td colspan="${t.courts.length+1}">
-            <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
-              <span class="tour-break-handle" title="Dra för att flytta" onpointerdown="onBreakRowPointerDown(event,'${t.id}',${ri})">⠿</span>
+        if(row.isEndMarker){
+          html = `<tr class="tour-break-row" data-tour-schedule-row="${ri}">
+            <td colspan="${t.courts.length+1}">
               <input type="text" value="${row.label}" onchange="updateBreakField('${t.id}',${ri},'label',this.value)" style="max-width:160px;text-align:center;font-weight:700;">
-              <span>(</span><input type="number" value="${row.minutes}" min="0" step="5" onchange="updateBreakField('${t.id}',${ri},'minutes',this.value)" style="width:60px;text-align:center;"><span>min)</span>
-              <button type="button" class="btn ghost small" onclick="removeScheduleRow('${t.id}',${ri})">Ta bort block</button>
-            </div>
-          </td>
-        </tr>`;
+            </td>
+          </tr>`;
+        } else {
+          html = `<tr class="tour-break-row" data-tour-schedule-row="${ri}">
+            <td colspan="${t.courts.length+1}">
+              <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                <span class="tour-break-handle" title="Dra för att flytta" onpointerdown="onBreakRowPointerDown(event,'${t.id}',${ri})">⠿</span>
+                <input type="text" value="${row.label}" onchange="updateBreakField('${t.id}',${ri},'label',this.value)" style="max-width:160px;text-align:center;font-weight:700;">
+                <span>(</span><input type="number" value="${row.minutes}" min="0" step="5" onchange="updateBreakField('${t.id}',${ri},'minutes',this.value)" style="width:60px;text-align:center;"><span>min)</span>
+                <button type="button" class="btn ghost small" onclick="removeScheduleRow('${t.id}',${ri})">Ta bort block</button>
+              </div>
+            </td>
+          </tr>`;
+        }
         clock = tourAddMinutes(clock, row.minutes);
       } else {
         const timeLabel = clock;
