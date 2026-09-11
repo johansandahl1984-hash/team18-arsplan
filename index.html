@@ -604,6 +604,7 @@
     <div class="field"><label>Övriga noteringar</label><textarea id="player-notes"></textarea></div>
     <div class="modal-actions">
       <button class="btn danger" id="player-delete-btn" style="display:none;" onclick="deletePlayer()">Ta bort</button>
+      <button class="btn ghost" id="player-active-toggle-btn" style="display:none;" onclick="togglePlayerActiveFromModal()">Inaktivera</button>
       <button class="btn ghost" onclick="closeModal('modal-player')">Avbryt</button>
       <button class="btn" onclick="savePlayer()">Spara</button>
     </div>
@@ -1266,6 +1267,7 @@ function migratePairHistory(){
   if(!DATA.exerciseDiagrams) DATA.exerciseDiagrams = {};
   if(!DATA.tournaments) DATA.tournaments = [];
   if(!DATA.savedClubs) DATA.savedClubs = [];
+  DATA.players.forEach(p=>{ if(p.active===undefined) p.active = true; }); // äldre spelare utan fältet räknas som aktiva
   if(!DATA.icsCalendarUrl) DATA.icsCalendarUrl = "https://cal.laget.se/Trelleborgsif-vikingsteam18.ics";
 }
 // Engångsmigrering: flaggar automatiskt en befintlig grupp som heter "Målvakter" (skiftläges-
@@ -2801,7 +2803,7 @@ function openInlineLineup(sid){
   const hadAnyPlayers = Object.values(lineup).some(g=>(g.players||[]).length>0);
   const attendance = (s.attendance && s.attendance.length) ? s.attendance.slice()
     : hadAnyPlayers ? [...new Set(Object.values(lineup).flatMap(g=>g.players||[]))]
-    : DATA.players.map(p=>p.id); // förvalt: alla är med
+    : DATA.players.filter(p=>p.active!==false).map(p=>p.id); // förvalt: alla AKTIVA är med
   activeGroups.forEach(gid=>{ if(!lineup[gid]) lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""}; });
   sessionDraft = { attendance, activeGroups, lineup };
   const container = document.getElementById("inline-lineup-container-"+sid);
@@ -3048,7 +3050,9 @@ function setZoneGathering(gid, value){
 
 function renderLineupBoard(){
   const poolEl = document.getElementById(scopedId("poolChips")); if(!poolEl) return;
-  const sortedPlayers = [...DATA.players].sort((a,b)=>a.name.localeCompare(b.name,'sv'));
+  const sortedPlayers = [...DATA.players]
+    .filter(p => p.active!==false || sessionDraft.attendance.includes(p.id)) // inaktiva erbjuds inte som NYTT val, men försvinner inte om redan markerad närvarande i just denna session
+    .sort((a,b)=>a.name.localeCompare(b.name,'sv'));
   const poolPlayers = sortedPlayers.filter(p => !(sessionDraft.attendance.includes(p.id) && assignedElsewhere(p.id)));
   poolEl.innerHTML = DATA.players.length===0
     ? '<span style="font-size:12px;color:var(--muted);">Inga spelare inlagda i "Laget" än.</span>'
@@ -3268,7 +3272,7 @@ function openSessionModal(){
   refreshPassOptions("");
   pendingArchiveOverride = null;
   updateArchiveButtonLabel(null);
-  sessionDraft = { attendance: DATA.players.map(p=>p.id), activeGroups: DATA.groups.slice(0,4).map(g=>g.id), lineup: {} };
+  sessionDraft = { attendance: DATA.players.filter(p=>p.active!==false).map(p=>p.id), activeGroups: DATA.groups.slice(0,4).map(g=>g.id), lineup: {} };
   sessionDraft.activeGroups.forEach(gid=> sessionDraft.lineup[gid] = {coaches:[], players:[], goalie:"", gathering:""});
   lineupScope = null;
   renderActiveGroupsPicker(); renderLineupBoard();
@@ -4276,20 +4280,27 @@ function trainingCountFor(pid){
   ).length;
 }
 function renderPlayers(){
-  document.getElementById("player-count-hint").textContent = DATA.players.length + " spelare registrerade";
+  const activeCount = DATA.players.filter(p=>p.active!==false).length;
+  const inactiveCount = DATA.players.length - activeCount;
+  document.getElementById("player-count-hint").textContent = `${activeCount} aktiva spelare` + (inactiveCount ? ` · ${inactiveCount} inaktiva` : "");
   const list = document.getElementById("player-list");
   if(DATA.players.length===0){ list.innerHTML = '<div class="empty">Inga spelare tillagda ännu.</div>'; return; }
   const numVal = p => { const n = parseInt(p.number,10); return isNaN(n) ? 9999 : n; };
-  const sorted = [...DATA.players].sort((a,b)=> numVal(a)-numVal(b) || a.name.localeCompare(b.name,'sv'));
+  // Aktiva spelare först (numret sen namn, som förut), inaktiva samlade sist för sig
+  const sorted = [...DATA.players].sort((a,b)=>
+    (a.active===false?1:0) - (b.active===false?1:0) || numVal(a)-numVal(b) || a.name.localeCompare(b.name,'sv'));
   list.innerHTML = sorted.map(p=>{
     const suggestions = focusSuggestions(p.growth);
-    return `<div class="player-row" style="flex-direction:column;align-items:stretch;">
+    const inactive = p.active===false;
+    return `<div class="player-row" style="flex-direction:column;align-items:stretch;${inactive?'opacity:.55;':''}">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <span class="mono" style="min-width:26px;text-align:center;font-weight:700;color:var(--pine);">${p.number&&p.number!=='-'?'#'+p.number:'—'}</span>
         <span class="player-name">${p.name}</span>
+        ${inactive?'<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px;">Inaktiv</span>':''}
         <span class="player-meta">${trainingCountFor(p.id)} träningar registrerade</span>
         <span class="player-toggle" onclick="togglePlayer('${p.id}')" id="ptoggle-${p.id}">Visa profil ▾</span>
-        <button class="btn ghost small" style="margin-left:auto;" onclick="editPlayer('${p.id}')">Redigera</button>
+        <button class="btn ghost small" onclick="togglePlayerActive('${p.id}')">${inactive?'Återaktivera':'Inaktivera'}</button>
+        <button class="btn ghost small" onclick="editPlayer('${p.id}')">Redigera</button>
       </div>
       <div class="player-detail" id="pdetail-${p.id}">
         <dl>
@@ -4301,6 +4312,19 @@ function renderPlayers(){
       </div>
     </div>`;
   }).join("");
+}
+async function togglePlayerActive(id){
+  const p = DATA.players.find(x=>x.id===id); if(!p) return;
+  const willBeActive = p.active===false;
+  if(!willBeActive){
+    const yes = await confirmDialog(`Inaktivera ${p.name}? All historik (statistik, gamla pass) ligger kvar precis som förut — hen försvinner bara som val vid framtida lagindelning tills du återaktiverar.`, "Inaktivera spelare");
+    if(!yes) return;
+  }
+  await guard(async ()=>{
+    p.active = willBeActive;
+    renderPlayers();
+    await saveData();
+  });
 }
 function togglePlayer(id){
   const d = document.getElementById("pdetail-"+id);
@@ -4318,6 +4342,7 @@ function openPlayerModal(){
   document.getElementById("player-growth").value = "";
   document.getElementById("player-notes").value = "";
   document.getElementById("player-delete-btn").style.display = "none";
+  document.getElementById("player-active-toggle-btn").style.display = "none";
   openModal("modal-player");
 }
 function editPlayer(id){
@@ -4331,7 +4356,16 @@ function editPlayer(id){
   document.getElementById("player-growth").value = p.growth||"";
   document.getElementById("player-notes").value = p.notes||"";
   document.getElementById("player-delete-btn").style.display = "inline-block";
+  const toggleBtn = document.getElementById("player-active-toggle-btn");
+  toggleBtn.style.display = "inline-block";
+  toggleBtn.textContent = p.active===false ? "Återaktivera" : "Inaktivera";
   openModal("modal-player");
+}
+async function togglePlayerActiveFromModal(){
+  const id = document.getElementById("player-id").value;
+  await togglePlayerActive(id);
+  const p = DATA.players.find(x=>x.id===id); if(!p) return;
+  document.getElementById("player-active-toggle-btn").textContent = p.active===false ? "Återaktivera" : "Inaktivera";
 }
 async function savePlayer(){
   if(SAVE_BUSY) return; SAVE_BUSY = true;
@@ -4339,11 +4373,13 @@ async function savePlayer(){
   const id = document.getElementById("player-id").value || ("p-"+Date.now());
   const name = document.getElementById("player-name").value.trim();
   if(!name){ alert("Ange ett namn."); return; }
+  const existing = DATA.players.find(x=>x.id===id);
   const obj = {
     id, name, number: document.getElementById("player-number").value.trim() || "-",
     strengths: document.getElementById("player-strengths").value,
     growth: document.getElementById("player-growth").value,
     notes: document.getElementById("player-notes").value,
+    active: existing ? existing.active : true, // bevaras vid redigering — nollställs inte till aktiv varje gång man sparar
   };
   const idx = DATA.players.findIndex(x=>x.id===id);
   if(idx>=0) DATA.players[idx]=obj; else DATA.players.push(obj);
