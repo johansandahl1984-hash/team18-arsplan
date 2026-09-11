@@ -3119,7 +3119,13 @@ const LINEUP_DRAG_THRESHOLD = 6; // px rörelse innan ett tryck räknas som ett 
 
 function onChipPointerDown(ev, pid){
   if(ev.pointerType==="mouse" && ev.button!==0) return; // bara vänsterklick med mus
-  lineupDragState = { pid, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null, origChipEl:ev.currentTarget };
+  // Spara var INOM chipet fingret greppade — spöket ska hänga kvar i exakt den punkten under
+  // draget (håller man i vänsterkanten av namnet ska det fortsätta sitta där), istället för att
+  // hoppa till att vara centrerat under fingret.
+  const r = ev.currentTarget.getBoundingClientRect();
+  lineupDragState = { pid, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null,
+    origChipEl:ev.currentTarget, grabDX: ev.clientX - r.left, grabDY: ev.clientY - r.top,
+    chipW: r.width, chipH: r.height, corrX:0, corrY:0 };
   document.addEventListener("pointermove", onLineupDragPointerMove);
   document.addEventListener("pointerup", onLineupDragPointerUp, {once:true});
 }
@@ -3138,16 +3144,28 @@ function onLineupDragPointerMove(ev){
     const ghost = orig.cloneNode(true);
     ghost.classList.add("lineup-chip-ghost");
     ghost.style.position = "fixed";
+    ghost.style.margin = "0"; // ärvda marginaler skulle annars förskjuta spöket från sin angivna punkt
     ghost.style.pointerEvents = "none";
     ghost.style.zIndex = "500";
-    ghost.style.width = orig.offsetWidth+"px";
+    ghost.style.width = lineupDragState.chipW+"px";
+    ghost.style.left = "0px"; ghost.style.top = "0px";
+    ghost.style.transform = "translate(0px,0px) scale(1.05)";
     document.body.appendChild(ghost);
+    // Självkorrigering: mät var spöket FAKTISKT hamnade vid translate(0,0). Om position:fixed av
+    // någon anledning inte tolkas mot skärmen (t.ex. en transform någonstans i föräldrakedjan,
+    // vilket gör en förälder till referenspunkt istället) ger mätningen skillnaden, som vi sedan
+    // kompenserar för. Fungerar oavsett grundorsak istället för att anta en specifik.
+    const gr = ghost.getBoundingClientRect();
+    lineupDragState.corrX = -gr.left;
+    lineupDragState.corrY = -gr.top;
     lineupDragState.ghostEl = ghost;
     orig.style.opacity = "0.35";
   }
-  const ghost = lineupDragState.ghostEl;
-  ghost.style.left = (ev.clientX - ghost.offsetWidth/2) + "px";
-  ghost.style.top = (ev.clientY - ghost.offsetHeight/2) + "px";
+  const st = lineupDragState;
+  const ghost = st.ghostEl;
+  const gx = ev.clientX - st.grabDX + st.corrX;
+  const gy = ev.clientY - st.grabDY + st.corrY;
+  ghost.style.transform = `translate(${gx}px,${gy}px) scale(1.05)`;
   document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
   ghost.style.display = "none"; // dölj tillfälligt så elementFromPoint inte träffar spöket självt
   const under = document.elementFromPoint(ev.clientX, ev.clientY);
@@ -3914,7 +3932,9 @@ function onBreakRowPointerDown(ev, tourId, rowIndex){
   if(ev.pointerType==="mouse" && ev.button!==0) return;
   ev.stopPropagation();
   const rowEl = ev.currentTarget.closest("tr");
-  tourBreakDragState = { tourId, rowIndex, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null, origRowEl:rowEl };
+  const r = rowEl.getBoundingClientRect();
+  tourBreakDragState = { tourId, rowIndex, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null,
+    origRowEl:rowEl, grabDX: ev.clientX - r.left, grabDY: ev.clientY - r.top, rowW: r.width, corrX:0, corrY:0 };
   document.addEventListener("pointermove", onTourBreakDragPointerMove);
   document.addEventListener("pointerup", onTourBreakDragPointerUp, {once:true});
 }
@@ -3929,15 +3949,19 @@ function onTourBreakDragPointerMove(ev){
     const orig = tourBreakDragState.origRowEl;
     const ghost = orig.cloneNode(true);
     ghost.classList.add("tour-match-ghost");
-    ghost.style.position="fixed"; ghost.style.pointerEvents="none"; ghost.style.width=orig.offsetWidth+"px";
+    ghost.style.position="fixed"; ghost.style.margin="0"; ghost.style.pointerEvents="none";
+    ghost.style.width=tourBreakDragState.rowW+"px";
     ghost.style.display="table"; // <tr> utanför en <table> behöver detta för att se rätt ut löst från DOM:en
+    ghost.style.left="0px"; ghost.style.top="0px"; ghost.style.transform="translate(0px,0px)";
     document.body.appendChild(ghost);
+    const gr = ghost.getBoundingClientRect(); // självkorrigering, se onLineupDragPointerMove
+    tourBreakDragState.corrX = -gr.left; tourBreakDragState.corrY = -gr.top;
     tourBreakDragState.ghostEl = ghost;
     orig.style.opacity = "0.3";
   }
-  const ghost = tourBreakDragState.ghostEl;
-  ghost.style.left = (ev.clientX-ghost.offsetWidth/2)+"px";
-  ghost.style.top = (ev.clientY-16)+"px";
+  const st = tourBreakDragState;
+  const ghost = st.ghostEl;
+  ghost.style.transform = `translate(${ev.clientX-st.grabDX+st.corrX}px,${ev.clientY-st.grabDY+st.corrY}px)`;
   document.querySelectorAll(".tour-dragover").forEach(z=>z.classList.remove("tour-dragover"));
   ghost.style.display="none";
   const under = document.elementFromPoint(ev.clientX, ev.clientY);
@@ -4013,7 +4037,9 @@ function swapTournamentMatches(tourId, r1, c1, r2, c2){
 }
 function onTourMatchPointerDown(ev, tourId, rowIndex, court){
   if(ev.pointerType==="mouse" && ev.button!==0) return;
-  tourDragState = { tourId, rowIndex, court, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null, origEl:ev.currentTarget };
+  const r = ev.currentTarget.getBoundingClientRect();
+  tourDragState = { tourId, rowIndex, court, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null,
+    origEl:ev.currentTarget, grabDX: ev.clientX - r.left, grabDY: ev.clientY - r.top, elW: r.width, corrX:0, corrY:0 };
   document.addEventListener("pointermove", onTourDragPointerMove);
   document.addEventListener("pointerup", onTourDragPointerUp, {once:true});
 }
@@ -4028,14 +4054,18 @@ function onTourDragPointerMove(ev){
     const orig = tourDragState.origEl;
     const ghost = orig.cloneNode(true);
     ghost.classList.add("tour-match-ghost");
-    ghost.style.position="fixed"; ghost.style.pointerEvents="none"; ghost.style.width=orig.offsetWidth+"px";
+    ghost.style.position="fixed"; ghost.style.margin="0"; ghost.style.pointerEvents="none";
+    ghost.style.width=tourDragState.elW+"px";
+    ghost.style.left="0px"; ghost.style.top="0px"; ghost.style.transform="translate(0px,0px)";
     document.body.appendChild(ghost);
+    const gr = ghost.getBoundingClientRect(); // självkorrigering, se onLineupDragPointerMove
+    tourDragState.corrX = -gr.left; tourDragState.corrY = -gr.top;
     tourDragState.ghostEl = ghost;
     orig.style.opacity = "0.35";
   }
-  const ghost = tourDragState.ghostEl;
-  ghost.style.left = (ev.clientX-ghost.offsetWidth/2)+"px";
-  ghost.style.top = (ev.clientY-ghost.offsetHeight/2)+"px";
+  const st = tourDragState;
+  const ghost = st.ghostEl;
+  ghost.style.transform = `translate(${ev.clientX-st.grabDX+st.corrX}px,${ev.clientY-st.grabDY+st.corrY}px)`;
   document.querySelectorAll(".tour-dragover").forEach(z=>z.classList.remove("tour-dragover"));
   ghost.style.display="none";
   const under = document.elementFromPoint(ev.clientX, ev.clientY);
