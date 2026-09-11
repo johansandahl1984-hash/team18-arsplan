@@ -205,7 +205,7 @@
   .diag-toolbar{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
   .diag-tool{border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; background:#fff; cursor:pointer; display:flex; align-items:center; gap:5px;}
   .diag-tool.active{background:var(--pine); color:#fff; border-color:var(--pine);}
-  .diag-canvas{width:100%; height:auto; border:1px solid var(--line); border-radius:10px; background:var(--ice); cursor:crosshair; touch-action:none;}
+  .diag-canvas{width:100%; height:auto; border:1px solid var(--line); border-radius:10px; background:var(--ice); cursor:crosshair; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   .diag-thumb{width:100%; max-width:260px; border:1px solid var(--line); border-radius:8px; background:var(--ice); display:block; margin-top:6px;}
   .ex-head{padding:14px 16px 10px; cursor:pointer;}
   .ex-cat{display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:999px; margin-bottom:7px; color:#fff;}
@@ -279,6 +279,13 @@
   .lineup-zone select{font-size:11.5px; padding:4px 6px; max-width:100px;}
   .lineup-chip{cursor:grab; touch-action:none;}
   .lineup-chip-ghost{box-shadow:0 6px 16px rgba(0,0,0,.25); transform:scale(1.05);}
+  /* iOS tolkar annars ett långtryck i zonen som "markera text" — förstoringsglaset dyker upp och
+     hela zonens innehåll blir blåmarkerat istället för att draget fångas. user-select måste sitta
+     på behållarna (inte bara på chipsen), och -webkit-touch-callout stänger av popup-menyn
+     (Kopiera/Slå upp) som annars kan trigga vid långtryck. Fälten inuti (samlingstid, målvakts-
+     väljare) undantas så de fortfarande går att markera/redigera normalt. */
+  .lineup-zone, .lineup-pool{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  .lineup-zone input, .lineup-zone select, .lineup-pool input, .lineup-pool select{-webkit-user-select:auto; user-select:auto;}
 
   /* ---------- Turnering ---------- */
   .tour-card{border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; margin-bottom:18px;}
@@ -288,7 +295,7 @@
   .tour-grid td{border:1px solid var(--line); padding:0; vertical-align:top;}
   .tour-time-cell{font-family:'IBM Plex Mono'; font-size:12.5px; font-weight:600; padding:8px; white-space:nowrap; background:var(--ice); text-align:right;}
   .tour-match-cell{padding:4px;}
-  .tour-match{border-radius:7px; padding:5px 7px; font-size:11.5px; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line);}
+  .tour-match{border-radius:7px; padding:5px 7px; font-size:11.5px; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   .tour-match.selected{background:var(--pine); color:#fff; border-color:var(--pine);}
   .tour-match .vs{color:var(--muted); font-size:10px; display:block; text-align:center; margin:1px 0;}
   .tour-match.selected .vs{color:#DCE8DF;}
@@ -3122,6 +3129,11 @@ function onLineupDragPointerMove(ev){
   if(!lineupDragState.moved){
     if(Math.hypot(dx,dy) < LINEUP_DRAG_THRESHOLD) return;
     lineupDragState.moved = true;
+    // Rensa ev. textmarkering som hunnit påbörjas innan tröskeln passerades — CSS:ens
+    // user-select:none hindrar NY markering, men en redan påbörjad ligger kvar och blir
+    // kvarhängande blåmarkering under hela draget.
+    const sel = window.getSelection && window.getSelection();
+    if(sel && sel.removeAllRanges) sel.removeAllRanges();
     const orig = lineupDragState.origChipEl;
     const ghost = orig.cloneNode(true);
     ghost.classList.add("lineup-chip-ghost");
@@ -3912,6 +3924,8 @@ function onTourBreakDragPointerMove(ev){
   if(!tourBreakDragState.moved){
     if(Math.hypot(dx,dy) < 6) return;
     tourBreakDragState.moved = true;
+    const _sel = window.getSelection && window.getSelection();
+    if(_sel && _sel.removeAllRanges) _sel.removeAllRanges();
     const orig = tourBreakDragState.origRowEl;
     const ghost = orig.cloneNode(true);
     ghost.classList.add("tour-match-ghost");
@@ -4009,6 +4023,8 @@ function onTourDragPointerMove(ev){
   if(!tourDragState.moved){
     if(Math.hypot(dx,dy) < 6) return;
     tourDragState.moved = true;
+    const _sel = window.getSelection && window.getSelection();
+    if(_sel && _sel.removeAllRanges) _sel.removeAllRanges();
     const orig = tourDragState.origEl;
     const ghost = orig.cloneNode(true);
     ghost.classList.add("tour-match-ghost");
