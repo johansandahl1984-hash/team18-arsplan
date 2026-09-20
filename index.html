@@ -397,13 +397,14 @@
   <!-- ============ ÖVERSIKT ============ -->
   <section class="view active" id="view-oversikt">
     <div class="section-title">
-      <h2>Säsongens block, augusti–december</h2>
-      <span class="hint">Redigerbara perioder — vecka 32–52, kan inte överlappa</span>
+      <h2 id="season-title">Säsongens block</h2>
+      <select id="season-select" onchange="setViewSeason(+this.value)" aria-label="Välj säsong" style="padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:#fff;font:inherit;font-size:16px;"></select>
+      <span class="hint" id="season-hint" style="flex-basis:100%;"></span>
     </div>
 
     <div class="timeline-wrap">
       <svg id="tl-svg" viewBox="0 0 920 92" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="tl-caption">Varje segment = en vecka · färg = fokusblock · guldprick = specialhändelse (match/cup/Vikingadagen)</div>
+      <div class="tl-caption">Varje segment = en vecka · färg = fokusblock · guldprick = specialhändelse (match/cup/Vikingadagen) · vit ram = veckan just nu</div>
     </div>
 
     <div class="toolbar" style="margin:12px 0 4px;"><button class="btn" onclick="openPeriodModal(null)">+ Ny period</button></div>
@@ -751,9 +752,10 @@
     <h3 id="period-modal-title">Ny period</h3>
     <div class="field"><label>Namn</label><input type="text" id="period-label" placeholder="t.ex. Skridskoteknik"></div>
     <div class="field-row">
-      <div class="field"><label>Startvecka</label><input type="number" id="period-week-start" min="32" max="52"></div>
-      <div class="field"><label>Slutvecka</label><input type="number" id="period-week-end" min="32" max="52"></div>
+      <div class="field"><label>Startvecka</label><input type="number" id="period-week-start" min="1" max="53" oninput="updatePeriodDatePreview()"></div>
+      <div class="field"><label>Slutvecka</label><input type="number" id="period-week-end" min="1" max="53" oninput="updatePeriodDatePreview()"></div>
     </div>
+    <p id="period-dates-preview" style="font-size:12px;color:var(--muted);margin:-4px 0 12px;font-family:'IBM Plex Mono';"></p>
     <div class="field"><label>Färg</label><div class="checkchips" id="period-color-picker"></div></div>
     <div class="field"><label>Beskrivning</label><textarea id="period-description" placeholder="Vad handlar perioden om?"></textarea></div>
     <div class="field">
@@ -805,11 +807,162 @@ const DEFAULT_PERIODS = [
   {label:"Jullov", weekStart:51, weekEnd:52, color:"#8A8F86", description:"Ingen ordinarie träning inplanerad i ramverket.", focus:[], goal:"", goalStatus:"", goalNotes:""},
 ].map((p,i)=>({id:"per-default-"+i, ...p}));
 
-function periodForWeek(w){ return (DATA.periods||[]).find(p=>w>=p.weekStart && w<=p.weekEnd); }
+// =========================================================================
+// SÄSONG & VECKOR (år-medvetet)
+// En säsong går från 1 maj till 30 april året efter (säsong 2026/27 = maj 2026–apr 2027).
+// En vecka hör till den säsong där veckans torsdag ligger (ISO-konvention), så en vecka som
+// delas av 30 apr/1 maj hamnar alltid i exakt en säsong. Säsongen identifieras med startåret.
+// Datum räknas ALLTID fram från veckonummer + år (ISO-veckor, måndag–söndag) — skriv aldrig
+// in datum för hand (v.39 2026 börjar måndag 21 sep).
+// =========================================================================
+const SEASON_START_MONTH = 4;      // 0-baserad månad: 4 = maj
+const LEGACY_SEASON = 2026;        // säsongen som perioder utan sparat år tolkas mot (appen började användas 2026/27)
+const FRAMEWORK_SEASON = 2026;     // säsongen som veckoramverket (WEEK_TEMPLATES, guldprickar) är byggt för
+const SEASON_SPILLOVER_WEEKS = 8;  // en period får sträcka sig så många veckor in i nästa säsong
+const SV_MONTHS_SHORT = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
 
-// Vecka -> {månad}. Från laget.se-kalendern (2026): v.32=3-9 aug, v.33=10-16 aug, v.34=17-23 aug, v.35=24-30 aug, v.36=31aug-6sep...
-const WEEK_MONTH = {32:"Aug",33:"Aug",34:"Aug",35:"Aug",36:"Sep",37:"Sep",38:"Sep",39:"Sep",40:"Sep/Okt",
-  41:"Okt",42:"Okt",43:"Okt",44:"Okt",45:"Nov",46:"Nov",47:"Nov",48:"Nov",49:"Nov/Dec",50:"Dec",51:"Dec",52:"Dec"};
+// ISO: ett år har 53 veckor om 1 jan är torsdag (eller skottår där 1 jan är onsdag). 2026 har 53.
+function isoWeeksInYear(y){
+  const jan1 = new Date(Date.UTC(y,0,1)).getUTCDay();
+  const leap = (y%4===0 && y%100!==0) || y%400===0;
+  return (jan1===4 || (leap && jan1===3)) ? 53 : 52;
+}
+// Måndagen (UTC) i en given ISO-vecka + år.
+function isoWeekToDate(year, week){
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7;
+  const week1Monday = new Date(jan4);
+  week1Monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1);
+  const result = new Date(week1Monday);
+  result.setUTCDate(week1Monday.getUTCDate() + (week-1)*7);
+  return result;
+}
+// Måndagen (UTC) i veckan som ett lokalt Date-objekt ligger i.
+function mondayUTC(d){
+  const u = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return new Date(u - ((new Date(u).getUTCDay()+6)%7)*86400000);
+}
+// {week, year} (ISO) för en måndag.
+function isoWeekOfMonday(mon){
+  const thu = new Date(mon.getTime() + 3*86400000);
+  const year = thu.getUTCFullYear();
+  return {week: Math.floor((thu.getTime() - Date.UTC(year,0,1))/86400000/7) + 1, year};
+}
+// Startåret för säsongen som en veckas måndag tillhör (via veckans torsdag).
+function seasonOfMonday(mon){
+  const thu = new Date(mon.getTime() + 3*86400000);
+  return thu.getUTCMonth() >= SEASON_START_MONTH ? thu.getUTCFullYear() : thu.getUTCFullYear() - 1;
+}
+function seasonLabel(S){ return S + "/" + String(S+1).slice(2); }
+function currentSeasonStartYear(){ return seasonOfMonday(mondayUTC(new Date())); }
+// Vilken säsong som visas i Årsöversikt (standard: säsongen som pågår nu — rullar över själv 1 maj).
+let VIEW_SEASON = currentSeasonStartYear();
+
+function seasonStartMonday(S){
+  let m = mondayUTC(new Date(S, SEASON_START_MONTH, 1));
+  if(seasonOfMonday(m) !== S) m = new Date(m.getTime() + 7*86400000);
+  return m;
+}
+function seasonLastMonday(S){
+  let m = seasonStartMonday(S), last = m;
+  while(seasonOfMonday(m) === S){ last = m; m = new Date(m.getTime() + 7*86400000); }
+  return last.getTime();
+}
+// Vilket ISO-år veckonummer w har i säsong S (v.19–53 → S, v.1–17/18 → S+1).
+function yearForWeekInSeason(w, S){
+  return seasonOfMonday(isoWeekToDate(S, w)) === S ? S : S + 1;
+}
+
+// Perioders år: sparade år (yearStart/yearEnd) gäller. Saknas de tolkas veckorna mot LEGACY_SEASON.
+function periodYears(p){
+  const yS = p.yearStart || yearForWeekInSeason(p.weekStart, LEGACY_SEASON);
+  const yE = p.yearEnd || (isoWeekToDate(yS, p.weekEnd).getTime() >= isoWeekToDate(yS, p.weekStart).getTime() ? yS : yS + 1);
+  return {yS, yE};
+}
+function periodStartDate(p){ return isoWeekToDate(periodYears(p).yS, p.weekStart); }
+function periodEndDate(p){ return isoWeekToDate(periodYears(p).yE, p.weekEnd); }
+// En period tillhör säsongen där den startar (kan sträcka sig några veckor in i nästa).
+function periodSeason(p){ return seasonOfMonday(periodStartDate(p)); }
+
+function periodForSeasonWeek(week, year){
+  const mon = isoWeekToDate(year, week).getTime();
+  return (DATA.periods||[]).find(p=> mon>=periodStartDate(p).getTime() && mon<=periodEndDate(p).getTime());
+}
+// w = veckonummer. refDate (valfritt) = ett riktigt Date: då jämförs det mot periodens
+// kalenderdatum (måndag start-vecka → söndag slut-vecka), vilket är entydigt över årsskiftet.
+function periodForWeek(w, refDate){
+  if(refDate){
+    const refUTC = Date.UTC(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+    return (DATA.periods||[]).find(p=>{
+      const startUTC = periodStartDate(p).getTime();
+      const endUTC = periodEndDate(p).getTime() + 6*86400000;
+      return refUTC>=startUTC && refUTC<=endUTC;
+    });
+  }
+  return periodForSeasonWeek(w, yearForWeekInSeason(w, VIEW_SEASON));
+}
+// Veckorna i säsong S (1 maj–30 apr). Utökas om en period som startar i säsongen sträcker sig längre.
+function seasonWeeks(S){
+  S = S || VIEW_SEASON;
+  let lastMs = seasonLastMonday(S);
+  (DATA.periods||[]).forEach(p=>{ if(periodSeason(p)===S) lastMs = Math.max(lastMs, periodEndDate(p).getTime()); });
+  const out = [];
+  for(let ms = seasonStartMonday(S).getTime(); ms <= lastMs; ms += 7*86400000) out.push(isoWeekOfMonday(new Date(ms)));
+  return out;
+}
+// Säsonger att välja mellan: från äldsta säsongen med data (eller LEGACY_SEASON) till nästa säsong.
+function availableSeasons(){
+  let lo = Math.min(LEGACY_SEASON, currentSeasonStartYear()), hi = currentSeasonStartYear() + 1;
+  (DATA.periods||[]).forEach(p=>{ const s = periodSeason(p); lo = Math.min(lo, s); hi = Math.max(hi, s); });
+  hi = Math.max(hi, VIEW_SEASON); lo = Math.min(lo, VIEW_SEASON);
+  const out = []; for(let s=lo; s<=hi; s++) out.push(s);
+  return out;
+}
+function setViewSeason(S){
+  VIEW_SEASON = S;
+  window.__tlScrolled = false;
+  renderTimeline(); renderPeriods();
+}
+// Löser upp start-/slutvecka för en period i säsong S till riktiga år (eller ett felmeddelande).
+function resolvePeriodWeeks(ws, we, S){
+  if(!ws || !we || ws<1 || we<1 || ws>53 || we>53) return {error:"Ange giltiga veckor (1–53)."};
+  const yS = yearForWeekInSeason(ws, S);
+  if(ws>isoWeeksInYear(yS) || seasonOfMonday(isoWeekToDate(yS, ws))!==S)
+    return {error:`Vecka ${ws} ligger inte i säsong ${seasonLabel(S)} (1 maj–30 apr). Byt säsong med väljaren i Årsöversikt om perioden hör till en annan.`};
+  const startMs = isoWeekToDate(yS, ws).getTime();
+  const yE = isoWeekToDate(yS, we).getTime() >= startMs ? yS : yS + 1;
+  if(we>isoWeeksInYear(yE)) return {error:`Vecka ${we} finns inte ${yE}.`};
+  const endMs = isoWeekToDate(yE, we).getTime();
+  if(endMs > seasonLastMonday(S) + SEASON_SPILLOVER_WEEKS*7*86400000)
+    return {error:`Slutveckan ligger för långt fram — en period får sträcka sig som mest ${SEASON_SPILLOVER_WEEKS} veckor in i nästa säsong. Kontrollera att slutveckan inte ligger före startveckan.`};
+  return {yS, yE, startMs, endMs};
+}
+
+function fmtDayMonth(d){ return d.getUTCDate() + " " + SV_MONTHS_SHORT[d.getUTCMonth()]; }
+function periodDateText(p){
+  const start = periodStartDate(p);
+  const end = new Date(periodEndDate(p).getTime() + 6*86400000); // söndagen i slutveckan
+  return fmtDayMonth(start) + "–" + fmtDayMonth(end);
+}
+function periodMonthLabel(p){
+  const m = SV_MONTHS_SHORT[periodStartDate(p).getUTCMonth()];
+  return m.charAt(0).toUpperCase() + m.slice(1);
+}
+
+// Engångsmigrering: skriv in explicit år på perioder som saknar det, så de aldrig ändrar betydelse
+// när en ny säsong börjar.
+function migratePeriodYearsStamp(){
+  if(DATA.periodYearsStampedV1) return false;
+  let changed = false;
+  (DATA.periods||[]).forEach(p=>{
+    if(!p.yearStart || !p.yearEnd){
+      const {yS, yE} = periodYears(p);
+      p.yearStart = yS; p.yearEnd = yE; changed = true;
+    }
+  });
+  DATA.periodYearsStampedV1 = true;
+  return changed;
+}
 
 // Coach initial colors used across the app
 const COACH_COLORS = {OF:"#C9A24B", JS:"#3F8F5F", FB:"#2E6C9E", MJ:"#4C8FA8", PH:"#B57A3F", KN:"#8A8F86", "JS/FB":"#3F8F5F", "OF/FB":"#C9A24B"};
@@ -1224,6 +1377,7 @@ async function loadData(){
   if(!DATA.periods || DATA.periods.length===0) DATA.periods = JSON.parse(JSON.stringify(DEFAULT_PERIODS));
   migratePairHistoryCounting();
   migrateGoalieGroupFlag();
+  const periodStampChanged = migratePeriodYearsStamp();
   // Engångsmigreringar (flaggade i DATA, se importAugustLineups/mergeDuplicateGroups).
   // Transformen körs alltid i minnet (idempotent, behövs för korrekt vy), men sparningen
   // av flaggan sker EFTER att sidan redan visas och TYST — ingen "kunde inte spara"-ruta
@@ -1232,7 +1386,7 @@ async function loadData(){
   const augustChanged = importAugustLineups();
   const mergeChanged = mergeDuplicateGroups();
   renderAll();
-  if(augustChanged || mergeChanged) trySaveOnce();
+  if(augustChanged || mergeChanged || periodStampChanged) trySaveOnce();
 }
 
 // Lokal säkerhetskopia av senast korrekt inlästa data, som nödutväg om lagringen
@@ -1672,6 +1826,7 @@ document.getElementById("tabnav").addEventListener("click", e=>{
   btn.classList.add("active");
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
   document.getElementById("view-"+btn.dataset.view).classList.add("active");
+  if(btn.dataset.view==="oversikt") scrollTimelineToNow();
 });
 
 function renderAll(){
@@ -1694,36 +1849,65 @@ function renderAll(){
 /* ---- Timeline (signature SVG) ---- */
 function renderTimeline(){
   const svg = document.getElementById("tl-svg");
-  svg.setAttribute("viewBox", "0 0 920 108");
-  const weeks = []; for(let w=32; w<=52; w++) weeks.push(w);
-  const totalW = 900, x0=10, y0=46, h=34, gap=1.5;
-  const cw = (totalW - (weeks.length-1)*gap) / weeks.length;
+  const weeks = seasonWeeks();
+  const S = VIEW_SEASON;
+  const pitch = 26, x0 = 10, y0 = 46, h = 34, cw = pitch - 1.5;
+  const W = x0*2 + weeks.length*pitch;
+  svg.setAttribute("viewBox", `0 0 ${W} 108`);
+  svg.style.width = W + "px";
+  const titleEl = document.getElementById("season-title"), hintEl = document.getElementById("season-hint");
+  const selEl = document.getElementById("season-select");
+  if(titleEl) titleEl.textContent = "Säsongens block";
+  if(selEl) selEl.innerHTML = availableSeasons().map(s=>`<option value="${s}"${s===S?' selected':''}>Säsong ${seasonLabel(s)}</option>`).join("");
+  if(hintEl){
+    const first = weeks[0], last = weeks[weeks.length-1];
+    hintEl.textContent = `1 maj ${S}–30 apr ${S+1} · v.${first.week} ${first.year} till v.${last.week} ${last.year} · perioder kan inte överlappa`;
+  }
+  const nowMon = mondayUTC(new Date()).getTime();
   let html = "";
-  weeks.forEach((w,i)=>{
-    const p = periodForWeek(w);
-    const x = x0 + i*(cw+gap);
-    const hasSpecial = (WEEK_TEMPLATES[w] && (WEEK_TEMPLATES[w].pass2special || WEEK_TEMPLATES[w].pass3special));
-    html += `<rect x="${x}" y="${y0}" width="${cw}" height="${h}" rx="3" fill="${p?p.color:'#444'}" opacity="0.92"/>`;
+  const months = [];
+  weeks.forEach(({week:w, year:y}, i)=>{
+    const mon = isoWeekToDate(y, w);
+    const p = periodForSeasonWeek(w, y);
+    const x = x0 + i*pitch;
+    const isNow = mon.getTime() === nowMon;
+    const hasSpecial = S===FRAMEWORK_SEASON && WEEK_TEMPLATES[w] && (WEEK_TEMPLATES[w].pass2special || WEEK_TEMPLATES[w].pass3special);
+    html += `<rect x="${x}" y="${y0}" width="${cw}" height="${h}" rx="3" fill="${p?p.color:'#444'}" opacity="0.92"${isNow?' stroke="#fff" stroke-width="2"':''}/>`;
     if(hasSpecial) html += `<circle cx="${x+cw/2}" cy="${y0-10}" r="3" fill="#C9A24B"/>`;
-    if(w%2===0) html += `<text x="${x+cw/2}" y="${y0+h+16}" font-size="8.5" fill="#B9D3C4" text-anchor="middle" font-family="IBM Plex Mono">${w}</text>`;
+    html += `<text x="${x+cw/2}" y="${y0+h+16}" font-size="8.5" fill="${isNow?'#fff':'#B9D3C4'}" text-anchor="middle" font-family="IBM Plex Mono">${w}</text>`;
+    // månad = den månad veckans torsdag ligger i (ISO-konvention)
+    const thu = new Date(mon.getTime() + 3*86400000);
+    const key = thu.getUTCFullYear() + "-" + thu.getUTCMonth();
+    const last = months[months.length-1];
+    if(last && last.key===key) last.end = i; else months.push({key, m:thu.getUTCMonth(), y:thu.getUTCFullYear(), start:i, end:i});
   });
-  // month labels
-  const monthsOrder = [["Aug",32,35],["Sep",36,39],["Okt",40,44],["Nov",45,48],["Dec",49,52]];
-  monthsOrder.forEach(([m,ws,we])=>{
-    const i0 = weeks.indexOf(ws), i1=weeks.indexOf(we);
-    const xm = x0 + (i0*(cw+gap)) + ((i1-i0)*(cw+gap))/2 + cw/2;
-    html += `<text x="${xm}" y="20" font-size="11" fill="#EAF2EC" text-anchor="middle" font-family="Oswald" letter-spacing="1">${m.toUpperCase()}</text>`;
+  months.forEach((mo, k)=>{
+    const xm = x0 + (mo.start+mo.end)*pitch/2 + cw/2;
+    const label = SV_MONTHS_SHORT[mo.m].toUpperCase() + ((mo.m===0 || k===0) ? " " + mo.y : "");
+    html += `<text x="${xm}" y="20" font-size="11" fill="#EAF2EC" text-anchor="middle" font-family="Oswald" letter-spacing="1">${label}</text>`;
   });
   svg.innerHTML = html;
+  scrollTimelineToNow();
+}
+// Scrolla tidslinjen så veckan just nu syns (görs en gång per säsongsvisning, när vyn är synlig).
+function scrollTimelineToNow(){
+  if(window.__tlScrolled) return;
+  const svg = document.getElementById("tl-svg"); if(!svg) return;
+  const wrap = svg.parentElement;
+  if(!wrap || !wrap.clientWidth) return;
+  const nowMon = mondayUTC(new Date()).getTime();
+  const idx = seasonWeeks().findIndex(({week,year})=>isoWeekToDate(year,week).getTime()===nowMon);
+  window.__tlScrolled = true;
+  wrap.scrollLeft = idx>=0 ? Math.max(0, 10 + idx*26 - 60) : 0;
 }
 
 function renderPeriods(){
   const grid = document.getElementById("period-grid");
-  const today = todayStr();
-  const curWeek = isoWeekNumber(new Date());
-  const sorted = [...(DATA.periods||[])].sort((a,b)=>a.weekStart-b.weekStart);
+  const today = new Date(todayStr()+"T00:00:00");
+  const sorted = [...(DATA.periods||[])].filter(p=>periodSeason(p)===VIEW_SEASON).sort((a,b)=>periodStartDate(a)-periodStartDate(b));
+  if(!sorted.length){ grid.innerHTML = '<p style="color:var(--muted);font-size:13px;margin:8px 0;">Inga perioder i säsong '+seasonLabel(VIEW_SEASON)+' än — lägg till med "+ Ny period".</p>'; return; }
   grid.innerHTML = sorted.map(p=>{
-    const ended = curWeek > p.weekEnd;
+    const ended = today > new Date(periodEndDate(p).getTime() + 6*86400000);
     const needsGoalFill = ended && p.goal && !p.goalStatus;
     const focusTags = (p.focus||[]).map(f=>`<span class="focus-tag" style="margin:2px 4px 0 0;">${f}</span>`).join("");
     const statusColor = p.goalStatus==="Uppnått" ? "var(--pine)" : p.goalStatus==="Delvis uppnått" ? "var(--gold)" : p.goalStatus==="Ej uppnått" ? "var(--red)" : "var(--muted)";
@@ -1733,8 +1917,9 @@ function renderPeriods(){
         <h3>${p.label}</h3>
         <button class="btn ghost small" style="flex-shrink:0;" onclick="openPeriodModal('${p.id}')">Redigera</button>
       </div>
-      <div class="wk">Vecka ${p.weekStart}${p.weekEnd>p.weekStart?'–'+p.weekEnd:''} · ${WEEK_MONTH[p.weekStart]||''}</div>
-      <p>${p.description||''}</p>
+      <div class="wk">Vecka ${p.weekStart}${p.weekEnd>p.weekStart?'–'+p.weekEnd:''} · ${periodMonthLabel(p)}</div>
+      <p><b>${periodDateText(p)}</b></p>
+      ${p.description?`<p style="margin-top:3px;">${p.description}</p>`:""}
       ${focusTags?`<div style="margin-top:6px;">${focusTags}</div>`:""}
       ${p.goal?`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;">
         <b style="color:var(--muted);">Mål:</b> ${p.goal}
@@ -1748,6 +1933,14 @@ function renderPeriods(){
 /* ---- Period-modal: skapa/redigera säsongens block ---- */
 let periodDraftId = null;
 const PERIOD_COLOR_OPTIONS = ["#8A6BAF","#2E6C9E","#1F4D3A","#B57A3F","#C24A3A","#8A8F86","#4C8FA8","#2E8B95","#C9A24B"];
+function updatePeriodDatePreview(){
+  const el = document.getElementById("period-dates-preview"); if(!el) return;
+  const ws = +document.getElementById("period-week-start").value, we = +document.getElementById("period-week-end").value;
+  if(!ws || !we){ el.textContent = "Säsong " + seasonLabel(VIEW_SEASON); return; }
+  const rw = resolvePeriodWeeks(ws, we, VIEW_SEASON);
+  if(rw.error){ el.textContent = rw.error; return; }
+  el.textContent = `Säsong ${seasonLabel(VIEW_SEASON)} · v.${ws} ${rw.yS} – v.${we} ${rw.yE}: ` + periodDateText({weekStart:ws, weekEnd:we, yearStart:rw.yS, yearEnd:rw.yE});
+}
 function openPeriodModal(id){
   periodDraftId = id || null;
   const p = id ? DATA.periods.find(x=>x.id===id) : null;
@@ -1766,6 +1959,7 @@ function openPeriodModal(id){
     `<span class="checkchip" data-color="${c}" style="background:${c};color:#fff;border-color:${c};" onclick="pickPeriodColor('${c}')"> </span>`).join("");
   pickPeriodColor(p ? p.color : PERIOD_COLOR_OPTIONS[0]);
   document.getElementById("period-delete-btn").style.display = p ? "inline-block" : "none";
+  updatePeriodDatePreview();
   openModal("modal-period");
 }
 function pickPeriodColor(c){
@@ -1781,11 +1975,10 @@ async function savePeriod(){
   const weekStart = +document.getElementById("period-week-start").value;
   const weekEnd = +document.getElementById("period-week-end").value;
   if(!label){ alert("Ange ett namn på perioden."); return; }
-  if(!weekStart || !weekEnd || weekStart<32 || weekEnd>52 || weekStart>weekEnd){
-    alert("Ange giltiga veckor (32–52), där startvecka inte är efter slutvecka.");
-    return;
-  }
-  const overlap = DATA.periods.find(p => p.id!==periodDraftId && weekStart<=p.weekEnd && weekEnd>=p.weekStart);
+  const rw = resolvePeriodWeeks(weekStart, weekEnd, VIEW_SEASON);
+  if(rw.error){ alert(rw.error); return; }
+  const {yS, yE, startMs: newStartMs, endMs: newEndMs} = rw;
+  const overlap = DATA.periods.find(p => p.id!==periodDraftId && newStartMs<=periodEndDate(p).getTime() && newEndMs>=periodStartDate(p).getTime());
   if(overlap){
     alert(`Veckorna ${weekStart}–${weekEnd} krockar med "${overlap.label}" (v.${overlap.weekStart}–${overlap.weekEnd}). Justera veckorna så perioderna inte överlappar.`);
     return;
@@ -1794,6 +1987,7 @@ async function savePeriod(){
   const obj = {
     id: periodDraftId || ("per-"+Date.now()),
     label, weekStart, weekEnd,
+    yearStart: yS, yearEnd: yE,
     color: document.getElementById("period-color-picker").dataset.selected || PERIOD_COLOR_OPTIONS[0],
     description: document.getElementById("period-description").value,
     focus,
@@ -1932,13 +2126,13 @@ function renderCurrentPeriodBanner(){
   const el = document.getElementById("current-period-banner");
   if(!el) return;
   const wk = isoWeekNumber(new Date());
-  const p = periodForWeek(wk);
-  if(!p){ el.innerHTML = `<p style="margin:0;font-size:13px;color:var(--muted);">Vecka ${wk} ligger utanför säsongsramverket (v.32–52).</p>`; el.style.borderLeft=""; return; }
+  const p = periodForWeek(wk, new Date());
+  if(!p){ el.innerHTML = `<p style="margin:0;font-size:13px;color:var(--muted);">Vecka ${wk} matchar ingen period i Säsongens block just nu — lägg till en period i Årsöversikt.</p>`; el.style.borderLeft=""; return; }
   el.style.borderLeft = `5px solid ${p.color}`;
   el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
     <div><span class="hint" style="text-transform:uppercase;letter-spacing:.04em;font-size:10.5px;">Just nu — vecka ${wk}</span>
       <h3 style="font-size:18px;color:${p.color};margin-top:2px;">${p.label}</h3></div>
-    <span style="font-size:12.5px;color:var(--muted);max-width:320px;">${p.description||''}</span>
+    <span style="font-size:12.5px;color:var(--muted);max-width:320px;">${periodDateText(p)}${p.description?' · '+p.description:''}</span>
   </div>`;
 }
 function renderToPlanCallout(){
@@ -2339,8 +2533,9 @@ function toggleBlockNotes(bid){
 }
 
 function sessionPeriod(s){
-  const wk = s.week ? +s.week : isoWeekNumber(new Date(s.date+"T00:00:00"));
-  return periodForWeek(wk);
+  const d = new Date(s.date+"T00:00:00");
+  if(s.week){ const S = seasonOfMonday(mondayUTC(d)); return periodForSeasonWeek(+s.week, yearForWeekInSeason(+s.week, S)); }
+  return periodForWeek(isoWeekNumber(d), d);
 }
 function periodFocusCatIds(s){
   const p = sessionPeriod(s); if(!p || !p.focus) return [];
@@ -2859,7 +3054,7 @@ async function saveInlineLineup(sid){
 function populateSessionFormLists(){
   const weekSel = document.getElementById("sess-week");
   weekSel.innerHTML = '<option value="">— ingen vecka —</option>' +
-    Array.from({length:21},(_,i)=>32+i).map(w=>`<option value="${w}">Vecka ${w}${WEEK_TEMPLATES[w]?'':' (ingen mall)'}</option>`).join("");
+    seasonWeeks(currentSeasonStartYear()).map(({week:w,year:y})=>`<option value="${w}">Vecka ${w}${y!==currentSeasonStartYear()?' ('+y+')':''}${WEEK_TEMPLATES[w]?'':' (ingen mall)'}</option>`).join("");
   document.getElementById("sess-coaches").innerHTML = DATA.coaches.map(c=>
     `<span class="checkchip" data-id="${c.id}" onclick="this.classList.toggle('on')">${c.name}</span>`).join("");
   const tmplSel = document.getElementById("sess-template");
