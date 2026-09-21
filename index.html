@@ -542,6 +542,7 @@ body.xd-lock{overflow:hidden;}
   }
   /* rotationstabeller i Träningsöversikten: egen scrollruta som inte påverkar kortets bredd */
   [id^="training-summary-container"] div[style*="overflow-x:auto"]{ width:0; min-width:100%; }
+  .lineup-dock-pill.dragover{ outline:3px solid #1A1A1A; outline-offset:1px; transform:scale(1.04); }
 
 </style>
 </head>
@@ -4110,7 +4111,7 @@ function lineupTableHTML(s){
         ${lu.gathering ? `<span style="font-family:inherit;font-weight:600;font-size:11px;opacity:.9;">Samling ${lu.gathering}</span>` : ""}
       </div>
       <div style="padding:4px 10px 8px;">
-        <div style="font-size:11px;color:#777;padding:4px 0;border-bottom:1px solid #eee;"><b>Mv</b> ${gp?gp.name:"—"}</div>
+        ${gp ? `<div style="font-size:11px;color:#777;padding:4px 0;border-bottom:1px solid #eee;"><b>Mv</b> ${gp.name}</div>` : ""}
         ${playerRows}
         <div style="font-size:11px;color:#777;padding:5px 0 0;"><b>Tr</b> ${coaches.length?coaches.map(c=>c.name).join(", "):"—"}</div>
       </div>
@@ -4184,6 +4185,7 @@ function renderSessions(){
    BYGG PASS — tabellmotor (se nedan för fullständig implementation)
    ========================================================================= */
 const BLOCK_THEME_COLORS = {
+  "Vattenpaus":"#48A6D8",
   "Uppvärmning":"#8A6BAF","Skridsko":"#1F4D3A","Lek":"#8A6BAF","Spel":"#2E6C9E","Fys":"#4C8FA8","Stationer":"#C9A24B",
   // äldre teman (från tidigare version) — behålls så gammal data fortfarande visas med rätt färg
   "Skridskoteknik":"#1F4D3A","Puckteknik":"#B57A3F","Skott":"#C9A24B","Passning":"#C24A3A","Annat":"#8A8F86"
@@ -4204,7 +4206,7 @@ function exerciseOptionsHTML(selectedId){
 /* =========================================================================
    BYGG PASS — tabellvy: varje rad = ett block, direkt redigerbart
    ========================================================================= */
-const MAIN_THEME_LIST = ["Uppvärmning","Skridsko","Lek","Spel","Fys","Stationer"];
+const MAIN_THEME_LIST = ["Uppvärmning","Skridsko","Lek","Spel","Fys","Stationer","Vattenpaus"];
 const STATION_SUBTHEMES = ["Skridskoteknik","Puckteknik","Passning","Skott","Spel","Fys","Lek"];
 const SUBTHEME_TO_CAT = {Skridskoteknik:"skridsko", Puckteknik:"puck", Passning:"passning", Skott:"skott", Spel:"spel", Fys:"fys", Lek:"lek"};
 const MAIN_THEME_TO_CAT = {Skridsko:"skridsko", Lek:"lek", Fys:"fys", Spel:"spel"}; // Uppvärmning/Stationer har ingen given kategori
@@ -4350,6 +4352,7 @@ function renderBlocksPanel(sid){
         </table>
       </div>
       <button class="btn ghost small" style="margin-top:8px;" onclick="addBlockRow('${sid}')">+ Ny rad</button>
+      <button class="btn ghost small" style="margin-top:8px;" onclick="addWaterBreak('${sid}')" title="Lägger till ett block med vattenpaus på 5 min">💧 Vattenpaus</button>
     </div>`;
 }
 
@@ -5054,6 +5057,8 @@ function pdfBlockCard(D, x, compact){
         b.planRounds.map((r,ri)=>`<tr><td class="lb">${ri===0?"Start":"Byte "+ri}</td>${labels.map((_,pi)=>{ const a = r.assignments[pi]&&r.assignments[pi].a, bb = r.assignments[pi]&&r.assignments[pi].b; return `<td>${pdfGroupChip(a)}<br><span style="font-size:11px;color:#8A8F86">mot</span><br>${pdfGroupChip(bb)}</td>`; }).join("")}</tr>`).join("")}</table>`;
     }
   }
+  if(b.theme==="Vattenpaus" && !x.exNums.length && !b.instruction && !b.material)          // vattenpaus: bara en smal rubrikrad med tid
+    return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coach ? `<em>· ${escapeHtml(coach.name)}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div></div>`;
   return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coach ? `<em>· ${escapeHtml(coach.name)}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div><div class="tl-b">${inner||'<div class="who">—</div>'}</div></div>`;
 }
 function pdfTeamCard(x){
@@ -7460,6 +7465,24 @@ function updateRoundAssignment(sid, bid, rId, stId, groupId){
   scheduleBlockSave(sid, false);
 }
 
+/* ---------- Vattenpaus som blocktyp ---------- */
+const WATER_BREAK = "Vattenpaus", WATER_MIN = "5";
+async function addWaterBreak(sid){
+  const s = DATA.sessions.find(x=>x.id===sid); if(!s) return;
+  if(!s.blocks) s.blocks = [];
+  s.blocks.push({ id:"blk-"+Date.now()+"-"+Math.random().toString(36).slice(2,5), theme:WATER_BREAK, duration:WATER_MIN, coach:"", exerciseIds:[], instruction:"", material:"",
+    stations:[], rounds:[], numPlans:2, spelyta:"Tvärplan (cross-ice)", maltyp:"Småmål", malvakt:"Utan målvakt", planRounds:[] });
+  renderSessions(); renderBlocksPanel(sid);
+  saveData();
+}
+function updateBlockField(sid, bid, field, value){
+  const {b} = findBlock(sid, bid); if(!b) return;
+  b[field] = value;
+  if(field==="theme" && value===WATER_BREAK && !String(b.duration||"").trim()) b.duration = WATER_MIN;      // förinställda 5 min om tiden är tom
+  if(field==="theme"){ renderBlocksPanel(sid); scheduleBlockSave(sid, false); }
+  else scheduleBlockSave(sid, false);
+}
+
 /* ---------- Övningsväljare med sökning (block och stationer) + inaktiva övningar ---------- */
 let showInactiveEx = false;
 function isExInactive(id){ return !!(DATA.inactiveExercises && DATA.inactiveExercises[id]); }
@@ -7583,6 +7606,7 @@ function exerciseActionsHTML(e, isCustom){
   </div>${off && DATA.inactiveExercises[e.id].since ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">Inaktiv sedan ${DATA.inactiveExercises[e.id].since}</div>` : ""}`;
 }
 function exerciseCellHTML(sid, b, suggestCat, periodCats){
+  if(b.theme===WATER_BREAK) return `<div class="excell"><div class="hint" style="font-size:11.5px;color:var(--muted);padding:4px 0;">💧 Vattenpaus — ingen övning behövs</div></div>`;
   const chips = (b.exerciseIds||[]).map(id=>{
     const e = exerciseById(id); if(!e) return "";
     const c = EX_CATS.find(x=>x.id===e.cat) || {color:"#8A8F86"}, off = isExInactive(id);
@@ -7870,8 +7894,34 @@ function lineupDragCleanup(){
     if(st.origChipEl) st.origChipEl.style.opacity = "";
   }
   document.querySelectorAll(".lineup-chip-ghost").forEach(g=>g.remove());        // sopar även spöken som tappats bort
+  const dock = document.getElementById("lineup-dock"); if(dock) dock.remove();
   document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
   return st;
+}
+/* Släppdocka: när lagen inte ryms i bild tillsammans med "Ej indelade" visas ett fast fält längst ner med alla lag
+   medan man drar — släpp spelaren på ett lag (eller "Ej indelade") utan att behöva scrolla. */
+function lineupBoardRoot(chip){ let r = chip; while(r && !(r.querySelector && r.querySelector(".lineup-board"))) r = r.parentElement; return r || document; }
+function lineupDockShow(st){
+  const root = lineupBoardRoot(st.chip), zones = [...root.querySelectorAll(".lineup-zone[data-gid]")], pool = root.querySelector(".lineup-pool");
+  const off = el=>{ const r = el.getBoundingClientRect(); return r.top < 0 || r.bottom > window.innerHeight; };
+  if(!zones.length || !(zones.some(off) || (pool && off(pool)))) return;                   // allt syns redan — ingen docka behövs
+  const dock = document.createElement("div"); dock.id = "lineup-dock";
+  dock.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:480;background:rgba(255,255,255,.97);border-top:2px solid var(--pine);box-shadow:0 -4px 14px rgba(0,0,0,.2);padding:6px 10px calc(8px + env(safe-area-inset-bottom));display:flex;gap:6px;flex-wrap:wrap;";
+  dock.innerHTML = `<div style="flex:0 0 100%;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;">Släpp på ett lag</div>`
+    + zones.map(z=>{
+        const gid = z.dataset.gid, g = DATA.groups.find(x=>x.id===gid), name = g ? g.name : gid, col = g ? g.color : "#666";
+        const lu = (typeof sessionDraft!=="undefined" && sessionDraft && sessionDraft.lineup && sessionDraft.lineup[gid]) || {players:[]}, n = (lu.players||[]).length;
+        return `<div class="lineup-dock-pill" data-gid="${gid}" style="flex:1 1 72px;min-height:44px;border-radius:10px;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font:700 14px Oswald,sans-serif;letter-spacing:.02em;">${escapeHtml(name)}<small style="font:600 11px Inter,sans-serif;opacity:.9;">${n}</small></div>`;
+      }).join("")
+    + `<div class="lineup-dock-pill" data-pool="1" style="flex:1 1 92px;min-height:44px;border-radius:10px;background:#fff;border:1.5px dashed #9A9A92;color:#6B5F54;display:flex;align-items:center;justify-content:center;font:600 12.5px Inter,sans-serif;">Ej indelade</div>`;
+  document.body.appendChild(dock);
+}
+function lineupTargetAt(x, y){
+  const under = document.elementFromPoint(x, y); if(!under) return null;
+  const pill = under.closest(".lineup-dock-pill"); if(pill) return {el:pill, pool:pill.dataset.pool==="1", gid:pill.dataset.gid||null};
+  const zone = under.closest(".lineup-zone, .lineup-pool"); if(!zone) return null;
+  const pool = zone.classList.contains("lineup-pool");
+  return {el:zone, pool, gid:pool ? null : zone.dataset.gid};
 }
 function onLineupDragPointerCancel(ev){ if(lineupDragState && (ev.pointerId===undefined || ev.pointerId===lineupDragState.pointerId)) lineupDragCleanup(); }
 function onChipPointerDown(ev, pid){
@@ -7902,23 +7952,24 @@ function onLineupDragPointerMove(ev){
     document.body.appendChild(ghost);
     const gr = ghost.getBoundingClientRect();                       // självkorrigering (se originalet)
     st0.corrX = -gr.left; st0.corrY = -gr.top; st0.ghostEl = ghost; orig.style.opacity = "0.35";
+    lineupDockShow(st0);
   }
   const st = lineupDragState, ghost = st.ghostEl;
   ghost.style.transform = `translate(${ev.clientX - st.grabDX + st.corrX}px,${ev.clientY - st.grabDY + st.corrY}px) scale(1.05)`;
-  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
-  ghost.style.display = "none"; const under = document.elementFromPoint(ev.clientX, ev.clientY); ghost.style.display = "";
-  const zone = under && under.closest(".lineup-zone, .lineup-pool"); if(zone) zone.classList.add("dragover");
+  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover, .lineup-dock-pill.dragover").forEach(z=>z.classList.remove("dragover"));
+  ghost.style.display = "none"; const tgt = lineupTargetAt(ev.clientX, ev.clientY); ghost.style.display = "";
+  if(tgt) tgt.el.classList.add("dragover");
 }
 function onLineupDragPointerUp(ev){
   const st0 = lineupDragState; if(!st0) return;
   if(st0.pointerId!==undefined && ev.pointerId!==undefined && ev.pointerId!==st0.pointerId) return;
-  const state = lineupDragCleanup();                                // ghost, opacitet, lyssnare och markeringar städas alltid först
+  const target = st0.moved ? lineupTargetAt(ev.clientX, ev.clientY) : null;      // avgörs innan dockan städas bort
+  const state = lineupDragCleanup();                                // ghost, opacitet, lyssnare, docka och markeringar städas alltid
   if(!state || !state.moved) return;                                // bara ett tryck utan rörelse — click-eventet sköter tryck-välj
   const chip = state.origChipEl;
   if(chip){ chip.dataset.dragHandled = "1"; setTimeout(()=>{ if(chip.dataset) delete chip.dataset.dragHandled; }, 400); }   // gammal flagga får inte svälja nästa tryck
-  const under = document.elementFromPoint(ev.clientX, ev.clientY), zone = under && under.closest(".lineup-zone, .lineup-pool");
-  if(!zone) return;                                                 // släppt utanför en giltig zon — spelaren ligger kvar
-  movePlayerToGroup(state.pid, zone.classList.contains("lineup-pool") ? null : zone.dataset.gid);
+  if(!target) return;                                               // släppt utanför en giltig zon — spelaren ligger kvar
+  movePlayerToGroup(state.pid, target.pool ? null : target.gid);
 }
 function abortAllDrags(){
   lineupDragCleanup();
