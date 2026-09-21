@@ -976,7 +976,7 @@ var TOK = {fwd:{c:"#2E6C9E",l:"F"}, def:{c:"#1F4D3A",l:"D"}, gk:{c:"#C9A24B",l:"
 return {
   sport:"hockey", R:14, ballType:"ball",
   words:{ball:"puck", ballDef:"pucken", Ball:"Puck", icon:"🏒"},
-  features:{zones:true, text:true, transform:true, colors:true, stations:true},
+  features:{zones:true, text:true, transform:true, colors:true, stations:true}, areaWord:"isytan",
   rinks:[{id:"full",label:"Hel is",svg:FULL,area:{x0:10,y0:10,x1:590,y1:330}},{id:"half",label:"Halv is",svg:HALF,w:340,h:340,area:{x0:10,y0:10,x1:330,y1:330}},{id:"cross",label:"Tvärs",svg:CROSS,area:{x0:10,y0:10,x1:590,y1:330}}],
   defaultRink:"full",
   iconScale:{net:0.6, minnet:1},
@@ -1406,7 +1406,7 @@ function rinkObj(d){
   return rs[0];
 }
 function rinkOf(d){ return rinkObj(d).svg + stationsMarkup(d); }
-var FEAT = PACK.features || {};
+var FEAT = PACK.features || {}, AREA = PACK.areaWord || "ytan";
 function isDesk(){ return typeof window.matchMedia==="function" && window.matchMedia("(min-width:900px)").matches; }
 function dimOf(d){ var r=rinkObj(d); return {w:r.w||600, h:r.h||340}; }
 function areaOf(d){ var r=rinkObj(d); return r.area || {x0:10, y0:10, x1:(r.w||600)-10, y1:(r.h||340)-10}; }
@@ -2100,7 +2100,7 @@ function renderStations(){
       '<div class="xd-strow">'+(host && host.newExercise ? '<button class="xd-btn small primary" onclick="XD.zoneSaveDialog()">💾 Spara som ny övning …</button>' : '')+'<button class="xd-btn small" onclick="XD.zoneExit()">✓ Klar med zon '+zl+'</button></div>';
     setHTML(el,h); return;
   }
-  h='<div class="xd-group-t">Stationer — hur många och hur ska isytan delas?</div>';
+  h='<div class="xd-group-t">Stationer — hur många och hur ska '+AREA+' delas?</div>';
   h+='<div class="xd-strow"><span>Antal</span>'+[0,1,2,3,4,5,6].map(function(k){ return '<button class="xd-chip'+((k===n)?' active':'')+'" onclick="XD.setStationsN('+k+')">'+(k===0?'Inga':k)+'</button>'; }).join("")+'</div>';
   if(st){
     var lays=ST_LAYOUTS[st.n]||[], cur=layoutOf(st);
@@ -2418,7 +2418,7 @@ function edChoice(kind){
   if(kind==="keep"){ pushUndo(); stAux(st,"keep")[key]=true; if(st.chash) st.chash[key]=contentHash(S.drawing,key); if(st.stale) delete st.stale[key]; edChoiceClose(); dirty(); render(); return; }
   if(kind==="new"){ edChoiceClose(); openNewExFor(i); return; }
   if(kind==="source" && ex && host && host.saveDrawing){
-    if(!window.confirm("Skriva över ritningen för den ursprungliga övningen med det du gjort i zonen? Övningen får då isytan «"+((rinkObj(S.drawing).label)||"")+"».")) return;
+    if(!window.confirm("Skriva över ritningen för den ursprungliga övningen med det du gjort i zonen? Övningen får då "+AREA+" «"+((rinkObj(S.drawing).label)||"")+"».")) return;
     var nd=extractCell(c); host.saveDrawing(ex,nd); if(host.onSaved) host.onSaved(ex);
     pushUndo(); stAux(st,"shash")[key]=hashDrawing(nd); st.chash[key]=contentHash(S.drawing,key); if(st.stale) delete st.stale[key]; edChoiceClose(); dirty(); render();
   }
@@ -5847,21 +5847,23 @@ function renderExercises(){
   const q = (document.getElementById("ex-search").value||"").toLowerCase();
   const filtered = allExercises().filter(e=>{
     const catOk = activeExCats.size===0 || activeExCats.has(e.cat);
+    const actOk = showInactiveEx || !isExInactive(e.id);
     const searchOk = !q || e.namn.toLowerCase().includes(q) || e.syfte.toLowerCase().includes(q);
-    return catOk && searchOk;
+    return actOk && catOk && searchOk;
   });
-  document.getElementById("ex-count-hint").textContent = `${allExercises().length} övningar i banken · visar ${filtered.length}`;
+  document.getElementById("ex-count-hint").textContent = exerciseCountHint(filtered.length);
   const grid = document.getElementById("ex-grid");
   if(filtered.length===0){ grid.innerHTML = '<div class="empty">Inga övningar matchade sökningen.</div>'; return; }
   grid.innerHTML = filtered.map(e=>{
     const cat = EX_CATS.find(c=>c.id===e.cat);
     const isCustom = (DATA.customExercises||[]).some(x=>x.id===e.id);
-    return `<div class="ex-card">
+    return `<div class="ex-card" style="${isExInactive(e.id) ? 'opacity:.62;' : ''}">
       <div class="ex-head" onclick="toggleEx('${e.id}')">
         <span class="ex-cat" style="background:${cat.color}">${cat.label}</span>
         ${isCustom ? `<span class="ex-cat" style="background:#8A6BAF;">Egen</span>` : ""}
         ${e.edited ? `<span class="ex-cat" style="background:#6B5F54;">Ändrad</span>` : ""}
         ${isIncompleteExercise(e) ? `<span class="ex-cat" style="background:#C24A3A;">Ofullständig</span>` : ""}
+        ${isExInactive(e.id) ? `<span class="ex-cat" style="background:#8A8F86;">Inaktiv</span>` : ""}
         <h4>${e.namn}</h4>
         <div class="ex-purpose">${e.syfte}</div>
         <div class="expand-hint" id="hint-${e.id}">Tryck för detaljer ▾</div>
@@ -6911,12 +6913,21 @@ document.querySelectorAll(".overlay").forEach(o=>{
 });
 
 /* =========================================================================
-   ÖVNINGSRITARE + STATIONSÖVERSIKT — värdkod för Team-18 (ishockey).
+   ÖVNINGSRITARE + STATIONSÖVERSIKT — gemensam värdkod (ishockey Team-18 och innebandy Höllviken IBF).
    Modulen XD (ritaren) ligger i skriptet ovanför. Den här koden binder ihop den med appen:
    ritningar per övning (DATA.exerciseDrawings), översiktsbild på Stationer-block (block.overview),
    synk block ⇄ översikt, rotation, övningsbankens extrafunktioner och PDF-länkarna.
    Funktioner här ligger sist i skriptet och ersätter därmed äldre versioner med samma namn.
    ========================================================================= */
+/* Sportspecifikt (sätts av integrationsskriptet): appens webbadress, gamla diagramfigurer, ytor för översikterna, ordval */
+const HOST_CFG = {
+  appUrl: "https://johansandahl1984-hash.github.io/team18-arsplan/",
+  legacyMap: {player:"fwd", opponent:"opp", cone:"cone", puck:"ball"}, legacyRink: "full",
+  areaWord: "isytan", on: "på isen",
+  stationRink: n => n<=4 ? "half" : "full",
+  stationLayout: (n, rink) => (n===3 && rink==="half") ? "bl" : undefined,
+  spelRink: (n, yta) => n>1 ? "full" : (yta==="Halvplan" ? "half" : (/Tvärplan/.test(yta) ? "cross" : "full"))
+};
 const MAX_STATIONS = 6;
 const EX_PLACEHOLDER = "Fyll i instruktion.";
 let NEW_EX_SEQ = 0, STATION_SEQ = 0;
@@ -6924,13 +6935,14 @@ let NEW_EX_SEQ = 0, STATION_SEQ = 0;
 function escapeHtml(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function stLetter(i){ return String.fromCharCode(65+i); }
 function legacyDiagramToDrawing(list){
-  const map = {player:"fwd", opponent:"opp", cone:"cone", puck:"ball"};
+  const map = HOST_CFG.legacyMap;
   let id = 1; const objects = [];
   (list||[]).forEach(o=>{
     if(o.type==="arrow") objects.push({id:id++, kind:"path", type:"fwd", pts:[{x:o.x,y:o.y},{x:o.x2,y:o.y2}], smooth:false, step:1, owner:null});
     else if(map[o.type]) objects.push({id:id++, kind:"fig", type:map[o.type], x:o.x, y:o.y});
   });
-  return {v:2, rink:"full", objects, still:null};
+  const d = {v:2, objects, still:null}; if(HOST_CFG.legacyRink) d.rink = HOST_CFG.legacyRink;
+  return d;
 }
 function getExerciseDrawing(id){
   const d = (DATA.exerciseDrawings||{})[id];
@@ -6970,7 +6982,7 @@ function applyAutoNames(b){
   });
 }
 function newBlankStation(b){
-  const st = { id:"st-"+Date.now()+"-"+(STATION_SEQ++), name:"", subtheme:"Skridskoteknik", exerciseIds:[], coach:"", autoName:true };
+  const st = { id:"st-"+Date.now()+"-"+(STATION_SEQ++), name:"", subtheme:STATION_SUBTHEMES[0], exerciseIds:[], coach:"", autoName:true };
   stationsOf(b).push(st); applyAutoNames(b); return st;
 }
 function overviewLabelFor(st, exId){
@@ -6990,11 +7002,7 @@ function spelPlans(b){ ensurePlanConfigs(b); return Math.min(MAX_STATIONS, Math.
 function spelShownEx(b){ const ids = (b.exerciseIds||[]).filter(exHasDrawing); return ids[0] || null; }
 function roundsOf(b){ return isSpelBlock(b) ? (b.planRounds||[]) : (b.rounds||[]); }
 function roundLabel(b, ri){ return isSpelBlock(b) ? (ri===0 ? "Start" : "Byte "+(ri+1)) : "Byte "+(ri+1); }
-function spelRinkLayout(b, n){
-  if(n>1) return {rink:"full"};
-  const y = (b.plans && b.plans[0] && b.plans[0].yta) || "";
-  return {rink: y==="Halvplan" ? "half" : (/Tvärplan/.test(y) ? "cross" : "full")};
-}
+function spelRinkLayout(b, n){ return {rink: HOST_CFG.spelRink(n, (b.plans && b.plans[0] && b.plans[0].yta) || "")}; }
 function spelCells(b){
   const n = spelPlans(b), exId = spelShownEx(b), d = exId ? getExerciseDrawing(exId) : null;
   const more = Math.max(0, (b.exerciseIds||[]).filter(exHasDrawing).length - (exId ? 1 : 0));
@@ -7114,12 +7122,12 @@ function buildOverview(sid, bid, silent){
     saveData(); refreshBlocksPanel(sid); return;
   }
   const sts = stationsOf(b);
-  if(sts.length<1){ alert("Lägg till minst en station först — översikten delar isytan mellan stationerna."); return; }
+  if(sts.length<1){ alert("Lägg till minst en station först — översikten delar "+HOST_CFG.areaWord+" mellan stationerna."); return; }
   if(!silent && XD.hasContent(b.overview) && !confirm("Bygga om översikten från stationerna? Din nuvarande översiktsbild ersätts.")) return;
   applyAutoNames(b);
   if(b.overviewRound==null && (b.rounds||[]).length) b.overviewRound = 0;
-  const cells = overviewCells(b), n = cells.length, rink = n<=4 ? "half" : "full";
-  b.overview = XD.compose({rink, n, layout:(n===3 && rink==="half") ? "bl" : undefined, cells});
+  const cells = overviewCells(b), n = cells.length, rink = HOST_CFG.stationRink(n);
+  b.overview = XD.compose({rink, n, layout:HOST_CFG.stationLayout(n, rink), cells});
   saveData(); refreshBlocksPanel(sid);
 }
 function removeOverview(sid, bid){
@@ -7153,7 +7161,7 @@ function overviewRowHTML(s, b){
       ${rounds.map((r,ri)=>`<button class="btn ${idx===ri?'':'ghost'} small" style="padding:2px 8px;" onclick="setOverviewRound('${s.id}','${b.id}',${ri})">${roundLabel(b,ri)}</button>`).join("")}</div>` : "";
   const missHTML = missing.length ? `<div style="font-size:10.5px;color:#9A4A0C;margin-top:6px;">⚠ Saknar ritning i översikten: ${missing.map(m=>`<b>${m.letter}</b> ${escapeHtml(m.namn)} <a href="#" onclick="event.preventDefault();XD.open('${m.id}','edit')" style="color:#9A4A0C;">✏️ Rita</a>`).join(" · ")}</div>` : "";
   return `<div id="ovrow-${b.id}" style="margin:6px 0 8px;padding:7px 9px;background:#fff;border:1px solid var(--line);border-radius:8px;">
-    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:11.5px;color:var(--pine);">🗺 Översiktsbild</b><span style="font-size:10.5px;color:var(--muted);">${spel ? "alla planer på isen samtidigt · följer planerna nedan (och tvärtom)" : "alla stationer på isen samtidigt · följer stationerna nedan (och tvärtom)"} · kommer med i PDF:en</span></div>
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:11.5px;color:var(--pine);">🗺 Översiktsbild</b><span style="font-size:10.5px;color:var(--muted);">${spel ? "alla planer "+HOST_CFG.on+" samtidigt · följer planerna nedan (och tvärtom)" : "alla stationer "+HOST_CFG.on+" samtidigt · följer stationerna nedan (och tvärtom)"} · kommer med i PDF:en</span></div>
     ${has ? `<div onclick="XD.open('${id}','view')" style="cursor:pointer;margin:6px 0;max-width:340px;">${XD.thumbSVG(ov)}</div>` : ""}
     ${roundChips}${missHTML}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
@@ -7195,7 +7203,7 @@ XD.init({
     for(const s of DATA.sessions){ for(const b of (s.blocks||[])){ const st = (b.stations||[]).find(x=>x.id===key); if(st) return SUBTHEME_TO_CAT[st.subtheme] || "spel"; } }
     return "spel";
   },
-  listDrawings: excl=>allExercises().filter(e=>e.id!==excl && exHasDrawing(e.id)).map(e=>({id:e.id, title:e.namn, cat:(EX_CATS.find(c=>c.id===e.cat)||{}).label||""}))
+  listDrawings: excl=>allExercises().filter(e=>e.id!==excl && !isExInactive(e.id) && exHasDrawing(e.id)).map(e=>({id:e.id, title:e.namn, cat:(EX_CATS.find(c=>c.id===e.cat)||{}).label||""}))
 });
 
 /* ---------- Stationer i Bygg pass ---------- */
@@ -7359,30 +7367,167 @@ function updateRoundAssignment(sid, bid, rId, stId, groupId){
   scheduleBlockSave(sid, false);
 }
 
+/* ---------- Övningsväljare med sökning (block och stationer) + inaktiva övningar ---------- */
+let showInactiveEx = false;
+function isExInactive(id){ return !!(DATA.inactiveExercises && DATA.inactiveExercises[id]); }
+function inactiveCount(){ return allExercises().filter(e=>isExInactive(e.id)).length; }
+function exerciseCountHint(shown){
+  const all = allExercises().length, off = inactiveCount();
+  return `${all-off} aktiva övningar${off ? ` · ${off} inaktiva (${showInactiveEx?"visas":"dolda"})` : ""} · visar ${shown}`;
+}
+function toggleShowInactive(){ showInactiveEx = !showInactiveEx; renderCategoryFilter(); renderExercises(); }
+function renderCategoryFilter(){
+  const el = document.getElementById("cat-filter"); if(!el) return;
+  const off = inactiveCount();
+  el.innerHTML = EX_CATS.map(c=>`<span class="cat-chip ${activeExCats.has(c.id)?'active':''}" onclick="toggleCat('${c.id}')">${c.label}</span>`).join("")
+    + `<span class="cat-chip ${activeExCats.size===0?'active':''}" onclick="clearCats()">Alla</span>`
+    + ((off || showInactiveEx) ? `<span class="cat-chip ${showInactiveEx?'active':''}" title="Sparade övningar som inte används just nu" onclick="toggleShowInactive()">🗄 Inaktiva (${off})</span>` : "");
+}
+async function setExerciseActive(id, active){
+  const e = exerciseById(id); if(!e) return;
+  if(!active){
+    const uses = exerciseUsage(id);
+    const yes = await confirmDialog(`Inaktivera "${e.namn}"? Övningen sparas kvar (också ritningen) men syns inte i övningsbanken och går inte att välja när du bygger pass.`+(uses.length ? ` Den ligger kvar i de ${uses.length} block/stationer där den används idag.` : ""), "Inaktivera");
+    if(!yes) return;
+    if(!DATA.inactiveExercises) DATA.inactiveExercises = {};
+    DATA.inactiveExercises[id] = {since: new Date().toISOString().slice(0,10)};
+  } else if(DATA.inactiveExercises) delete DATA.inactiveExercises[id];
+  renderExercises(); renderCategoryFilter(); DATA.sessions.forEach(s=>refreshBlocksPanel(s.id));
+  await saveData();
+}
+function exerciseActionsHTML(e, isCustom){
+  const off = isExInactive(e.id);
+  return `<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+    ${off ? "" : `<button class="btn small" onclick="event.stopPropagation();openAddToPlan('${e.id}')">➕ Lägg till i pass</button>`}
+    <button class="btn ghost small" onclick="event.stopPropagation();openExerciseModal('${e.id}')">Redigera</button>
+    <button class="btn ghost small" onclick="event.stopPropagation();duplicateExercise('${e.id}')">Duplicera</button>
+    ${e.edited ? `<button class="btn ghost small" onclick="event.stopPropagation();resetExerciseOverride('${e.id}')">Återställ original</button>` : ""}
+    <button class="btn ghost small" onclick="event.stopPropagation();setExerciseActive('${e.id}',${off})">${off ? "♻ Aktivera igen" : "🗄 Inaktivera"}</button>
+    ${isCustom ? `<button class="btn ghost small" onclick="event.stopPropagation();deleteCustomExercise('${e.id}')">Ta bort</button>` : ""}
+  </div>${off && DATA.inactiveExercises[e.id].since ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">Inaktiv sedan ${DATA.inactiveExercises[e.id].since}</div>` : ""}`;
+}
+function exerciseCellHTML(sid, b, suggestCat, periodCats){
+  const chips = (b.exerciseIds||[]).map(id=>{
+    const e = exerciseById(id); if(!e) return "";
+    const c = EX_CATS.find(x=>x.id===e.cat) || {color:"#8A8F86"}, off = isExInactive(id);
+    return `<span class="chip" style="background:${c.color}22;color:${c.color};margin:1px 3px 1px 0;font-size:10.5px;padding:2px 6px;${off?'opacity:.6;border:1px dashed '+c.color+';':''}" ${off?'title="Inaktiv övning (sparad, används inte längre)"':''}>📋 ${escapeHtml(e.namn)}${off?' · inaktiv':''}
+      <span style="cursor:pointer;margin-left:4px;" onclick="removeBlockExercise('${sid}','${b.id}','${id}')">✕</span></span>`;
+  }).join("");
+  return `<div>${chips}</div><button class="btn ghost small" style="margin-top:3px;font-size:11px;width:100%;text-align:left;" onclick="openExPicker('block','${sid}','${b.id}')">🔎 Lägg till övning…</button>`;
+}
+const EXPICK = {t:null, q:"", cats:new Set(), draw:false, inactive:false};
+function exNorm(s){ return (s==null?"":String(s)).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+function ensureExPickerModal(){
+  if(document.getElementById("modal-expicker")) return;
+  const d = document.createElement("div");
+  d.innerHTML = `<div class="overlay" id="modal-expicker"><div class="modal" style="max-width:600px;display:flex;flex-direction:column;max-height:90vh;padding-bottom:12px;">
+    <button class="close-x" onclick="closeExPicker()">✕</button>
+    <h3 id="exp-title" style="padding-right:26px;">Lägg till övning</h3>
+    <input type="search" id="exp-q" placeholder="Sök på namn, syfte eller kategori …" autocomplete="off" style="font-size:16px;width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line);border-radius:9px;"
+      oninput="EXPICK.q=this.value;exPickerRender()" onkeydown="exPickerKey(event)">
+    <div id="exp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 4px;"></div>
+    <div id="exp-count" style="font-size:11px;color:var(--muted);margin:2px 0 4px;"></div>
+    <div id="exp-list" style="overflow-y:auto;flex:1 1 auto;min-height:160px;border-top:1px solid var(--line);-webkit-overflow-scrolling:touch;"></div>
+    <div class="modal-actions" style="margin-top:8px;"><button class="btn" onclick="closeExPicker()">Klar</button></div>
+  </div></div>`;
+  document.body.appendChild(d.firstChild);
+}
+function exPickerIds(){
+  const t = EXPICK.t; if(!t) return [];
+  const {b} = findBlock(t.sid, t.bid); if(!b) return [];
+  if(t.kind==="station"){ const st = stationsOf(b).find(x=>x.id===t.stId); return (st && st.exerciseIds) || []; }
+  return b.exerciseIds || [];
+}
+function openExPicker(kind, sid, bid, stId){
+  const {s, b} = findBlock(sid, bid); if(!b) return;
+  let title, suggest = null, period = [];
+  if(kind==="station"){
+    const st = stationsOf(b).find(x=>x.id===stId); if(!st) return;
+    title = `${b.theme||"Stationer"} › ${st.name||"Station"}`; suggest = SUBTHEME_TO_CAT[st.subtheme] || null;
+  } else { title = b.theme||"Block"; suggest = MAIN_THEME_TO_CAT[b.theme] || null; period = periodFocusCatIds(s); }
+  EXPICK.t = {kind, sid, bid, stId, suggest, period}; EXPICK.q = ""; EXPICK.cats = new Set(); EXPICK.draw = false; EXPICK.inactive = false;
+  ensureExPickerModal();
+  document.getElementById("exp-title").textContent = "Lägg till övning · "+title;
+  document.getElementById("exp-q").value = "";
+  openModal("modal-expicker"); exPickerRender();
+  setTimeout(()=>{ const q = document.getElementById("exp-q"); if(q) q.focus(); }, 60);
+}
+function closeExPicker(){ closeModal("modal-expicker"); EXPICK.t = null; }
+function exPickerToggleCat(id){ if(EXPICK.cats.has(id)) EXPICK.cats.delete(id); else EXPICK.cats.add(id); exPickerRender(); }
+function exPickerFlag(f){ EXPICK[f] = !EXPICK[f]; exPickerRender(); }
+function exPickerList(){
+  const t = EXPICK.t, q = exNorm(EXPICK.q.trim()), tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+  let list = allExercises().filter(e=>EXPICK.inactive || !isExInactive(e.id));
+  if(EXPICK.cats.size) list = list.filter(e=>EXPICK.cats.has(e.cat));
+  if(EXPICK.draw) list = list.filter(e=>exHasDrawing(e.id));
+  const catLabel = id=>(EX_CATS.find(c=>c.id===id)||{}).label||"";
+  if(tokens.length){
+    const scored = list.map(e=>{
+      const n = exNorm(e.namn); let sc = -1;
+      if(n.startsWith(q)) sc = 0; else if(n.split(/\s+/).some(w=>w.startsWith(q))) sc = 1; else if(n.includes(q)) sc = 2;
+      else {
+        const hay = exNorm([e.namn, catLabel(e.cat), e.syfte, e.material, e.coaching, (e.steg||[]).join(" ")].join(" "));
+        if(exNorm(catLabel(e.cat)).includes(q)) sc = 3; else if(exNorm(e.syfte).includes(q)) sc = 4; else if(tokens.every(w=>hay.includes(w))) sc = 5;
+      }
+      return {e, sc};
+    }).filter(x=>x.sc>=0).sort((a,b)=>a.sc-b.sc || a.e.namn.localeCompare(b.e.namn,"sv"));
+    return [{title:null, items:scored.map(x=>x.e)}];
+  }
+  const sections = [], used = new Set();
+  const add = (title, cid)=>{ const items = list.filter(e=>e.cat===cid && !used.has(e.id)); items.forEach(e=>used.add(e.id)); if(items.length) sections.push({title, items}); };
+  if(t.suggest) add("Föreslaget: "+catLabel(t.suggest), t.suggest);
+  (t.period||[]).filter(c=>c!==t.suggest).forEach(c=>add("📅 Periodens fokus: "+catLabel(c), c));
+  EX_CATS.forEach(c=>add(c.label, c.id));
+  return sections;
+}
+function exPickerRender(){
+  const t = EXPICK.t; if(!t) return;
+  const have = new Set(exPickerIds()), sections = exPickerList(), total = sections.reduce((n,x)=>n+x.items.length, 0);
+  const chip = (label, on, fn, title)=>`<span class="cat-chip ${on?'active':''}" ${title?`title="${title}"`:""} onclick="${fn}">${label}</span>`;
+  document.getElementById("exp-chips").innerHTML = EX_CATS.map(c=>chip(escapeHtml(c.label), EXPICK.cats.has(c.id), `exPickerToggleCat('${c.id}')`)).join("")
+    + chip("✏ Med ritning", EXPICK.draw, "exPickerFlag('draw')")
+    + (inactiveCount() ? chip(`🗄 Visa inaktiva (${inactiveCount()})`, EXPICK.inactive, "exPickerFlag('inactive')", "Visa även sparade, inaktiva övningar") : "");
+  document.getElementById("exp-count").textContent = `${total} ${total===1?"övning":"övningar"}${have.size?` · ${have.size} redan tillagd${have.size>1?"a":""}`:""}`;
+  const q = exNorm(EXPICK.q.trim());
+  const row = e=>{
+    const c = EX_CATS.find(x=>x.id===e.cat) || {color:"#8A8F86"}, has = have.has(e.id), off = isExInactive(e.id);
+    return `<div class="exp-item" data-id="${e.id}" onclick="${has?"":`exPickerAdd('${e.id}')`}" style="display:flex;gap:9px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);${has?'opacity:.55;':'cursor:pointer;'}">
+      <span style="flex:0 0 5px;align-self:stretch;border-radius:3px;background:${c.color};"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;"><b>${escapeHtml(e.namn)}</b>${exHasDrawing(e.id)?' <span title="Har ritning">✏</span>':""}${isIncompleteExercise(e)?' <span style="font-size:10px;color:#C24A3A;">ofullständig</span>':""}${off?' <span style="font-size:10px;color:#6B5F54;">inaktiv</span>':""}</div>
+        <div style="font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(e.syfte||"")}</div>
+      </div>
+      <span style="flex:0 0 auto;font-weight:700;color:${has?'#2E6C3E':'var(--pine)'};">${has?"✓":"+"}</span></div>`;
+  };
+  document.getElementById("exp-list").innerHTML = total ? sections.map(sec=>(sec.title?`<div style="position:sticky;top:0;background:#F4F4EF;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);padding:5px 6px;">${escapeHtml(sec.title)}</div>`:"")+sec.items.map(row).join("")).join("")
+    : `<div class="empty" style="padding:22px 8px;text-align:center;color:var(--muted);font-size:13px;">Inga övningar matchade${q?` «${escapeHtml(EXPICK.q.trim())}»`:""}.${(!EXPICK.inactive && inactiveCount()) ? "<br>Inaktiva övningar döljs — slå på \"Visa inaktiva\" ovan." : ""}</div>`;
+}
+function exPickerAdd(id){
+  const t = EXPICK.t; if(!t) return;
+  if(isExInactive(id) && !confirm("Den här övningen är inaktiv. Lägga till den ändå?")) return;
+  if(t.kind==="station") addStationExercise(t.sid, t.bid, t.stId, id); else addBlockExercise(t.sid, t.bid, id);
+  exPickerRender();
+}
+function exPickerKey(ev){
+  if(ev.key==="Escape"){ closeExPicker(); return; }
+  if(ev.key==="Enter"){
+    ev.preventDefault();
+    const first = document.querySelector("#exp-list .exp-item[onclick*='exPickerAdd']"); if(first) exPickerAdd(first.dataset.id);
+  }
+}
+
 /* ---------- Stationsraden i Bygg pass ---------- */
 function exerciseCellHTMLForStation(sid, bid, st, suggestCat){
   const ids = st.exerciseIds || [], drawIds = drawingExIds(st), shown = shownExId(st);
   const chips = ids.map(id=>{
     const e = exerciseById(id); if(!e) return "";
-    const c = EX_CATS.find(x=>x.id===e.cat) || {color:"#8A8F86"}, has = exHasDrawing(id);
+    const c = EX_CATS.find(x=>x.id===e.cat) || {color:"#8A8F86"}, has = exHasDrawing(id), off = isExInactive(id);
     const eye = (has && drawIds.length>1) ? `<span title="${id===shown?'Visas i översikten':'Visa i översikten'}" style="cursor:pointer;margin-left:4px;${id===shown?'':'opacity:.45;'}" onclick="setStationView('${sid}','${bid}','${st.id}','${id}')">${id===shown?'👁':'○'}</span>` : "";
     const draw = has ? `<span title="Visa animering" style="cursor:pointer;margin-left:4px;" onclick="XD.open('${id}','view')">▶</span>` : `<span title="Övningen saknar ritning — rita den nu" style="cursor:pointer;margin-left:4px;color:#9A4A0C;" onclick="XD.open('${id}','edit')">✏️ Rita</span>`;
-    return `<span class="chip" style="background:${c.color}22;color:${c.color};margin:1px 3px 1px 0;font-size:10px;padding:1px 5px;">📋 ${escapeHtml(e.namn)}${draw}${eye}
+    return `<span class="chip" style="background:${c.color}22;color:${c.color};margin:1px 3px 1px 0;font-size:10px;padding:1px 5px;${off?'opacity:.6;border:1px dashed '+c.color+';':''}" ${off?'title="Inaktiv övning (sparad, används inte längre)"':''}>📋 ${escapeHtml(e.namn)}${off?' · inaktiv':''}${draw}${eye}
       <span style="cursor:pointer;margin-left:4px;" onclick="removeStationExercise('${sid}','${bid}','${st.id}','${id}')">✕</span></span>`;
   }).join("");
-  const label = e=>(exHasDrawing(e.id)?"✏ ":"")+escapeHtml(e.namn);
-  let opts = '<option value="">+ lägg till övning… (✏ = har ritning)</option>';
-  if(suggestCat){
-    const cat = EX_CATS.find(c=>c.id===suggestCat);
-    const suggested = allExercises().filter(e=>e.cat===suggestCat && !ids.includes(e.id));
-    if(suggested.length) opts += `<optgroup label="Föreslaget: ${cat.label}">` + suggested.map(e=>`<option value="${e.id}">${label(e)}</option>`).join("") + `</optgroup>`;
-  }
-  EX_CATS.forEach(c=>{
-    const items = allExercises().filter(e=>e.cat===c.id && !ids.includes(e.id) && !(suggestCat===c.id));
-    if(!items.length) return;
-    opts += `<optgroup label="${c.label}">` + items.map(e=>`<option value="${e.id}">${label(e)}</option>`).join("") + `</optgroup>`;
-  });
-  return `<div>${chips}</div><select style="font-size:10.5px;margin-top:2px;" onchange="addStationExercise('${sid}','${bid}','${st.id}',this.value);this.value=''">${opts}</select>`;
+  return `<div>${chips}</div><button class="btn ghost small" style="margin-top:3px;font-size:11px;" onclick="openExPicker('station','${sid}','${bid}','${st.id}')">🔎 Lägg till övning…</button>`;
 }
 function stationExtraRowHTML(s, b){
   applyAutoNames(b);
@@ -7447,15 +7592,6 @@ function exerciseUsage(id){
 function exerciseUsageHTML(e){
   const u = exerciseUsage(e.id);
   return `<div style="font-size:11px;color:var(--muted);margin-top:8px;"><b>Används i:</b> ${u.length ? u.slice(0,6).map(x=>escapeHtml(x.label)).join(" · ")+(u.length>6?` · +${u.length-6}`:"") : "inga pass ännu"}</div>`;
-}
-function exerciseActionsHTML(e, isCustom){
-  return `<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
-    <button class="btn small" onclick="event.stopPropagation();openAddToPlan('${e.id}')">➕ Lägg till i pass</button>
-    <button class="btn ghost small" onclick="event.stopPropagation();openExerciseModal('${e.id}')">Redigera</button>
-    <button class="btn ghost small" onclick="event.stopPropagation();duplicateExercise('${e.id}')">Duplicera</button>
-    ${e.edited ? `<button class="btn ghost small" onclick="event.stopPropagation();resetExerciseOverride('${e.id}')">Återställ original</button>` : ""}
-    ${isCustom ? `<button class="btn ghost small" onclick="event.stopPropagation();deleteCustomExercise('${e.id}')">Ta bort</button>` : ""}
-  </div>`;
 }
 async function deleteCustomExercise(id){
   const e = (DATA.customExercises||[]).find(x=>x.id===id);
@@ -7539,7 +7675,7 @@ function atpConfirm(){
 }
 
 /* ---------- Djuplänk: #ovning=<id> öppnar övningens animering, #oversikt=<pass>:<block> öppnar stationsöversikten ---------- */
-const APP_PUBLIC_URL = "https://johansandahl1984-hash.github.io/team18-arsplan/";
+const APP_PUBLIC_URL = HOST_CFG.appUrl;
 let APP_DATA_READY = false, DEEPLINK_OPEN = null;
 function deepLinkExerciseId(){
   const h = location.hash||"";
