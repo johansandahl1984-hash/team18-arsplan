@@ -4914,12 +4914,57 @@ function pdfStyle(){
   .pdfp .var{display:flex; gap:8px; margin-top:12px;}
   .pdfp .var div{flex:1; background:#F4F1EC; border-radius:10px; padding:9px 11px; font-size:14px; line-height:1.4;}
   .pdfp .var b{display:block; font:700 12px 'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.07em; color:#E8621A; margin-bottom:3px;}
+
+  /* Kompakt läge: tätare tidsplan och lag, sektionerna fyller på samma sida i stället för att börja ny */
+  .pdfp.c .top{padding:7px 14px; font-size:10.5px;}
+  .pdfp.c .body{padding:11px 14px 6px;}
+  .pdfp.c h2{font-size:20px; margin:0 0 8px;}
+  .pdfp.c h3{font-size:11.5px; margin:10px 0 4px;}
+  .pdfp.c .foot{margin:0 14px; padding:6px 0 9px; font-size:10.5px;}
+  .pdfp.c .hero{padding:13px 14px 12px;}
+  .pdfp.c .hero .club{font-size:10.5px;}
+  .pdfp.c .hero .tag{font-size:11px; padding:2px 9px; margin:6px 0 5px;}
+  .pdfp.c .hero h1{font-size:25px;}
+  .pdfp.c .hero .sub{margin-top:5px; font-size:13.5px; line-height:1.3;}
+  .pdfp.c .hero .hfocus{margin-top:9px; padding-top:7px; border-top:1px solid rgba(255,255,255,.3); font-size:12.5px; line-height:1.32; color:#fff;}
+  .pdfp.c .hero .hfocus .hl{display:block; font:600 10px 'Oswald',sans-serif; letter-spacing:.1em; text-transform:uppercase; opacity:.82; margin-bottom:2px;}
+  .pdfp.c .hero .hfocus .pdot{display:inline-block; width:8px; height:8px; border-radius:4px; border:1.5px solid #fff; margin-right:5px; vertical-align:0;}
+  .pdfp.c .hero .hfocus .hn{font-size:14px; font-weight:700; line-height:1.25;}
+  .pdfp.c .hero .hfocus .hc{display:inline-block; background:rgba(255,255,255,.22); border-radius:9px; padding:0 7px; font-size:11px; font-weight:600; margin:3px 5px 0 0;}
+  .pdfp.c .hero .hfocus .hg{margin-top:3px; opacity:.96;}
+  .pdfp.c .card{padding:8px 11px; margin:0 0 8px; border-radius:10px;}
+  .pdfp.c .big{font-size:15.5px; line-height:1.3;}
+  .pdfp.c .lbl{font-size:10.5px; margin-bottom:2px;}
+  .pdfp.c .chips{gap:5px; margin-top:5px;} .pdfp.c .chip{font-size:12px; padding:2px 8px;}
+  .pdfp.c .bar{height:12px; margin:2px 0 6px;}
+  .pdfp.c .meta{font-size:13px; color:#4A4238; line-height:1.4; margin:3px 0 0;}
+  .pdfp.c .tl{margin:0 0 7px; border-radius:10px;}
+  .pdfp.c .tl-h{padding:4px 11px;} .pdfp.c .tl-h b{font-size:14.5px;} .pdfp.c .tl-h b em{font:500 12px 'Inter',sans-serif; opacity:.92; margin-left:6px; letter-spacing:0; font-style:normal;} .pdfp.c .tl-h span{font-size:12px;}
+  .pdfp.c .tl-b{padding:5px 11px 6px;}
+  .pdfp.c .who{font-size:12.5px; margin-bottom:3px;}
+  .pdfp.c .ex{gap:7px; padding:1px 0; font-size:14px; line-height:1.25;}
+  .pdfp.c .exn{flex:0 0 19px; height:19px; border-radius:10px; font-size:11px; margin-top:1px;}
+  .pdfp.c .ins{font-size:12.5px; margin-top:3px; line-height:1.3;}
+  .pdfp.c .st{padding:5px 8px; margin:5px 0 0; border-radius:8px;} .pdfp.c .st b{font-size:13.5px;} .pdfp.c .st .sub{font-size:12px;}
+  .pdfp.c .stl{padding:0 6px; margin-right:5px; font-size:13px;}
+  .pdfp.c table.rot{margin-top:6px;} .pdfp.c table.rot th, .pdfp.c table.rot td{padding:3px 2px; font-size:11px;} .pdfp.c table.rot td.lb{font-size:11px; width:40px;}
+  .pdfp.c .gp{font-size:11px; padding:1px 6px;}
+  .pdfp.c .animlink.sm{font-size:12.5px; padding:6px 8px; margin:4px 0 2px;}
+  .pdfp.c .img{margin:6px 0 2px;}
+  .pdfp.c .teams{display:grid; grid-template-columns:repeat(auto-fit,minmax(165px,1fr)); gap:7px; align-items:start;}
+  .pdfp.c .team{margin:0; border-radius:10px;}
+  .pdfp.c .team-h{padding:4px 9px;} .pdfp.c .team-h b{font-size:15.5px;} .pdfp.c .team-h span{font-size:10.5px;}
+  .pdfp.c .team-b{padding:4px 9px 6px;}
+  .pdfp.c .names, .pdfp.c .names.one{column-count:1; margin:2px 0 0;}
+  .pdfp.c .names div{font-size:13px; padding:2px 0; line-height:1.25;}
+  .pdfp.c .mv{font-size:12.5px; padding:1px 0 4px;}
+  .pdfp.c .tr{font-size:11.5px; margin-top:5px;}
   `;
   document.head.appendChild(st);
 }
 function pdfGroupChip(gid){ const g = DATA.groups.find(x=>x.id===gid); return g ? `<span class="gp" style="background:${g.color}">${escapeHtml(g.name)}</span>` : "—"; }
 
-function pdfPageOverview(D){
+function pdfPageOverview(D, compact){
   const s = D.s;
   const dayLabel = pdfCap(D.d.toLocaleDateString("sv-SE",{weekday:"long", day:"numeric", month:"long"}));
   const week = isoWeekNumber(D.d);
@@ -4936,8 +4981,21 @@ function pdfPageOverview(D){
   const bar = D.total>0 ? `<div class="bar">${D.blocks.filter(x=>x.dur>0).map(x=>`<div style="width:${(x.dur/D.total*100).toFixed(2)}%;background:${themeColor(x.b.theme)}"></div>`).join("")}</div>` : "";
   const rows = D.blocks.map(x=>`<div class="row"><span class="dot" style="background:${themeColor(x.b.theme)}"></span>${x.from!=null?`<span class="tm">${pdfFmt(x.from)}</span>`:""}<b>${escapeHtml(x.b.theme)}</b><span class="mn">${x.dur?x.dur+" min":""}</span></div>`).join("");
   const teamChips = D.groups.length ? `<div class="chips">${D.groups.map(x=>`<span class="gp" style="background:${x.g.color};font-size:13.5px;padding:3px 10px">${escapeHtml(x.g.name)} · ${x.names.length}${x.goalie?" +Mv":""}</span>`).join("")}</div>` : "";
+  const heroHtml = `<div class="hero"><div class="club">Trelleborg IF · Team-18</div><div class="tag">Träning</div><h1>${escapeHtml(dayLabel)}</h1><div class="sub">${sub}</div></div>`;
+  if(compact){                                                     // kompakt: fokus + tidsstapel + nyckeltal; tidsplanen följer direkt under på samma sida
+    const meta = [`<div class="meta"><b>Planerat:</b> ${escapeHtml(totalTxt)}</div>`,
+      D.coaches.length ? `<div class="meta"><b>Tränare:</b> ${D.coaches.map(escapeHtml).join(", ")}</div>` : "",
+      D.groups.length ? `<div class="meta"><b>Lag:</b> ${D.groups.map(x=>`<span class="gp" style="background:${x.g.color}">${escapeHtml(x.g.name)} · ${x.names.length}${x.goalie?" +Mv":""}</span>`).join(" ")}</div>` : ""].join("");
+    const note = s.notes && s.notes.split(" — ")[0] && s.notes.split(" — ")[0]!==s.type ? `<div class="meta" style="margin-top:6px"><b>Anteckning:</b> ${escapeHtml(s.notes)}</div>` : "";
+    const pfocus = p ? `<div class="hfocus"><span class="hl"><span class="pdot" style="background:${escapeHtml(p.color||"#E8621A")}"></span>Periodens fokus</span><div class="hn">${escapeHtml(p.label)}</div>${(p.focus||[]).length ? `<div>${p.focus.map(f=>`<span class="hc">${escapeHtml(f)}</span>`).join("")}</div>` : ""}${p.goal ? `<div class="hg"><b>Mål:</b> ${escapeHtml(p.goal)}</div>` : ""}</div>` : "";
+    const heroC = heroHtml.slice(0, heroHtml.lastIndexOf("</div>")) + pfocus + "</div>";      // periodens fokus i mindre text direkt i headern
+    const chtml = `
+    ${heroC}
+    <div class="body" style="padding-top:11px">${dayCard}${bar}${meta}${note}</div>`;
+    return {kind:"overview", html:chtml, hero:true};
+  }
   const html = `
-    <div class="hero"><div class="club">Trelleborg IF · Team-18</div><div class="tag">Träning</div><h1>${escapeHtml(dayLabel)}</h1><div class="sub">${sub}</div></div>
+    ${heroHtml}
     <div class="body" style="padding-top:16px">
       ${dayCard}${periodCard}
       ${D.blocks.length ? `<h3 style="margin-top:6px">Dagens upplägg</h3>${bar}<div>${rows}</div><div style="font-size:13.5px;color:#6B5F54;margin-top:6px">${escapeHtml(totalTxt)}</div>` : ""}
@@ -4947,24 +5005,24 @@ function pdfPageOverview(D){
     </div>`;
   return {kind:"overview", html, hero:true};
 }
-function pdfOverviewHTML(D, b){                                     // översiktsbild för stationer/planer: alla på isen samtidigt
+function pdfOverviewHTML(D, b, compact){                                     // översiktsbild för stationer/planer: alla på isen samtidigt
   if(!XD.hasContent(b.overview)) return "";
   const ov = b.overview, ovUrl = APP_PUBLIC_URL + "#oversikt=" + encodeURIComponent(D.s.id) + ":" + encodeURIComponent(b.id);
   const ovAnim = (ov.objects||[]).some(o=>o.kind==="path");
   const spel = isSpelBlock(b), rounds = spel ? (b.planRounds||[]) : (b.rounds||[]);
   return XD.stillImages(ov).map(im=>{
-    const iw = Math.round(Math.min(PDF_W-32-28, 290*(im.w||600)/(im.h||340))), ih = Math.round(iw*(im.h||340)/(im.w||600));
+    const iw = compact ? PDF_W-28-24 : PDF_W-32-28, ih = Math.round(iw*(im.h||340)/(im.w||600));   // full bredd i kortet, även för halvplan
     const svg = im.svg.replace("<svg ", `<svg width="${iw}" height="${ih}" `);
     const ridx = b.overviewRound==null ? 0 : b.overviewRound, cap = [ (ridx>=0 && rounds[ridx]) ? (spel ? (ridx===0 ? "Start" : `Byte ${ridx+1}`) : `Byte ${ridx+1}`) : "", im.label||"" ].filter(Boolean).join(" · ");
     return `<div class="img"${ovAnim?` data-href="${ovUrl}"`:""}>${cap?`<div class="cap">${escapeHtml(cap)}</div>`:""}${svg}</div>`;
   }).join("") + (ovAnim ? `<a class="animlink sm" data-href="${ovUrl}" href="${ovUrl}">▶ Se översikten animerad</a>` : "");
 }
-function pdfBlockCard(D, x){
+function pdfBlockCard(D, x, compact){
   const b = x.b, color = themeColor(b.theme);
   const coach = b.coach ? coachById(b.coach) : null;
   const timeTxt = x.from!=null ? `${pdfFmt(x.from)}–${pdfFmt(x.to)}` : (x.dur ? x.dur+" min" : "");
   let inner = "";
-  if(coach) inner += `<div class="who"><b>Ansvarig:</b> ${escapeHtml(coach.name)}</div>`;
+  if(coach && !compact) inner += `<div class="who"><b>Ansvarig:</b> ${escapeHtml(coach.name)}</div>`;
   const nums = x.exNums.filter(z=>!z.st);
   inner += nums.map(z=>{ const e = D.exList[z.n-1].e; return `<div class="ex"><span class="exn">${z.n}</span><span>${escapeHtml(e.namn)}</span></div>`; }).join("");
   if(b.instruction) inner += `<div class="ins">${escapeHtml(b.instruction)}</div>`;
@@ -4973,7 +5031,7 @@ function pdfBlockCard(D, x){
     const stations = b.stations||[];
     if(typeof applyAutoNames==="function") applyAutoNames(b);
     if(b.overview && typeof syncOverview==="function") syncOverview(D.s.id, b.id);   // översikten följer blockets stationer
-    inner += pdfOverviewHTML(D, b);
+    inner += pdfOverviewHTML(D, b, compact);
     inner += stations.map((st,si)=>{
       const stCoach = st.coach ? coachById(st.coach) : null, stLetter = XD.hasContent(b.overview) ? `<span class="stl">${String.fromCharCode(65+si)}</span>` : "";
       const exs = x.exNums.filter(z=>z.st===st);
@@ -4986,7 +5044,7 @@ function pdfBlockCard(D, x){
     }
   } else if(isSpelBlock(b)){
     if(b.overview && typeof syncOverview==="function") syncOverview(D.s.id, b.id);
-    inner += pdfOverviewHTML(D, b);
+    inner += pdfOverviewHTML(D, b, compact);
     ensurePlanConfigs(b);
     const numPlans = Math.max(1, +b.numPlans || 1);
     const labels = Array.from({length:numPlans},(_,i)=>"Plan "+String.fromCharCode(65+i));
@@ -4996,7 +5054,7 @@ function pdfBlockCard(D, x){
         b.planRounds.map((r,ri)=>`<tr><td class="lb">${ri===0?"Start":"Byte "+ri}</td>${labels.map((_,pi)=>{ const a = r.assignments[pi]&&r.assignments[pi].a, bb = r.assignments[pi]&&r.assignments[pi].b; return `<td>${pdfGroupChip(a)}<br><span style="font-size:11px;color:#8A8F86">mot</span><br>${pdfGroupChip(bb)}</td>`; }).join("")}</tr>`).join("")}</table>`;
     }
   }
-  return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}</b><span>${escapeHtml(timeTxt)}</span></div><div class="tl-b">${inner||'<div class="who">—</div>'}</div></div>`;
+  return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coach ? `<em>· ${escapeHtml(coach.name)}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div><div class="tl-b">${inner||'<div class="who">—</div>'}</div></div>`;
 }
 function pdfTeamCard(x){
   const many = x.names.length > 6;
@@ -5012,7 +5070,7 @@ function pdfExercisePage(D, i){
   const hasAnim = !!(drawing && drawing.objects && drawing.objects.some(o=>o.kind==="path"));
   const animUrl = APP_PUBLIC_URL + "#ovning=" + encodeURIComponent(e.id);
   const imgs = XD.stillImages(drawing).map(im=>{
-    const iw = Math.round(Math.min(PDF_W-32, 300*(im.w||600)/(im.h||340))), ih = Math.round(iw*(im.h||340)/(im.w||600));
+    const iw = PDF_W-32, ih = Math.round(iw*(im.h||340)/(im.w||600));
     const svg = im.svg.replace("<svg ", `<svg width="${iw}" height="${ih}" `);
     return `<div class="img"${hasAnim?` data-href="${animUrl}"`:""}>${im.label?`<div class="cap">${escapeHtml(im.label)}</div>`:""}${svg}</div>`;
   }).join("") + (hasAnim ? `<a class="animlink" data-href="${animUrl}" href="${animUrl}">▶ Se animeringen i appen</a><div class="animhint">Öppnar appen i webbläsaren — logga in om den ber om lösenord</div>` : "");
@@ -5035,36 +5093,52 @@ function pdfExercisePage(D, i){
 /* ---------- Sidbygge (paginering i riktig DOM) ---------- */
 function pdfBuildPageEls(D, opts, stage){
   const pages = [];   // {el, title}
-  const mk = (title, hero)=>{
-    const el = document.createElement("div"); el.className = "pdfp";
-    el.innerHTML = `<div class="top"><span>Trelleborg IF · <b>Träning</b></span><span>${escapeHtml(pdfCap(D.d.toLocaleDateString("sv-SE",{weekday:"short", day:"numeric", month:"short"}).replace(".","")))}</span></div>` +
+  const compact = !!opts.compact;
+  const mk = (title, hero, plain)=>{
+    const el = document.createElement("div"); el.className = "pdfp" + ((compact && !plain) ? " c" : "");
+    const topHtml = `<div class="top"><span>Trelleborg IF · <b>Träning</b></span><span>${escapeHtml(pdfCap(D.d.toLocaleDateString("sv-SE",{weekday:"short", day:"numeric", month:"short"}).replace(".","")))}</span></div>`;
+    el.innerHTML = ((hero && !plain) ? "" : topHtml) +          // översiktssidan har egen rubrik (hero) — ingen övre list ovanför den
       (hero ? "" : `<div class="body" style="padding-bottom:0"><h2>${escapeHtml(title)}</h2></div><div class="body" data-flow style="padding-top:0"></div>`);
     stage.appendChild(el); pages.push({el, title}); return el;
   };
   const flow = (el)=>el.querySelector("[data-flow]");
   // 1. Översikt
+  let tail = null;                       // kompakt läge: sidan som fortfarande har plats, nästa sektion fyller på där
   if(opts.overview){
-    const ov = pdfPageOverview(D);
+    const ov = pdfPageOverview(D, compact);
     const el = mk("Översikt", true);
     el.insertAdjacentHTML("beforeend", ov.html);
+    if(compact){ el.insertAdjacentHTML("beforeend", `<div class="body" data-flow style="padding-top:0"></div>`); tail = el; }
   }
-  // hjälpare för sektioner som kan flöda över flera sidor
-  const flowing = (title, atoms, maxH)=>{
-    let el = mk(title), cont = 0;
-    atoms.forEach(a=>{
+  // sektioner som kan flöda över flera sidor
+  const maxH = compact ? 1500 : 1150;
+  const flowing = (title, atoms)=>{
+    const merged = compact && tail;
+    let el = merged ? tail : mk(title);
+    atoms.forEach((a,i)=>{
       flow(el).insertAdjacentHTML("beforeend", a);
       if(el.offsetHeight > maxH && flow(el).children.length > 1){
         const last = flow(el).lastElementChild; last.remove();
-        el = mk(title+" (forts.)"); flow(el).appendChild(last);
+        const h = last.querySelector(":scope > h3.sec"); if(h) h.remove();        // ny sida har redan rubriken som sidtitel
+        el = mk(i===0 ? title : title+" (forts.)"); flow(el).appendChild(last);
       }
     });
+    tail = el;
   };
-  if(opts.schedule && D.blocks.length) flowing("Tidsplan", D.blocks.map(x=>pdfBlockCard(D,x)), 1150);
-  if(opts.teams && D.groups.length) flowing("Lag", D.groups.map(pdfTeamCard), 1150);
+  const sec = (label, first)=> (compact && tail) ? `<h3 class="sec" style="margin-top:6px">${label}</h3>` : "";
+  if(opts.schedule && D.blocks.length){
+    const cards = D.blocks.map(x=>pdfBlockCard(D,x,compact));
+    if(compact && tail) cards[0] = `<div>${sec("Tidsplan")}${cards[0]}</div>`;
+    flowing("Tidsplan", cards);
+  }
+  if(opts.teams && D.groups.length){
+    if(compact) flowing("Lag", [`<div>${sec("Lag")}<div class="teams">${D.groups.map(pdfTeamCard).join("")}</div></div>`]);
+    else flowing("Lag", D.groups.map(pdfTeamCard));
+  }
   if(opts.exercises){
     D.exList.forEach((_,i)=>{
       const ex = pdfExercisePage(D,i);
-      const el = mk(D.exList[i].e.namn, true);
+      const el = mk(D.exList[i].e.namn, true, true);
       el.insertAdjacentHTML("beforeend", ex.html);
     });
   }
@@ -5130,6 +5204,7 @@ function pdfEnsureModal(){
         <label class="pdf-chk"><input type="checkbox" id="pdf-o-teams" checked><span>Lagindelning <small id="pdf-n-teams"></small></span></label>
         <label class="pdf-chk"><input type="checkbox" id="pdf-o-exercises" checked><span>Övningar med stillbilder <small id="pdf-n-exercises"></small></span></label>
       </div>
+      <div style="margin-top:6px;"><label class="pdf-chk"><input type="checkbox" id="pdf-o-compact" checked><span>Kompakt layout <small>(färre sidor: tidsplan och lag på samma sida)</small></span></label></div>
       <div class="toolbar" style="margin-top:14px;"><button class="btn" id="pdf-make" onclick="pdfMake()">Skapa PDF</button></div>
     </div>
     <div id="pdf-progress" style="display:none;"><div style="font-size:14px;" id="pdf-prog-txt">Skapar…</div><div style="height:8px;border-radius:4px;background:#EEE;margin-top:8px;overflow:hidden;"><div id="pdf-prog-bar" style="height:100%;width:0;background:var(--pine);transition:width .2s;"></div></div></div>
@@ -5156,6 +5231,7 @@ function openPdfDialog(sid){
   document.getElementById("pdf-dayfocus").value = s.dayFocus || "";
   const set = (k, n)=>{ const cb = document.getElementById("pdf-o-"+k); cb.disabled = !n; cb.checked = !!n; document.getElementById("pdf-n-"+k).textContent = n ? "("+n+")" : "(inget inlagt)"; };
   document.getElementById("pdf-o-overview").checked = true;
+  try{ const pref = localStorage.getItem("pdf-compact"); document.getElementById("pdf-o-compact").checked = (pref!=="0"); }catch(_){}
   set("schedule", D.blocks.length); set("teams", D.groups.length); set("exercises", D.exList.length);
   document.getElementById("pdf-error").style.display = "none";
   pdfShow("setup"); openModal("modal-pdf");
@@ -5168,7 +5244,8 @@ async function pdfMake(){
   const focus = document.getElementById("pdf-dayfocus").value.trim();
   if((s.dayFocus||"") !== focus){ s.dayFocus = focus; saveData(); }
   const opts = {overview:document.getElementById("pdf-o-overview").checked, schedule:document.getElementById("pdf-o-schedule").checked,
-    teams:document.getElementById("pdf-o-teams").checked, exercises:document.getElementById("pdf-o-exercises").checked};
+    teams:document.getElementById("pdf-o-teams").checked, exercises:document.getElementById("pdf-o-exercises").checked, compact:document.getElementById("pdf-o-compact").checked};
+  try{ localStorage.setItem("pdf-compact", opts.compact ? "1" : "0"); }catch(_){}
   pdfShow("progress");
   const txt = document.getElementById("pdf-prog-txt"), bar = document.getElementById("pdf-prog-bar");
   txt.textContent = "Laddar PDF-verktyg…"; bar.style.width = "4%";
@@ -5872,8 +5949,9 @@ function renderExercises(){
   grid.innerHTML = filtered.map(e=>{
     const cat = EX_CATS.find(c=>c.id===e.cat);
     const isCustom = (DATA.customExercises||[]).some(x=>x.id===e.id);
-    return `<div class="ex-card" style="${isExInactive(e.id) ? 'opacity:.62;' : ''}">
-      <div class="ex-head" onclick="toggleEx('${e.id}')">
+    return `<div class="ex-card" id="exc-${e.id}" style="${isExInactive(e.id) ? 'opacity:.62;' : ''}${exSelMode && exSelected.has(e.id) ? 'outline:3px solid var(--pine);outline-offset:-2px;' : ''}">
+      <div class="ex-head" onclick="${exSelMode ? `exSelToggle('${e.id}')` : `toggleEx('${e.id}')`}">
+        ${exSelMode ? exSelBox(e.id) : ""}
         <span class="ex-cat" style="background:${cat.color}">${cat.label}</span>
         ${isCustom ? `<span class="ex-cat" style="background:#8A6BAF;">Egen</span>` : ""}
         ${e.edited ? `<span class="ex-cat" style="background:#6B5F54;">Ändrad</span>` : ""}
@@ -7387,6 +7465,7 @@ let showInactiveEx = false;
 function isExInactive(id){ return !!(DATA.inactiveExercises && DATA.inactiveExercises[id]); }
 function inactiveCount(){ return allExercises().filter(e=>isExInactive(e.id)).length; }
 function exerciseCountHint(shown){
+  exSelRenderBar();
   const all = allExercises().length, off = inactiveCount();
   return `${all-off} aktiva övningar${off ? ` · ${off} inaktiva (${showInactiveEx?"visas":"dolda"})` : ""} · visar ${shown}`;
 }
@@ -7396,8 +7475,90 @@ function renderCategoryFilter(){
   const off = inactiveCount();
   el.innerHTML = EX_CATS.map(c=>`<span class="cat-chip ${activeExCats.has(c.id)?'active':''}" onclick="toggleCat('${c.id}')">${c.label}</span>`).join("")
     + `<span class="cat-chip ${activeExCats.size===0?'active':''}" onclick="clearCats()">Alla</span>`
-    + ((off || showInactiveEx) ? `<span class="cat-chip ${showInactiveEx?'active':''}" title="Sparade övningar som inte används just nu" onclick="toggleShowInactive()">🗄 Inaktiva (${off})</span>` : "");
+    + ((off || showInactiveEx) ? `<span class="cat-chip ${showInactiveEx?'active':''}" title="Sparade övningar som inte används just nu" onclick="toggleShowInactive()">🗄 Inaktiva (${off})</span>` : "")
+    + `<span class="cat-chip ${exSelMode?'active':''}" title="Markera flera övningar och inaktivera dem på en gång" onclick="exSelToggleMode()">☑ Markera flera</span>`;
 }
+/* ---------- Markera flera övningar i övningsbanken (inaktivera/aktivera på en gång) ---------- */
+let exSelMode = false, exSelLast = null, exSelTimer = null;
+const exSelected = new Set();
+function exSelBox(id){ const on = exSelected.has(id); return `<span class="exsel" style="float:right;margin-left:8px;font-size:22px;line-height:1;color:${on?'var(--pine)':'#9A9A92'};">${on?"☑":"☐"}</span>`; }
+function exSelToggleMode(){ exSelMode ? exSelExit() : (exSelMode = true, exSelected.clear(), exSelLast = null, renderCategoryFilter(), renderExercises()); }
+function exSelExit(){ exSelMode = false; exSelected.clear(); exSelLast = null; renderCategoryFilter(); renderExercises(); exSelRenderBar(); }
+function exSelToggle(id){
+  if(exSelected.has(id)) exSelected.delete(id); else exSelected.add(id);
+  exSelLast = null;
+  const card = document.getElementById("exc-"+id);
+  if(card){ card.style.outline = exSelected.has(id) ? "3px solid var(--pine)" : ""; card.style.outlineOffset = "-2px"; const b = card.querySelector(".exsel"); if(b){ b.textContent = exSelected.has(id) ? "☑" : "☐"; b.style.color = exSelected.has(id) ? "var(--pine)" : "#9A9A92"; } }
+  exSelRenderBar();
+}
+function exSelVisibleIds(){ return [...document.querySelectorAll("#ex-grid .ex-card[id^='exc-']")].map(c=>c.id.slice(4)); }
+function exSelAllVisible(){
+  const vis = exSelVisibleIds(), all = vis.length && vis.every(id=>exSelected.has(id));
+  vis.forEach(id=>{ if(all) exSelected.delete(id); else exSelected.add(id); });
+  exSelLast = null; renderExercises();
+}
+function exSelClear(){ exSelected.clear(); exSelLast = null; renderExercises(); }
+function ensureExSelBar(){
+  let el = document.getElementById("exsel-bar"); if(el) return el;
+  el = document.createElement("div"); el.id = "exsel-bar";
+  el.style.cssText = "display:none;position:fixed;left:0;right:0;bottom:0;z-index:900;background:#fff;border-top:2px solid var(--pine);box-shadow:0 -4px 14px rgba(0,0,0,.14);padding:10px 14px calc(10px + env(safe-area-inset-bottom));";
+  el.innerHTML = `<div style="max-width:1100px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;">
+      <b id="exsel-n" style="font-size:13.5px;">0 valda</b>
+      <a href="#" style="font-size:12.5px;color:var(--pine);" onclick="event.preventDefault();exSelAllVisible()" id="exsel-all">Markera alla som visas</a>
+      <a href="#" style="font-size:12.5px;color:var(--pine);" onclick="event.preventDefault();exSelClear()">Rensa</a>
+      <span style="flex:1;"></span>
+      <button class="btn small" id="exsel-off" onclick="exSelApply(false)">🗄 Inaktivera</button>
+      <button class="btn small" id="exsel-on" onclick="exSelApply(true)">♻ Aktivera</button>
+      <button class="btn ghost small" onclick="exSelExit()">Klar</button>
+    </div>
+    <div id="exsel-msg" style="font-size:12px;color:#2E6C3E;margin-top:6px;display:none;"></div></div>`;
+  document.body.appendChild(el); return el;
+}
+function exSelRenderBar(){
+  const bank = document.getElementById("view-ovningar"), visibleTab = bank && getComputedStyle(bank).display !== "none";
+  const grid = document.getElementById("ex-grid"); if(grid) grid.style.paddingBottom = (exSelMode && visibleTab) ? "150px" : "";
+  const el = document.getElementById("exsel-bar");
+  if(!exSelMode || !visibleTab){ if(el) el.style.display = "none"; return; }
+  ensureExSelBar(); const bar = document.getElementById("exsel-bar"); bar.style.display = "block";
+  const ids = [...exSelected].filter(id=>exerciseById(id)), nOff = ids.filter(id=>!isExInactive(id)).length, nOn = ids.length - nOff;
+  document.getElementById("exsel-n").textContent = ids.length===1 ? "1 vald" : `${ids.length} valda`;
+  const bOff = document.getElementById("exsel-off"), bOn = document.getElementById("exsel-on");
+  bOff.textContent = `🗄 Inaktivera${nOff?` (${nOff})`:""}`; bOff.disabled = !nOff; bOff.style.opacity = nOff ? "" : ".45";
+  bOn.textContent = `♻ Aktivera${nOn?` (${nOn})`:""}`; bOn.disabled = !nOn; bOn.style.opacity = nOn ? "" : ".45"; bOn.style.display = (nOn || inactiveCount() && showInactiveEx) ? "" : "none";
+  const vis = exSelVisibleIds(), all = vis.length && vis.every(id=>exSelected.has(id));
+  document.getElementById("exsel-all").textContent = all ? "Avmarkera alla som visas" : `Markera alla som visas (${vis.length})`;
+  const msg = document.getElementById("exsel-msg");
+  if(exSelLast){ msg.style.display = "block"; msg.innerHTML = `✓ ${exSelLast.ids.length} övning${exSelLast.ids.length>1?"ar":""} ${exSelLast.active?"aktiverade":"inaktiverade"} · <a href="#" style="color:var(--pine);font-weight:700;" onclick="event.preventDefault();exSelUndo()">Ångra</a>`; }
+  else msg.style.display = "none";
+}
+async function exSelPersist(ids, active){
+  if(!DATA.inactiveExercises) DATA.inactiveExercises = {};
+  const day = new Date().toISOString().slice(0,10);
+  ids.forEach(id=>{ if(active) delete DATA.inactiveExercises[id]; else DATA.inactiveExercises[id] = {since:day}; });
+  exSelected.clear();
+  renderExercises(); renderCategoryFilter(); DATA.sessions.forEach(s=>refreshBlocksPanel(s.id));
+  await saveData();
+}
+async function exSelApply(active){
+  const ids = [...exSelected].filter(id=>exerciseById(id) && (active ? isExInactive(id) : !isExInactive(id)));
+  if(!ids.length) return;
+  if(!active){
+    const names = ids.map(id=>exerciseById(id).namn); let used = 0, places = 0;
+    ids.forEach(id=>{ const u = exerciseUsage(id).length; if(u){ used++; places += u; } });
+    const yes = await confirmDialog(`Inaktivera ${ids.length} övning${ids.length>1?"ar":""}? (${names.slice(0,4).join(", ")}${names.length>4?` + ${names.length-4} till`:""}) De sparas kvar men syns inte i övningsbanken och går inte att välja när du bygger pass.`+(used ? ` ${used} av dem används i pass (${places} platser) och ligger kvar där.` : ""), `Inaktivera ${ids.length}`);
+    if(!yes) return;
+  }
+  await exSelPersist(ids, active);
+  exSelLast = {ids, active}; exSelRenderBar();
+}
+async function exSelUndo(){
+  if(!exSelLast) return; const {ids, active} = exSelLast; exSelLast = null;
+  await exSelPersist(ids, !active);
+}
+{ const __renderExBase = renderExercises; renderExercises = function(){ __renderExBase(); exSelRenderBar(); }; }   // fältet räknar om efter varje ombyggd lista
+document.querySelector("nav.tabs") && document.querySelector("nav.tabs").addEventListener("click", ()=>setTimeout(()=>{ const b = document.getElementById("view-ovningar"); if(exSelMode && b && getComputedStyle(b).display === "none") exSelExit(); }, 60));
+
 async function setExerciseActive(id, active){
   const e = exerciseById(id); if(!e) return;
   if(!active){
@@ -7688,6 +7849,90 @@ function atpConfirm(){
   if(p[0]==="b") addBlockExercise(sid, p[1], exId); else addStationExercise(sid, p[1], p.slice(2).join(":"), exId);
   closeModal("modal-addtoplan");
 }
+
+
+/* =========================================================================
+   Dra-och-släpp (laguppställning + turneringsschema): spöket ska ALLTID städas bort.
+   Orsak till "spökdata som blir kvar": draget avslutades bara på pointerup. Avbryts draget
+   (systemgest på iOS, samtal/avisering, fler fingrar) kommer i stället pointercancel, och
+   byggs listan om mitt i draget (chipet byts ut) når pointerup aldrig dokumentet. Då blev
+   spöket kvar på skärmen och nästa drag glömde bort det (nytt state ersatte det gamla).
+   Nu: alla vägar som avslutar ett drag städar, och varje nytt tryck sopar bort föräldralösa spöken.
+   ========================================================================= */
+function lineupDragCleanup(){
+  const st = lineupDragState; lineupDragState = null;
+  document.removeEventListener("pointermove", onLineupDragPointerMove);
+  document.removeEventListener("pointerup", onLineupDragPointerUp, true);
+  document.removeEventListener("pointercancel", onLineupDragPointerCancel, true);
+  if(st){
+    if(st.chip && st.chipHandler){ ["pointerup","pointercancel","lostpointercapture"].forEach(t=>st.chip.removeEventListener(t, st.chipHandler)); try{ st.chip.releasePointerCapture(st.pointerId); }catch(e){} }
+    if(st.ghostEl) st.ghostEl.remove();
+    if(st.origChipEl) st.origChipEl.style.opacity = "";
+  }
+  document.querySelectorAll(".lineup-chip-ghost").forEach(g=>g.remove());        // sopar även spöken som tappats bort
+  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
+  return st;
+}
+function onLineupDragPointerCancel(ev){ if(lineupDragState && (ev.pointerId===undefined || ev.pointerId===lineupDragState.pointerId)) lineupDragCleanup(); }
+function onChipPointerDown(ev, pid){
+  if(ev.pointerType==="mouse" && ev.button!==0) return;             // bara vänsterklick med mus
+  lineupDragCleanup();                                              // ett tidigare drag som aldrig avslutades lämnar inget kvar
+  const chip = ev.currentTarget, r = chip.getBoundingClientRect();
+  const st = { pid, pointerId:ev.pointerId, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null,
+    origChipEl:chip, chip, grabDX:ev.clientX - r.left, grabDY:ev.clientY - r.top, chipW:r.width, chipH:r.height, corrX:0, corrY:0 };
+  st.chipHandler = e=>{ if(lineupDragState!==st) return; if(e.type==="pointerup") onLineupDragPointerUp(e); else lineupDragCleanup(); };
+  lineupDragState = st;
+  try{ chip.setPointerCapture(ev.pointerId); }catch(e){}            // händelserna följer chipet även om det byggs om
+  document.addEventListener("pointermove", onLineupDragPointerMove);
+  document.addEventListener("pointerup", onLineupDragPointerUp, true);
+  document.addEventListener("pointercancel", onLineupDragPointerCancel, true);
+  ["pointerup","pointercancel","lostpointercapture"].forEach(t=>chip.addEventListener(t, st.chipHandler));
+}
+function onLineupDragPointerMove(ev){
+  const st0 = lineupDragState; if(!st0 || (st0.pointerId!==undefined && ev.pointerId!==st0.pointerId)) return;
+  const dx = ev.clientX - st0.startX, dy = ev.clientY - st0.startY;
+  if(!st0.moved){
+    if(Math.hypot(dx,dy) < LINEUP_DRAG_THRESHOLD) return;
+    st0.moved = true;
+    const sel = window.getSelection && window.getSelection(); if(sel && sel.removeAllRanges) sel.removeAllRanges();
+    const orig = st0.origChipEl, ghost = orig.cloneNode(true);
+    ghost.classList.add("lineup-chip-ghost");
+    ghost.style.position = "fixed"; ghost.style.margin = "0"; ghost.style.pointerEvents = "none"; ghost.style.zIndex = "500"; ghost.style.opacity = "1";
+    ghost.style.width = st0.chipW+"px"; ghost.style.left = "0px"; ghost.style.top = "0px"; ghost.style.transform = "translate(0px,0px) scale(1.05)";
+    document.body.appendChild(ghost);
+    const gr = ghost.getBoundingClientRect();                       // självkorrigering (se originalet)
+    st0.corrX = -gr.left; st0.corrY = -gr.top; st0.ghostEl = ghost; orig.style.opacity = "0.35";
+  }
+  const st = lineupDragState, ghost = st.ghostEl;
+  ghost.style.transform = `translate(${ev.clientX - st.grabDX + st.corrX}px,${ev.clientY - st.grabDY + st.corrY}px) scale(1.05)`;
+  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover").forEach(z=>z.classList.remove("dragover"));
+  ghost.style.display = "none"; const under = document.elementFromPoint(ev.clientX, ev.clientY); ghost.style.display = "";
+  const zone = under && under.closest(".lineup-zone, .lineup-pool"); if(zone) zone.classList.add("dragover");
+}
+function onLineupDragPointerUp(ev){
+  const st0 = lineupDragState; if(!st0) return;
+  if(st0.pointerId!==undefined && ev.pointerId!==undefined && ev.pointerId!==st0.pointerId) return;
+  const state = lineupDragCleanup();                                // ghost, opacitet, lyssnare och markeringar städas alltid först
+  if(!state || !state.moved) return;                                // bara ett tryck utan rörelse — click-eventet sköter tryck-välj
+  const chip = state.origChipEl;
+  if(chip){ chip.dataset.dragHandled = "1"; setTimeout(()=>{ if(chip.dataset) delete chip.dataset.dragHandled; }, 400); }   // gammal flagga får inte svälja nästa tryck
+  const under = document.elementFromPoint(ev.clientX, ev.clientY), zone = under && under.closest(".lineup-zone, .lineup-pool");
+  if(!zone) return;                                                 // släppt utanför en giltig zon — spelaren ligger kvar
+  movePlayerToGroup(state.pid, zone.classList.contains("lineup-pool") ? null : zone.dataset.gid);
+}
+function abortAllDrags(){
+  lineupDragCleanup();
+  if(typeof tourDragState!=="undefined" && tourDragState){ const st = tourDragState; tourDragState = null; document.removeEventListener("pointermove", onTourDragPointerMove); if(st.ghostEl) st.ghostEl.remove(); if(st.origEl) st.origEl.style.opacity = ""; }
+  if(typeof tourBreakDragState!=="undefined" && tourBreakDragState){ const st = tourBreakDragState; tourBreakDragState = null; document.removeEventListener("pointermove", onTourBreakDragPointerMove); if(st.ghostEl) st.ghostEl.remove(); if(st.origRowEl) st.origRowEl.style.opacity = ""; }
+  document.querySelectorAll(".lineup-chip-ghost, .tour-match-ghost").forEach(g=>g.remove());
+  document.querySelectorAll(".tour-dragover").forEach(z=>z.classList.remove("tour-dragover"));
+}
+document.addEventListener("pointerdown", abortAllDrags, true);      // varje nytt tryck börjar med ren skärm (körs före kortets egen pointerdown)
+document.addEventListener("pointercancel", ()=>{ if(typeof tourDragState!=="undefined" && (tourDragState || tourBreakDragState)) abortAllDrags(); }, true);
+["blur","pagehide","orientationchange"].forEach(t=>window.addEventListener(t, abortAllDrags));
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) abortAllDrags(); });
+{ const __rlb = renderLineupBoard; renderLineupBoard = function(){ if(lineupDragState) lineupDragCleanup(); return __rlb.apply(this, arguments); }; }      // omritning mitt i ett drag avbryter det i stället för att tappa spöket
+if(typeof renderTournaments==="function"){ const __rt = renderTournaments; renderTournaments = function(){ if((typeof tourDragState!=="undefined" && tourDragState) || (typeof tourBreakDragState!=="undefined" && tourBreakDragState)) abortAllDrags(); return __rt.apply(this, arguments); }; }
 
 /* ---------- Djuplänk: #ovning=<id> öppnar övningens animering, #oversikt=<pass>:<block> öppnar stationsöversikten ---------- */
 const APP_PUBLIC_URL = HOST_CFG.appUrl;
