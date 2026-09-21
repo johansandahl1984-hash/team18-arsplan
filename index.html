@@ -317,25 +317,25 @@
   /* Bygg-pass-tabellen som staplade kort på mobil (istället för sidledsscroll) */
   @media(max-width:640px){
     .blk-table{min-width:0;}
-    .blk-table thead{display:none;}
-    .blk-table tbody{display:block;}
-    .blk-table tr{
+    .blk-table > thead{display:none;}
+    .blk-table > tbody{display:block;}
+    .blk-table > tbody > tr{
       display:block; border:1px solid var(--line); border-radius:10px;
       margin-bottom:10px; padding:6px 8px; background:#fff;
     }
-    .blk-table tr[style*="border-left"]{border-left-width:4px;}
-    .blk-table td{
+    .blk-table > tbody > tr[style*="border-left"]{border-left-width:4px;}
+    .blk-table > tbody > tr > td{
       display:flex; align-items:center; gap:8px; border-bottom:none; padding:4px 0;
     }
-    .blk-table td[data-label]:not([data-label=""])::before{
+    .blk-table > tbody > tr > td[data-label]:not([data-label=""])::before{
       content:attr(data-label); flex:0 0 92px; font-size:10.5px; text-transform:uppercase;
       letter-spacing:.03em; color:var(--muted); font-weight:600;
     }
-    .blk-table td[data-label]:not([data-label=""]) > *{flex:1; min-width:0;}
+    .blk-table > tbody > tr > td[data-label]:not([data-label=""]) > *{flex:1; min-width:0;}
     /* Rader/celler som hör till "extra"-innehåll (anteckningar, stationer/spel) tar full bredd, ingen etikett-kolumn */
-    .blk-table td[colspan]{display:block;}
+    .blk-table > tbody > tr > td[colspan]{display:block;}
     /* tomma "spacer"-celler (utan data-label och utan colspan) hör inte hemma i kortvyn */
-    .blk-table td:not([data-label]):not([colspan]){display:none;}
+    .blk-table > tbody > tr > td:not([data-label]):not([colspan]){display:none;}
   }
 
   .row-arrow{cursor:pointer; display:block; font-size:10px; line-height:1.3; color:var(--muted); user-select:none;}
@@ -527,6 +527,21 @@ body.xd-lock{overflow:hidden;}
 .xd-stopt{display:flex; align-items:center; gap:5px; font-size:12px; color:#6B5F54;}
 .xd-stflag{flex:1 0 100%; font-size:12px; color:#6B5F54; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;}
 .xd-stflag.warn{color:#9A4A0C;}
+
+  /* ===== Bygg pass på mobil: innehåll får aldrig göra tabellen/kortet bredare än skärmen ===== */
+  .excell .chip{ white-space:normal; overflow-wrap:anywhere; max-width:100%; box-sizing:border-box; }
+  .excell > button{ display:block; width:100%; margin-top:4px; box-sizing:border-box; }
+  @media(max-width:640px){
+    /* övningscellen är ett enda flex-barn som bidrar med 0 till radens minsta bredd, chips bryts och knappen ligger under */
+    .blk-table td[data-label] > .excell{ width:0; flex:1 1 0; min-width:0; }
+    /* stationskort och spelplaner: rader som förut var "nowrap + scroll" bryter i stället rad */
+    .blk-table td[colspan] div[style*="flex-wrap:nowrap"]{ flex-wrap:wrap !important; overflow-x:visible !important; }
+    /* rotationstabeller ligger i egen scrollruta som inte får påverka kortets bredd */
+    .blk-table td[colspan] div[style*="overflow-x:auto"]{ width:0; min-width:100%; }
+    .blk-table td[colspan] table select{ min-width:76px; }   /* lagvalen i rotationen får plats att läsas; tabellen scrollar i sidled vid behov */
+  }
+  /* rotationstabeller i Träningsöversikten: egen scrollruta som inte påverkar kortets bredd */
+  [id^="training-summary-container"] div[style*="overflow-x:auto"]{ width:0; min-width:100%; }
 
 </style>
 </head>
@@ -7413,7 +7428,7 @@ function exerciseCellHTML(sid, b, suggestCat, periodCats){
     return `<span class="chip" style="background:${c.color}22;color:${c.color};margin:1px 3px 1px 0;font-size:10.5px;padding:2px 6px;${off?'opacity:.6;border:1px dashed '+c.color+';':''}" ${off?'title="Inaktiv övning (sparad, används inte längre)"':''}>📋 ${escapeHtml(e.namn)}${off?' · inaktiv':''}
       <span style="cursor:pointer;margin-left:4px;" onclick="removeBlockExercise('${sid}','${b.id}','${id}')">✕</span></span>`;
   }).join("");
-  return `<div>${chips}</div><button class="btn ghost small" style="margin-top:3px;font-size:11px;width:100%;text-align:left;" onclick="openExPicker('block','${sid}','${b.id}')">🔎 Lägg till övning…</button>`;
+  return `<div class="excell"><div>${chips}</div><button class="btn ghost small" style="font-size:11px;text-align:left;" onclick="openExPicker('block','${sid}','${b.id}')">🔎 Lägg till övning…</button></div>`;
 }
 const EXPICK = {t:null, q:"", cats:new Set(), draw:false, inactive:false};
 function exNorm(s){ return (s==null?"":String(s)).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
