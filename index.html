@@ -7919,6 +7919,8 @@ function lineupDockShow(st){
 function lineupTargetAt(x, y){
   const under = document.elementFromPoint(x, y); if(!under) return null;
   const pill = under.closest(".lineup-dock-pill"); if(pill) return {el:pill, pool:pill.dataset.pool==="1", gid:pill.dataset.gid||null};
+  const slot = under.closest(".pos-slot[data-slot]");                          // innebandy: positioner inom en färg (femma-rutor) — kollas före den allmänna zonträffen, eftersom en ruta ligger inuti sin zon
+  if(slot) return {el:slot, slot:true, gid:slot.dataset.gid, slotKey:slot.dataset.slot};
   const zone = under.closest(".lineup-zone, .lineup-pool"); if(!zone) return null;
   const pool = zone.classList.contains("lineup-pool");
   return {el:zone, pool, gid:pool ? null : zone.dataset.gid};
@@ -7926,6 +7928,7 @@ function lineupTargetAt(x, y){
 function onLineupDragPointerCancel(ev){ if(lineupDragState && (ev.pointerId===undefined || ev.pointerId===lineupDragState.pointerId)) lineupDragCleanup(); }
 function onChipPointerDown(ev, pid){
   if(ev.pointerType==="mouse" && ev.button!==0) return;             // bara vänsterklick med mus
+  if(ev.target && ev.target.closest && ev.target.closest(".chip-remove")) return;   // en "×" inuti chippet sköter sitt eget klick — pointer capture skulle annars kapa det klicket till chippet
   lineupDragCleanup();                                              // ett tidigare drag som aldrig avslutades lämnar inget kvar
   const chip = ev.currentTarget, r = chip.getBoundingClientRect();
   const st = { pid, pointerId:ev.pointerId, startX:ev.clientX, startY:ev.clientY, moved:false, ghostEl:null,
@@ -7956,7 +7959,7 @@ function onLineupDragPointerMove(ev){
   }
   const st = lineupDragState, ghost = st.ghostEl;
   ghost.style.transform = `translate(${ev.clientX - st.grabDX + st.corrX}px,${ev.clientY - st.grabDY + st.corrY}px) scale(1.05)`;
-  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover, .lineup-dock-pill.dragover").forEach(z=>z.classList.remove("dragover"));
+  document.querySelectorAll(".lineup-zone.dragover, .lineup-pool.dragover, .lineup-dock-pill.dragover, .pos-slot.dragover").forEach(z=>z.classList.remove("dragover"));
   ghost.style.display = "none"; const tgt = lineupTargetAt(ev.clientX, ev.clientY); ghost.style.display = "";
   if(tgt) tgt.el.classList.add("dragover");
 }
@@ -7966,6 +7969,7 @@ function onLineupDragPointerUp(ev){
   const target = st0.moved ? lineupTargetAt(ev.clientX, ev.clientY) : null;      // avgörs innan dockan städas bort
   const state = lineupDragCleanup();                                // ghost, opacitet, lyssnare, docka och markeringar städas alltid
   if(!state || !state.moved) return;                                // bara ett tryck utan rörelse — click-eventet sköter tryck-välj
+  if(target && target.slot){ if(typeof assignGroupFormationSlot==="function") assignGroupFormationSlot(state.pid, target.gid, target.slotKey); return; }   // innebandy: släppt på en positionsruta (finns bara när "Positioner" är på)
   const chip = state.origChipEl;
   if(chip){ chip.dataset.dragHandled = "1"; setTimeout(()=>{ if(chip.dataset) delete chip.dataset.dragHandled; }, 400); }   // gammal flagga får inte svälja nästa tryck
   if(!target) return;                                               // släppt utanför en giltig zon — spelaren ligger kvar
