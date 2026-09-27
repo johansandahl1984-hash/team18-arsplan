@@ -1792,12 +1792,10 @@ function renderEditor(){
     h+='</div></div>';
     tools.innerHTML=h; S.toolsBuilt=true;
   }
-  tools.style.display = (S.paletteOpen || isDesk()) ? "block" : "none";
+  tools.style.display = "block"; // figurer & pilar ska alltid ligga synliga, inte gömmas bakom "Välj verktyg"
   tools.querySelectorAll(".xd-tool").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-tool")===S.tool); });
-  var tn=toolName();
   setHTML($("xd-toolbar"),
     '<button class="xd-tool xd-select'+(S.tool===null?' active':'')+'" data-tool="select" onclick="XD.pickTool(\'select\')"><span class="xd-ico">✋</span><span>Markera &amp; flytta</span></button>'+
-    '<button class="xd-btn small xd-tb xd-palbtn'+(S.paletteOpen?' on':'')+'" onclick="XD.togglePalette()">'+(tn ? esc(tn)+' ' : 'Välj verktyg ')+(S.paletteOpen?'▴':'▾')+'</button>'+
     '<button class="xd-btn small xd-tb" id="xd-undo" onclick="XD.undo()"'+(S.undo.length?'':' disabled')+'>↶ Ångra</button>'+
     '<button class="xd-btn small xd-tb" onclick="XD.clearAll()">Rensa allt</button>');
   $("xd-toolhint").textContent=toolHint();
@@ -2067,7 +2065,7 @@ function onUp(e){
 function pickTool(t){
   if(t==="select" || t===null) S.tool=null;
   else S.tool = t;                       // tryck på samma verktyg igen behåller det (✋ Markera & flytta är enda sättet att släppa verktyget)
-  if(S.tool!==null && !isDesk()){ S.paletteOpen=false; var sc=document.querySelector(".xd-scroll"); if(sc) sc.scrollTop=0; }
+  if(S.tool!==null && !isDesk()){ var sc=document.querySelector(".xd-scroll"); if(sc) sc.scrollTop=0; }
   render();
 }
 function togglePalette(){ S.paletteOpen=!S.paletteOpen; render(); }
