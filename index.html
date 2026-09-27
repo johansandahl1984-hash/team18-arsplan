@@ -5892,6 +5892,7 @@ async function saveSession(){
   const coaches = Array.from(document.querySelectorAll("#sess-coaches .checkchip.on")).map(e=>e.dataset.id);
   const oldSession = DATA.sessions.find(x=>x.id===id);
   const obj = {
+    ...(oldSession||{}), // bevarar fält utan eget formulärfält (blocks, icsUid, pairHistoryCounted m.fl.) — annars skrevs de över till borttagna vid varje redigering av en befintlig session
     id, date: document.getElementById("sess-date").value, type: document.getElementById("sess-type").value,
     start: document.getElementById("sess-start").value, end: document.getElementById("sess-end").value,
     place: document.getElementById("sess-place").value, week: document.getElementById("sess-week").value,
