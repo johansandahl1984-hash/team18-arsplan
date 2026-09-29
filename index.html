@@ -3192,6 +3192,8 @@ let activeExCats = new Set();
 // ingenting sparas — annars riskerar vi att skriva över lagets riktiga plan med tomma
 // standardvärden efter ett misslyckat läsanrop.
 let DATA_LOADED_OK = false;
+let SERVER_REV_AT_LOAD = null; // senast kända "rev" på servern — se mergeTeamData()
+let SAVE_IN_FLIGHT = 0;        // antal pågående sparförsök (inkl. omförsök) — används för att varna innan man stänger appen
 
 async function loadData(){
   let loadFailed = false;
@@ -3205,6 +3207,7 @@ async function loadData(){
     if(rows && rows.length>0 && rows[0].value){
       DATA = Object.assign(DATA, rows[0].value);
       DATA_LOADED_OK = true;
+      SERVER_REV_AT_LOAD = DATA.rev || null; // används för att upptäcka om någon annan sparar innan vi gör det, se mergeTeamData()
       backupLastKnownGood();
     } else {
       // Läsningen gick igenom men tabellen är tom — allra första körningen.
@@ -3449,6 +3452,58 @@ function confirmDialog(message, confirmLabel){
   });
 }
 
+/* =========================================================================
+   KROCKSKYDD VID SAMTIDIG REDIGERING — appen sparar hela lagets data som ETT
+   dokument i Supabase. Om två tränare har appen öppen samtidigt och båda
+   sparar, skulle den som sparar sist annars skriva över allt den andra just
+   gjort (inte bara det man själv ändrat). Lösningen: varje sparning taggas
+   med en "rev". Innan vi skriver kollar vi om servern har en annan rev än
+   den vi senast såg — i så fall har någon annan sparat under tiden, och vi
+   slår ihop deras version med vår (post-för-post på id, se mergeTeamData())
+   istället för att skriva över. Stänger en liten risk kvar (millisekunder
+   mellan kontroll och skrivning) men tar bort den stora (hela sessionstiden).
+   ========================================================================= */
+function newRev(){ return Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7); }
+// Array-fält där varje post har ett unikt nyckelfält — slås ihop post-för-post.
+// Nya array-fält i DATA bör läggas till här, annars "vinner" den som sparar sist för HELA fältet.
+const MERGE_ARRAY_FIELDS = {
+  sessions:"id", players:"id", coaches:"id", templates:"id", periods:"id",
+  customExercises:"id", groups:"id", tournaments:"id"
+};
+// Fält där varje post inte har ett "id" men ett annat unikt fält (funktion istället för fältnamn).
+const MERGE_ARRAY_FIELDS_BY_FN = { savedClubs: c=>String(c.name||"").toLowerCase() };
+// Dict-fält keyade på t.ex. övnings-id — slås ihop nyckel-för-nyckel.
+const MERGE_DICT_FIELDS = ["exerciseOverrides","exerciseDrawings","exerciseDiagrams"];
+// Dict-fält med en extra nivå (typ -> nyckel -> antal) — slås ihop nyckel-för-nyckel per typ.
+const MERGE_NESTED_DICT_FIELDS = ["pairHistory","goalieHistory"];
+function mergeTeamData(local, server){
+  const out = Object.assign({}, server); // börja från serverns version — den kan ha fält/poster vi inte känner till lokalt
+  const arrayKeyFn = k => MERGE_ARRAY_FIELDS[k] ? (x=>x[MERGE_ARRAY_FIELDS[k]]) : (MERGE_ARRAY_FIELDS_BY_FN[k] || null);
+  Object.keys(local).forEach(k=>{
+    const keyFn = arrayKeyFn(k);
+    if(keyFn && Array.isArray(local[k]) && Array.isArray(server[k])){
+      const merged = server[k].slice();
+      const idxByKey = new Map(merged.map((x,i)=>[keyFn(x), i]));
+      local[k].forEach(item=>{
+        const kk = keyFn(item);
+        if(idxByKey.has(kk)) merged[idxByKey.get(kk)] = item; // samma post ändrad lokalt — vår version vinner
+        else { idxByKey.set(kk, merged.length); merged.push(item); } // ny post lokalt — läggs till
+      });
+      out[k] = merged;
+    } else if(MERGE_DICT_FIELDS.indexOf(k)>=0 && local[k] && typeof local[k]==="object" && server[k] && typeof server[k]==="object"){
+      out[k] = Object.assign({}, server[k], local[k]); // lokala nycklar vinner, servens övriga nycklar bevaras
+    } else if(MERGE_NESTED_DICT_FIELDS.indexOf(k)>=0 && local[k] && server[k]){
+      const merged = {};
+      new Set([...Object.keys(server[k]||{}), ...Object.keys(local[k]||{})]).forEach(t=>{
+        merged[t] = Object.assign({}, (server[k]||{})[t], (local[k]||{})[t]);
+      });
+      out[k] = merged;
+    } else {
+      out[k] = local[k]; // enkla fält (inställningar m.m.) — den som sparar just nu vinner
+    }
+  });
+  return out;
+}
 async function saveData(){
   // Skyddsspärr: har vi inte lyckats läsa in vad som redan ligger i Supabase vet vi
   // inte vad vi skriver över. Då sparar vi inte alls.
@@ -3457,22 +3512,44 @@ async function saveData(){
     showLoadErrorBanner();
     return false;
   }
-  const ok = await trySaveOnce();
-  if(ok){ hideSaveToast(); backupLastKnownGood(); return true; }
-  // automatic retries with increasing pauses (handles transient server hiccups
-  // without immediately bothering the user with the toast)
-  const delays = [900, 1800, 3600];
-  for(const delay of delays){
-    await new Promise(r=>setTimeout(r, delay));
-    const retryOk = await trySaveOnce();
-    if(retryOk){ hideSaveToast(); return true; }
-  }
-  showSaveToast();
-  return false;
+  SAVE_IN_FLIGHT++;
+  try{
+    const ok = await trySaveOnce();
+    if(ok){ hideSaveToast(); backupLastKnownGood(); return true; }
+    // automatic retries with increasing pauses (handles transient server hiccups
+    // without immediately bothering the user with the toast)
+    const delays = [900, 1800, 3600];
+    for(const delay of delays){
+      await new Promise(r=>setTimeout(r, delay));
+      const retryOk = await trySaveOnce();
+      if(retryOk){ hideSaveToast(); return true; }
+    }
+    showSaveToast();
+    return false;
+  } finally { SAVE_IN_FLIGHT--; }
 }
 let LAST_SAVE_ERROR = "";
 async function trySaveOnce(){
   try{
+    // 1) Krockkontroll: har någon annan sparat sedan vi senast laddade/sparade?
+    if(SERVER_REV_AT_LOAD){
+      try{
+        const checkRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/team_data?key=eq.${STORAGE_KEY}&select=value`,
+          { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
+        );
+        if(checkRes.ok){
+          const rows = await checkRes.json();
+          const serverValue = rows && rows[0] && rows[0].value;
+          if(serverValue && serverValue.rev && serverValue.rev !== SERVER_REV_AT_LOAD){
+            DATA = mergeTeamData(DATA, serverValue); // slå ihop istället för att skriva över
+            SERVER_REV_AT_LOAD = serverValue.rev;
+            console.info("Slog ihop med ändringar sparade av en annan enhet under tiden.");
+          }
+        }
+      }catch(_){ /* krockkontrollen är en extra säkerhet — går den inte igenom sparar vi ändå som vanligt */ }
+    }
+    DATA.rev = newRev();
     const res = await fetch(`${SUPABASE_URL}/rest/v1/team_data?on_conflict=key`, {
       method: "POST",
       headers: {
@@ -3492,6 +3569,7 @@ async function trySaveOnce(){
       console.error("Kunde inte spara:", LAST_SAVE_ERROR);
       return false;
     }
+    SERVER_REV_AT_LOAD = DATA.rev;
     LAST_SAVE_ERROR = "";
     return true;
   }catch(e){
@@ -3501,6 +3579,15 @@ async function trySaveOnce(){
     return false;
   }
 }
+// Skydda mot att stänga fliken/appen medan en sparning (inkl. omförsök) fortfarande pågår —
+// annars kan en påbörjad sparning kapas mitt i och ändringen gå förlorad helt tyst.
+window.addEventListener("beforeunload", function(e){
+  if(SAVE_IN_FLIGHT > 0){
+    e.preventDefault();
+    e.returnValue = "En sparning pågår fortfarande — vänta ett par sekunder innan du stänger, annars kan ändringen gå förlorad.";
+    return e.returnValue;
+  }
+});
 function showSaveToast(){
   document.getElementById("save-toast-text").textContent =
     "Kunde inte spara — ändringen syns här men är inte synkad till de andra tränarna."
