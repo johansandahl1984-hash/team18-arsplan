@@ -758,6 +758,7 @@ body.xd-lock{overflow:hidden;}
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
           <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
+          <button type="button" class="btn ghost small" onclick="togglePairStats()">📊 Statistik</button>
         </div>
       </div>
       <p style="font-size:11.5px;color:var(--muted);margin:4px 0 8px;">Gråa/streckade = inte med idag, tryck för att lägga till. Mörka = med och redo att fördelas — dra till en grupp (håll in och dra på mobil), eller tryck på spelaren och sedan på gruppen. Liten × tar bort någon som inte kommer.</p>
@@ -765,6 +766,7 @@ body.xd-lock{overflow:hidden;}
         <div class="checkchips" id="lineup-pool-chips"></div>
       </div>
       <div class="lineup-board" id="lineup-board"></div>
+      <div id="sess-pairstats" style="display:none;margin-top:10px;"></div>
     </div>
 
     <div class="field"><label>Anteckningar</label><textarea id="sess-notes" placeholder="T.ex. matchmotstånd, samling 15 min innan…"></textarea></div>
@@ -5705,6 +5707,7 @@ function inlineLineupShellHTML(s){
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
           <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
+          <button type="button" class="btn ghost small" onclick="togglePairStats()">📊 Statistik</button>
         </div>
       </div>
       <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Gråa/streckade = inte med, tryck för att lägga till. Dra en spelare, eller tryck på spelaren och sedan på gruppen. Liten × tar bort någon.</p>
@@ -5712,6 +5715,7 @@ function inlineLineupShellHTML(s){
         <div class="checkchips" id="il-pool-chips-${sid}"></div>
       </div>
       <div class="lineup-board" id="il-board-${sid}"></div>
+      <div id="il-pairstats-${sid}" style="display:none;margin-top:10px;"></div>
     </div>
     <div class="modal-actions" style="margin-top:10px;">
       <button class="btn" onclick="saveInlineLineup('${sid}')">Spara laguppställning</button>
@@ -5839,13 +5843,65 @@ let lineupSelectedPlayer = null; // för tryck-och-tryck-läge på mobil
 let lineupScope = null; // null = redigera-händelse-modalen, annars ett session-id = inline på kortet
 
 function scopedId(base){
-  const modalIds = { groups:"sess-active-groups", poolChips:"lineup-pool-chips", board:"lineup-board" };
+  const modalIds = { groups:"sess-active-groups", poolChips:"lineup-pool-chips", board:"lineup-board", stats:"sess-pairstats" };
   if(!lineupScope) return modalIds[base];
-  const inlineIds = { groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, board:`il-board-${lineupScope}` };
+  const inlineIds = { groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, board:`il-board-${lineupScope}`, stats:`il-pairstats-${lineupScope}` };
   return inlineIds[base];
 }
 
 function pairKey(a,b){ return [a,b].sort().join("|"); }
+/* ---- Statistik: vilka har spelat ihop förut (för cup-/mixplanering) — endast tänkt för desktop,
+   tabellen scrollar i sidled på smal skärm istället för att anpassas. ---- */
+function pairStatsCount(a,b){
+  const tr = (DATA.pairHistory && DATA.pairHistory.Träning) || {};
+  const mt = (DATA.pairHistory && DATA.pairHistory.Match) || {};
+  const k = pairKey(a,b);
+  return (tr[k]||0) + (mt[k]||0);
+}
+function togglePairStats(){
+  const el = document.getElementById(scopedId("stats")); if(!el) return;
+  const isOpen = el.style.display !== "none" && el.innerHTML.trim() !== "";
+  if(isOpen){ el.style.display = "none"; el.innerHTML = ""; }
+  else { el.style.display = "block"; renderPairStats(); }
+}
+function pairStatsCellStyle(n, max){
+  if(!n) return "background:#F3F5F2;color:#B9C2B6;";
+  const t = max>1 ? (n-1)/(max-1) : 1;
+  const r1=243,g1=217,b1=160, r2=194,g2=74,b2=58; // ljus gul/amber -> rött
+  const r=Math.round(r1+(r2-r1)*t), g=Math.round(g1+(g2-g1)*t), b=Math.round(b1+(b2-b1)*t);
+  const lum = (0.299*r+0.587*g+0.114*b)/255;
+  return `background:rgb(${r},${g},${b});color:${lum>0.6?"#1A1A1A":"#fff"};font-weight:700;`;
+}
+function renderPairStats(){
+  const el = document.getElementById(scopedId("stats")); if(!el) return;
+  if(el.style.display==="none") return; // panelen är stängd — inget att rita
+  if(!sessionDraft){ el.innerHTML = ""; return; }
+  const ids = sessionDraft.attendance.slice().sort((a,b)=>{
+    const pa = DATA.players.find(p=>p.id===a), pb = DATA.players.find(p=>p.id===b);
+    return (pa?pa.name:"").localeCompare(pb?pb.name:"", "sv");
+  });
+  if(ids.length<2){ el.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:6px 0 0;">Minst två närvarande spelare krävs för att visa statistik.</p>'; return; }
+  let max=0;
+  ids.forEach(a=>ids.forEach(b=>{ if(a!==b) max=Math.max(max,pairStatsCount(a,b)); }));
+  const nameOf = pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:"?"; };
+  const header = '<th style="min-width:86px;"></th>' + ids.map(pid=>
+    `<th style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;padding:4px 2px;font-weight:600;white-space:nowrap;vertical-align:bottom;">${escapeHtml(nameOf(pid))}</th>`).join("");
+  const rows = ids.map(rowId=>{
+    const cells = ids.map(colId=>{
+      if(rowId===colId) return '<td style="background:#ECECE8;"></td>';
+      const n = pairStatsCount(rowId,colId);
+      return `<td style="text-align:center;font-size:11px;padding:3px;min-width:26px;${pairStatsCellStyle(n,max)}" title="${escapeHtml(nameOf(rowId))} + ${escapeHtml(nameOf(colId))}: ${n} gång${n===1?"":"er"} ihop (träning+match)">${n||""}</td>`;
+    }).join("");
+    return `<tr><th style="text-align:left;font-size:11px;padding:3px 8px 3px 2px;white-space:nowrap;font-weight:600;">${escapeHtml(nameOf(rowId))}</th>${cells}</tr>`;
+  }).join("");
+  el.innerHTML = `<div style="border-top:1px dashed var(--line);padding-top:10px;">
+    <b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">Spelat ihop tidigare</b>
+    <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Antal gånger varje par varit i samma grupp (träning + match, hela säsongen). Ljust/tomt = sällan eller aldrig ihop — sikta på ljusa kombinationer när du mixar. Bäst på bred skärm (scrollar i sidled annars).</p>
+    <div style="overflow-x:auto;max-width:100%;">
+      <table style="border-collapse:collapse;font-family:'IBM Plex Mono',monospace;"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
 function pairsInGroup(players){ const out=[]; for(let i=0;i<players.length;i++) for(let j=i+1;j<players.length;j++) out.push(pairKey(players[i],players[j])); return out; }
 function pairsInLineup(lineup){ let out=[]; Object.values(lineup||{}).forEach(g=>{ out = out.concat(pairsInGroup(g.players||[])); }); return out; }
 function adjustPairHistory(lineup, delta, type){
@@ -6011,6 +6067,8 @@ function renderLineupBoard(){
         return `<span class="checkchip lineup-chip ${sel}" data-pid="${pid}"
           onpointerdown="onChipPointerDown(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}<span class="chip-remove" onclick="event.stopPropagation();toggleAttendance('${pid}')" title="Inte med idag">×</span></span>`;
       }).join("");
+
+  renderPairStats(); // uppdaterar bara om statistikpanelen faktiskt är öppen (se egen display-koll)
 
   const board = document.getElementById(scopedId("board")); if(!board) return;
   const activeGroups = sortGroupsGoalieLast(DATA.groups.filter(g=>sessionDraft.activeGroups.includes(g.id)));
