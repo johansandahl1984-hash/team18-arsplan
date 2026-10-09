@@ -5852,10 +5852,14 @@ function scopedId(base){
 function pairKey(a,b){ return [a,b].sort().join("|"); }
 /* ---- Statistik: vilka har spelat ihop förut (för cup-/mixplanering) — endast tänkt för desktop,
    tabellen scrollar i sidled på smal skärm istället för att anpassas. ---- */
+let pairStatsMode = "total"; // "total" | "Träning" | "Match" — styr vilken spärr av historiken som visas
+function setPairStatsMode(mode){ pairStatsMode = mode; renderPairStats(); }
 function pairStatsCount(a,b){
   const tr = (DATA.pairHistory && DATA.pairHistory.Träning) || {};
   const mt = (DATA.pairHistory && DATA.pairHistory.Match) || {};
   const k = pairKey(a,b);
+  if(pairStatsMode==="Träning") return tr[k]||0;
+  if(pairStatsMode==="Match") return mt[k]||0;
   return (tr[k]||0) + (mt[k]||0);
 }
 function togglePairStats(){
@@ -5880,23 +5884,36 @@ function renderPairStats(){
     const pa = DATA.players.find(p=>p.id===a), pb = DATA.players.find(p=>p.id===b);
     return (pa?pa.name:"").localeCompare(pb?pb.name:"", "sv");
   });
-  if(ids.length<2){ el.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:6px 0 0;">Minst två närvarande spelare krävs för att visa statistik.</p>'; return; }
+  const modeSwitchHTML = `<div class="checkchips" style="margin-bottom:8px;">
+      <span class="checkchip ${pairStatsMode==="total"?"on":""}" onclick="setPairStatsMode('total')">Totalt</span>
+      <span class="checkchip ${pairStatsMode==="Träning"?"on":""}" onclick="setPairStatsMode('Träning')">Bara träning</span>
+      <span class="checkchip ${pairStatsMode==="Match"?"on":""}" onclick="setPairStatsMode('Match')">Bara match</span>
+    </div>`;
+  if(ids.length<2){
+    el.innerHTML = `<div style="border-top:1px dashed var(--line);padding-top:10px;">${modeSwitchHTML}<p style="font-size:12px;color:var(--muted);margin:0;">Minst två närvarande spelare krävs för att visa statistik.</p></div>`;
+    return;
+  }
   let max=0;
   ids.forEach(a=>ids.forEach(b=>{ if(a!==b) max=Math.max(max,pairStatsCount(a,b)); }));
   const nameOf = pid=>{ const p=DATA.players.find(x=>x.id===pid); return p?p.name:"?"; };
-  const header = '<th style="min-width:86px;"></th>' + ids.map(pid=>
-    `<th style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;padding:4px 2px;font-weight:600;white-space:nowrap;vertical-align:bottom;">${escapeHtml(nameOf(pid))}</th>`).join("");
-  const rows = ids.map(rowId=>{
-    const cells = ids.map(colId=>{
-      if(rowId===colId) return '<td style="background:#ECECE8;"></td>';
+  // Matrisen är symmetrisk (A+B = B+A) — visa bara övre triangeln så varje par syns EN gång,
+  // inte speglat på båda axlarna.
+  const header = '<th style="min-width:86px;"></th>' + ids.map((pid,ci)=>
+    `<th style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;padding:4px 2px;font-weight:600;white-space:nowrap;vertical-align:bottom;">${ci>0?escapeHtml(nameOf(pid)):""}</th>`).join("");
+  const rows = ids.map((rowId,ri)=>{
+    if(ri===ids.length-1) return ""; // sista raden har inget till höger kvar att visa i övre triangeln
+    const cells = ids.map((colId,ci)=>{
+      if(ci<=ri) return '<td style="background:transparent;border:none;"></td>';
       const n = pairStatsCount(rowId,colId);
-      return `<td style="text-align:center;font-size:11px;padding:3px;min-width:26px;${pairStatsCellStyle(n,max)}" title="${escapeHtml(nameOf(rowId))} + ${escapeHtml(nameOf(colId))}: ${n} gång${n===1?"":"er"} ihop (träning+match)">${n||""}</td>`;
+      return `<td style="text-align:center;font-size:11px;padding:3px;min-width:26px;${pairStatsCellStyle(n,max)}" title="${escapeHtml(nameOf(rowId))} + ${escapeHtml(nameOf(colId))}: ${n} gång${n===1?"":"er"} ihop">${n||""}</td>`;
     }).join("");
     return `<tr><th style="text-align:left;font-size:11px;padding:3px 8px 3px 2px;white-space:nowrap;font-weight:600;">${escapeHtml(nameOf(rowId))}</th>${cells}</tr>`;
   }).join("");
+  const modeLabel = pairStatsMode==="total" ? "träning + match, hela säsongen" : pairStatsMode==="Träning" ? "bara träning, hela säsongen" : "bara match, hela säsongen";
   el.innerHTML = `<div style="border-top:1px dashed var(--line);padding-top:10px;">
     <b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">Spelat ihop tidigare</b>
-    <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Antal gånger varje par varit i samma grupp (träning + match, hela säsongen). Ljust/tomt = sällan eller aldrig ihop — sikta på ljusa kombinationer när du mixar. Bäst på bred skärm (scrollar i sidled annars).</p>
+    <p style="font-size:11px;color:var(--muted);margin:4px 0 8px;">Antal gånger varje par varit i samma grupp (${modeLabel}). Ljust/tomt = sällan eller aldrig ihop — sikta på ljusa kombinationer när du mixar. Bäst på bred skärm (scrollar i sidled annars).</p>
+    ${modeSwitchHTML}
     <div style="overflow-x:auto;max-width:100%;">
       <table style="border-collapse:collapse;font-family:'IBM Plex Mono',monospace;"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>
     </div>
