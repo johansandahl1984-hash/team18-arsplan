@@ -267,6 +267,10 @@
   .chip-remove{margin-left:6px; opacity:.55; font-weight:700;}
   .chip-remove:hover{opacity:1;}
   .checkchip.selected{background:var(--gold); color:var(--pine-dark); border-color:var(--gold);}
+  .checkchip.chip-coach{border-color:var(--gold); background:#FFF9E8; font-weight:600;}
+  .checkchip.chip-coach.on{background:var(--gold); color:var(--pine-dark); border-color:var(--gold);}
+  .lineup-subhead{font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:0 0 3px;}
+  .lineup-count-badge{font-size:11px; font-weight:600; color:var(--muted); background:var(--ice); border-radius:999px; padding:2px 9px; margin-left:6px;}
 
   .lineup-pool{border:1.5px dashed var(--line); border-radius:12px; padding:10px 12px; margin:6px 0 12px; background:var(--ice); transition:background .15s;}
   .lineup-pool.dragover{background:#E4F1E8; border-color:var(--pine-light);}
@@ -754,7 +758,7 @@ body.xd-lock{overflow:hidden;}
 
     <div class="field">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <label style="margin:0;">Spelare</label>
+        <label style="margin:0;">Spelare <span class="lineup-count-badge" id="lineup-pool-count"></span></label>
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
           <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
@@ -5705,7 +5709,7 @@ function inlineLineupShellHTML(s){
     </div>
     <div class="field">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <label style="margin:0;font-size:12px;">Spelare</label>
+        <label style="margin:0;font-size:12px;">Spelare <span class="lineup-count-badge" id="il-pool-count-${sid}"></span></label>
         <div style="display:flex;gap:6px;">
           <button type="button" class="btn ghost small" onclick="suggestMix()">🔀 Föreslå mix</button>
           <button type="button" class="btn ghost small" onclick="clearLineupAssignments()">Nollställ</button>
@@ -5846,9 +5850,9 @@ let lineupSelectedPlayer = null; // för tryck-och-tryck-läge på mobil
 let lineupScope = null; // null = redigera-händelse-modalen, annars ett session-id = inline på kortet
 
 function scopedId(base){
-  const modalIds = { groups:"sess-active-groups", poolChips:"lineup-pool-chips", board:"lineup-board", stats:"sess-pairstats" };
+  const modalIds = { groups:"sess-active-groups", poolChips:"lineup-pool-chips", poolCount:"lineup-pool-count", board:"lineup-board", stats:"sess-pairstats" };
   if(!lineupScope) return modalIds[base];
-  const inlineIds = { groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, board:`il-board-${lineupScope}`, stats:`il-pairstats-${lineupScope}` };
+  const inlineIds = { groups:`il-groups-${lineupScope}`, poolChips:`il-pool-chips-${lineupScope}`, poolCount:`il-pool-count-${lineupScope}`, board:`il-board-${lineupScope}`, stats:`il-pairstats-${lineupScope}` };
   return inlineIds[base];
 }
 
@@ -6107,6 +6111,9 @@ function renderLineupBoard(){
           onpointerdown="onChipPointerDown(event,'${pid}')" onclick="onChipClick(event,'${pid}')">${p.name}<span class="chip-remove" onclick="event.stopPropagation();toggleAttendance('${pid}')" title="Inte med idag">×</span></span>`;
       }).join("");
 
+  const poolCountEl = document.getElementById(scopedId("poolCount"));
+  if(poolCountEl) poolCountEl.textContent = `${sessionDraft.attendance.length} att fördela`;
+
   renderPairStats(); // uppdaterar bara om statistikpanelen faktiskt är öppen (se egen display-koll)
 
   const board = document.getElementById(scopedId("board")); if(!board) return;
@@ -6117,7 +6124,7 @@ function renderLineupBoard(){
     const luCoaches = lineupCoaches(lu);
     const coachChips = DATA.coaches.map(c=>{
       const on = luCoaches.includes(c.id);
-      return `<span class="checkchip ${on?'on':''}" style="font-size:10.5px;padding:2px 8px;" onclick="event.stopPropagation();toggleZoneCoach('${g.id}','${c.id}')">${c.name}</span>`;
+      return `<span class="checkchip chip-coach ${on?'on':''}" style="font-size:10.5px;padding:2px 8px;" onclick="event.stopPropagation();toggleZoneCoach('${g.id}','${c.id}')">${c.name}</span>`;
     }).join("");
     const goalieOpts = '<option value="">Målvakt —</option>' + sessionDraft.attendance
       .map(pid=>DATA.players.find(x=>x.id===pid))
@@ -6154,7 +6161,9 @@ function renderLineupBoard(){
         <label style="font-size:10.5px;color:var(--muted);">Samling</label>
         <input type="time" value="${lu.gathering||''}" style="font-size:11px;padding:2px 4px;width:90px;" onchange="setZoneGathering('${g.id}',this.value)">
       </div>
-      <div class="checkchips" style="margin-bottom:6px;" onclick="event.stopPropagation()">${coachChips}</div>
+      <div class="lineup-subhead">Ledare</div>
+      <div class="checkchips" style="margin-bottom:6px;" onclick="event.stopPropagation()">${coachChips || '<span style="font-size:10.5px;color:var(--muted);">Ingen vald</span>'}</div>
+      <div class="lineup-subhead">Spelare</div>
       <div class="checkchips">${chips}</div>
     </div>`;
   }).join("");
