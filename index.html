@@ -1166,7 +1166,7 @@ function figMarkup(f, o){
     body='<g transform="translate('+x+' '+y+') rotate('+rot+') scale('+sc+') translate('+(-x)+' '+(-y)+')">'+body+'</g>';
     hitR*=sc;
   }
-  if(!o.noHit) hit='<circle cx="'+x+'" cy="'+y+'" r="'+f1(hitR)+'" fill="transparent"/>';
+  if(!o.noHit) hit='<circle cx="'+x+'" cy="'+y+'" r="'+f1(Math.max(hitR,11))+'" fill="transparent"/>';
   var hb="";
   if(o.hideBadge!=null){
     var bx=x+R*0.95*sc, by=y-R*1.15*sc, lab="×"+o.hideBadge;
@@ -1959,7 +1959,7 @@ function onDown(e){
   }
   if(S.tool!==null && S.tool.indexOf("fig:")===0){
     e.preventDefault(); pushUndo();
-    var ft=S.tool.slice(4), n={id:S.nid++, kind:"fig", type:ft, x:f1(p.x), y:f1(p.y)};
+    var ft=S.tool.slice(4), n={id:S.nid++, kind:"fig", type:ft, x:f1(p.x), y:f1(p.y), scale:0.25};
     if(ft==="unit") n.label="ABC";
     objs.push(n); S.selected=n.id; dirty(); render(); return;
   }
@@ -2265,7 +2265,7 @@ function insertIntoCell(src, c, tag){
   var padX=12, padTop=34, padBot=12, aw=c.w-2*padX, ah=c.h-padTop-padBot;
   var sc=Math.min(aw/bw, ah/bh, 1);
   var ox=c.x+c.w/2-((b.x0+b.x1)/2)*sc, oy=c.y+padTop+ah/2-((b.y0+b.y1)/2)*sc;
-  var fs=Math.max(0.55, Math.min(1, sc)), idMap={};
+  var fs=Math.max(0.15, Math.min(1, sc)), idMap={};
   objs.forEach(function(o){ idMap[o.id]=S.nid++; });
   objs.forEach(function(o){
     var old=o.id; o.id=idMap[old];
@@ -2346,7 +2346,7 @@ function moveCellContent(d, key, from, to){              // ordningen på statio
   d.objects.forEach(function(o){
     if(o.st!==key) return;
     if(o.kind==="path") o.pts=o.pts.map(function(p){ return {x:f1(tcx+(p.x-fcx)*sc), y:f1(tcy+(p.y-fcy)*sc)}; });
-    else { o.x=f1(tcx+(o.x-fcx)*sc); o.y=f1(tcy+(o.y-fcy)*sc); if(o.kind==="zone"){ o.w=f1(o.w*sc); o.h=f1(o.h*sc); } else if(o.kind==="fig" && sc<0.99 && !o.lb){ o.scale=f1(Math.max(0.5,(o.scale||1)*Math.max(sc,0.75))); } }
+    else { o.x=f1(tcx+(o.x-fcx)*sc); o.y=f1(tcy+(o.y-fcy)*sc); if(o.kind==="zone"){ o.w=f1(o.w*sc); o.h=f1(o.h*sc); } else if(o.kind==="fig" && sc<0.99 && !o.lb){ o.scale=f1(Math.max(0.15,(o.scale||1)*Math.max(sc,0.75))); } }
   });
 }
 function syncStations(d0, spec){
@@ -2411,7 +2411,7 @@ function stationFit(i){                                     // ⤢ Anpassa inneh
   if(!objs.length) return; pushUndo();
   var b=bboxOf(objs), bw=Math.max(b.x1-b.x0,20), bh=Math.max(b.y1-b.y0,20), padX=12, padTop=34, padBot=12;
   var aw=c.w-2*padX, ah=c.h-padTop-padBot, sc=Math.min(aw/bw, ah/bh, 1.6);
-  var ox=c.x+c.w/2-((b.x0+b.x1)/2)*sc, oy=c.y+padTop+ah/2-((b.y0+b.y1)/2)*sc, fs=Math.max(0.55, Math.min(1, sc));
+  var ox=c.x+c.w/2-((b.x0+b.x1)/2)*sc, oy=c.y+padTop+ah/2-((b.y0+b.y1)/2)*sc, fs=Math.max(0.15, Math.min(1, sc));
   objs.forEach(function(o){
     if(o.kind==="path") o.pts=o.pts.map(function(p){ return {x:f1(p.x*sc+ox), y:f1(p.y*sc+oy)}; });
     else { o.x=f1(o.x*sc+ox); o.y=f1(o.y*sc+oy); if(o.kind==="zone"){ o.w=f1(o.w*sc); o.h=f1(o.h*sc); } else if(o.kind==="fig"){ var ns=f1(Math.min(1,(o.scale||1)*(sc<1?fs:1))); if(ns>=0.98) delete o.scale; else o.scale=ns; } }
@@ -2471,7 +2471,7 @@ function rotSel(deg){ var o=selObj(); if(!o || o.kind==="path" || o.kind==="text
 function scaleSel(m){
   var o=selObj(); if(!o) return; pushUndo();
   if(o.kind==="zone"){ o.w=f1(Math.max(20,Math.min(560,o.w*m))); o.h=f1(Math.max(20,Math.min(320,o.h*m))); }
-  else if(o.kind==="fig"){ o.scale=f1(Math.max(0.5,Math.min(3.2,(o.scale||1)*m))); }
+  else if(o.kind==="fig"){ o.scale=f1(Math.max(0.15,Math.min(3.2,(o.scale||1)*m))); }
   dirty(); render();
 }
 function zoneSize(dim,m){ var o=selObj(); if(!o || o.kind!=="zone") return; pushUndo(); if(dim==="w") o.w=f1(Math.max(20,Math.min(580,o.w*m))); else o.h=f1(Math.max(20,Math.min(330,o.h*m))); dirty(); render(); }
@@ -2511,7 +2511,7 @@ function addBallAtStart(){
   var objs=objsRef(), s=p.pts[0];
   var h=nearestFig(s,objs,function(f){ return !!C.HOLDERS[f.type]; },8);
   pushUndo();
-  var b={id:S.nid++, kind:"fig", type:"ball", x:f1(s.x+(h?13:0)), y:f1(s.y+(h?9:0))};
+  var b={id:S.nid++, kind:"fig", type:"ball", x:f1(s.x+(h?13:0)), y:f1(s.y+(h?9:0)), scale:0.25};
   objs.push(b); dirty(); render();
 }
 function setLabel(v){ var f=selFig(); if(!f) return; f.label=v; dirty(); renderCanvas(); }
