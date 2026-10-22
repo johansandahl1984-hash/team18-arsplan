@@ -3983,9 +3983,11 @@ async function fetchLagetCalendar(){
     const events = parseICS(text);
     const existingUids = new Set(DATA.sessions.map(s=>s.icsUid).filter(Boolean));
     const existingDateTime = new Set(DATA.sessions.map(s=>s.date+"|"+s.start));
+    const today = todayStr(); // bortse från händelser som ligger bakåt i tiden och inte redan importerats
     icsFoundEvents = events.filter(e=>{
       if(e.uid && existingUids.has(e.uid)) return false;
       if(existingDateTime.has(e.dtstart.date+"|"+e.dtstart.time)) return false;
+      if(e.dtstart.date < today) return false;
       return true;
     }).sort((a,b)=>(a.dtstart.date+a.dtstart.time).localeCompare(b.dtstart.date+b.dtstart.time));
     renderIcsImportPanel();
