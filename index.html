@@ -1959,7 +1959,7 @@ function onDown(e){
   }
   if(S.tool!==null && S.tool.indexOf("fig:")===0){
     e.preventDefault(); pushUndo();
-    var ft=S.tool.slice(4), n={id:S.nid++, kind:"fig", type:ft, x:f1(p.x), y:f1(p.y)};
+    var ft=S.tool.slice(4), n={id:S.nid++, kind:"fig", type:ft, x:f1(p.x), y:f1(p.y), scale:0.65};
     if(ft==="unit") n.label="ABC";
     objs.push(n); S.selected=n.id; dirty(); render(); return;
   }
@@ -2511,7 +2511,7 @@ function addBallAtStart(){
   var objs=objsRef(), s=p.pts[0];
   var h=nearestFig(s,objs,function(f){ return !!C.HOLDERS[f.type]; },8);
   pushUndo();
-  var b={id:S.nid++, kind:"fig", type:"ball", x:f1(s.x+(h?13:0)), y:f1(s.y+(h?9:0))};
+  var b={id:S.nid++, kind:"fig", type:"ball", x:f1(s.x+(h?13:0)), y:f1(s.y+(h?9:0)), scale:0.65};
   objs.push(b); dirty(); render();
 }
 function setLabel(v){ var f=selFig(); if(!f) return; f.label=v; dirty(); renderCanvas(); }
