@@ -5072,6 +5072,7 @@ function trainingSummaryHTML(s){
         return `<div style="margin:6px 0;padding:6px 9px;background:#F8F8F5;border-radius:6px;">
           <b style="font-size:12px;">${st.name||"Station"}</b>${st.subtheme?` <span style="font-size:10.5px;color:var(--muted);">(${st.subtheme})</span>`:""}${stCoach?` <span style="font-size:10.5px;color:var(--muted);">· ${stCoach.name}</span>`:""}
           ${stEx.length?`<div style="font-size:11.5px;margin-top:2px;">${stEx.join(", ")}</div>`:""}
+          ${st.note?`<div style="font-size:11.5px;margin-top:2px;font-style:italic;color:#555;white-space:pre-wrap;">${escapeHtml(st.note)}</div>`:""}
         </div>`;
       }).join("");
       if(stations.length && (b.rounds||[]).length){
@@ -5415,7 +5416,8 @@ function pdfBlockCard(D, x, compact){
       const stCoach = st.coach ? coachById(st.coach) : null, stLetter = XD.hasContent(b.overview) ? `<span class="stl">${String.fromCharCode(65+si)}</span>` : "";
       const exs = x.exNums.filter(z=>z.st===st);
       return `<div class="st">${stLetter}<b>${escapeHtml(st.name||"Station")}</b>${st.subtheme?` <span class="sub">· ${escapeHtml(st.subtheme)}</span>`:""}${stCoach?` <span class="sub">· ${escapeHtml(stCoach.name)}</span>`:""}
-        ${exs.map(z=>`<div class="ex" style="font-size:14.5px"><span class="exn" style="flex:0 0 22px;height:22px;border-radius:11px;font-size:12px">${z.n}</span><span>${escapeHtml(D.exList[z.n-1].e.namn)}</span></div>`).join("")}</div>`;
+        ${exs.map(z=>`<div class="ex" style="font-size:14.5px"><span class="exn" style="flex:0 0 22px;height:22px;border-radius:11px;font-size:12px">${z.n}</span><span>${escapeHtml(D.exList[z.n-1].e.namn)}</span></div>`).join("")}
+        ${st.note?`<div class="ins" style="font-size:12.5px;">${escapeHtml(st.note)}</div>`:""}</div>`;
     }).join("");
     if(stations.length && (b.rounds||[]).length){
       inner += `<table class="rot"><tr><th style="width:46px"></th>${stations.map(st=>`<th>${escapeHtml(st.name||"Station")}</th>`).join("")}</tr>${
@@ -7565,7 +7567,7 @@ function applyAutoNames(b){
   });
 }
 function newBlankStation(b){
-  const st = { id:"st-"+Date.now()+"-"+(STATION_SEQ++), name:"", subtheme:STATION_SUBTHEMES[0], exerciseIds:[], coach:"", autoName:true };
+  const st = { id:"st-"+Date.now()+"-"+(STATION_SEQ++), name:"", subtheme:STATION_SUBTHEMES[0], exerciseIds:[], coach:"", note:"", autoName:true };
   stationsOf(b).push(st); applyAutoNames(b); return st;
 }
 function overviewLabelFor(st, exId){
@@ -8239,6 +8241,9 @@ function stationExtraRowHTML(s, b){
       </div>
       <div style="font-size:10px;color:var(--muted);margin:4px 0 2px;">Övningar (förslag: ${subCat?EX_CATS.find(c=>c.id===subCat).label:"—"})</div>
       ${exerciseCellHTMLForStation(s.id, b.id, st, subCat)}
+      <div style="font-size:10px;color:var(--muted);margin:6px 0 2px;">Fritext (valfritt — beskriv stationen utan att koppla en övning)</div>
+      <textarea placeholder="T.ex. fri lek, egen uppvärmning, instruktion som inte finns som övning…" style="min-height:34px;font-size:12px;width:100%;"
+        onchange="updateStationField('${s.id}','${b.id}','${st.id}','note',this.value)">${escapeHtml(st.note||'')}</textarea>
     </div>`;
   }).join("");
   const rotHead = stations.map(st=>`<th style="border:1px solid var(--line);padding:4px 6px;font-size:10.5px;">${escapeHtml(st.name)}</th>`).join("");
