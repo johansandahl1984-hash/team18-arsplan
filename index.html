@@ -4462,6 +4462,30 @@ function lineupCoaches(entry){
   if(entry.coaches) return entry.coaches;
   return entry.coach ? [entry.coach] : []; // bakåtkompatibilitet med äldre sparad data (en tränare per lag)
 }
+function blockCoaches(b){
+  if(b.coaches) return b.coaches;
+  return b.coach ? [b.coach] : []; // bakåtkompatibilitet med äldre sparad data (en tränare per block)
+}
+function toggleBlockCoach(sid, bid, coachId){
+  const {b} = findBlock(sid, bid); if(!b) return;
+  const current = blockCoaches(b);
+  b.coaches = current.includes(coachId) ? current.filter(x=>x!==coachId) : current.concat([coachId]);
+  delete b.coach;
+  renderBlocksPanel(sid);
+  scheduleBlockSave(sid, false);
+}
+function stationCoaches(st){
+  if(st.coaches) return st.coaches;
+  return st.coach ? [st.coach] : []; // bakåtkompatibilitet med äldre sparad data (en tränare per station)
+}
+function toggleStationCoach(sid, bid, stId, coachId){
+  const {b} = findBlock(sid, bid); const st = b && stationsOf(b).find(x=>x.id===stId); if(!st) return;
+  const current = stationCoaches(st);
+  st.coaches = current.includes(coachId) ? current.filter(x=>x!==coachId) : current.concat([coachId]);
+  delete st.coach;
+  renderBlocksPanel(sid);
+  scheduleBlockSave(sid, false);
+}
 function lineupTableHTML(s){
   const groupsUsed = DATA.groups.filter(g => s.lineup && s.lineup[g.id] && ((s.lineup[g.id].players||[]).length>0 || s.lineup[g.id].goalie));
   if(groupsUsed.length===0) return '<p style="font-size:12.5px;color:var(--muted);margin:8px 0 0;">Ingen laguppställning inlagd ännu.</p>';
@@ -4737,7 +4761,11 @@ function blockRowHTML(s, b, i, total){
   const color = themeColor(b.theme);
   const themeOpts = MAIN_THEME_LIST.map(t=>`<option ${b.theme===t?'selected':''}>${t}</option>`).join("")
     + (!MAIN_THEME_LIST.includes(b.theme) ? `<option selected>${b.theme}</option>` : "");
-  const coachOpts = '<option value="">—</option>' + DATA.coaches.map(c=>`<option value="${c.id}" ${b.coach===c.id?'selected':''}>${c.name}</option>`).join("");
+  const bCoaches = blockCoaches(b);
+  const coachChipsHTML = DATA.coaches.length ? `<div class="checkchips" style="gap:2px;">${DATA.coaches.map(c=>{
+    const on = bCoaches.includes(c.id);
+    return `<span class="checkchip chip-coach ${on?'on':''}" style="font-size:10px;padding:1px 6px;" onclick="toggleBlockCoach('${s.id}','${b.id}','${c.id}')">${c.name}</span>`;
+  }).join("")}</div>` : '<span style="font-size:10.5px;color:var(--muted);">Inga tränare upplagda</span>';
   const cat = MAIN_THEME_TO_CAT[b.theme];
   const exChipsAndAdd = exerciseCellHTML(s.id, b, cat, periodFocusCatIds(s));
 
@@ -4754,7 +4782,7 @@ function blockRowHTML(s, b, i, total){
         onchange="updateBlockField('${s.id}','${b.id}','duration',this.value)"></td>
     <td data-label="Tema"><select style="background:${color}18;font-weight:600;color:${color};" onchange="updateBlockField('${s.id}','${b.id}','theme',this.value)">${themeOpts}</select></td>
     <td data-label="Koppla övningar">${exChipsAndAdd}</td>
-    <td data-label="Ansvarig"><select onchange="updateBlockField('${s.id}','${b.id}','coach',this.value)">${coachOpts}</select></td>
+    <td data-label="Ansvarig">${coachChipsHTML}</td>
     <td data-label="" style="text-align:right;white-space:nowrap;">
       <button class="btn ghost small" style="padding:3px 7px;" onclick="toggleBlockNotes('${b.id}')" title="Anteckningar">📝</button>
       <button class="btn ghost small" style="padding:3px 7px;" onclick="deleteBlockRow('${s.id}','${b.id}')" title="Ta bort">🗑</button>
@@ -5062,17 +5090,17 @@ function trainingSummaryHTML(s){
 
   const blockCards = (s.blocks||[]).map(b=>{
     const color = themeColor(b.theme);
-    const coach = b.coach ? coachById(b.coach) : null;
+    const coachNames = blockCoaches(b).map(id=>coachById(id)).filter(Boolean).map(c=>c.name);
     const exNames = (b.exerciseIds||[]).map(id=>{ const e=exerciseById(id); return e?e.namn:null; }).filter(Boolean);
 
     let subHTML = "";
     if(isStationBlock(b)){
       const stations = b.stations||[];
       subHTML = ((b.overview && XD.hasContent(b.overview)) ? `<div style="max-width:340px;margin:6px 0;">${XD.thumbSVG(b.overview)}</div>` : "") + stations.map(st=>{
-        const stCoach = st.coach ? coachById(st.coach) : null;
+        const stCoachNames = stationCoaches(st).map(id=>coachById(id)).filter(Boolean).map(c=>c.name);
         const stEx = (st.exerciseIds||[]).map(id=>{ const e=exerciseById(id); return e?e.namn:null; }).filter(Boolean);
         return `<div style="margin:6px 0;padding:6px 9px;background:#F8F8F5;border-radius:6px;">
-          <b style="font-size:12px;">${st.name||"Station"}</b>${st.subtheme?` <span style="font-size:10.5px;color:var(--muted);">(${st.subtheme})</span>`:""}${stCoach?` <span style="font-size:10.5px;color:var(--muted);">· ${stCoach.name}</span>`:""}
+          <b style="font-size:12px;">${st.name||"Station"}</b>${st.subtheme?` <span style="font-size:10.5px;color:var(--muted);">(${st.subtheme})</span>`:""}${stCoachNames.length?` <span style="font-size:10.5px;color:var(--muted);">· ${stCoachNames.join(", ")}</span>`:""}
           ${stEx.length?`<div style="font-size:11.5px;margin-top:2px;">${stEx.join(", ")}</div>`:""}
           ${st.note?`<div style="font-size:11.5px;margin-top:2px;font-style:italic;color:#555;white-space:pre-wrap;">${escapeHtml(st.note)}</div>`:""}
         </div>`;
@@ -5113,7 +5141,7 @@ function trainingSummaryHTML(s){
         ${b.duration?`<span style="font-size:11.5px;opacity:.9;white-space:nowrap;">${b.duration} min</span>`:""}
       </div>
       <div style="padding:8px 12px;">
-        ${coach ? `<div style="font-size:11px;color:#777;"><b>Ansvarig</b> ${coach.name}</div>` : ""}
+        ${coachNames.length ? `<div style="font-size:11px;color:#777;"><b>Ansvarig</b> ${coachNames.join(", ")}</div>` : ""}
         ${exNames.length ? `<div style="font-size:12.5px;margin-top:4px;">${exNames.join(", ")}</div>` : ""}
         ${b.instruction ? `<div style="font-size:11.5px;color:#555;margin-top:4px;font-style:italic;">${b.instruction}</div>` : ""}
         ${subHTML}
@@ -5401,10 +5429,10 @@ function pdfOverviewHTML(D, b, compact){                                     // 
 }
 function pdfBlockCard(D, x, compact){
   const b = x.b, color = themeColor(b.theme);
-  const coach = b.coach ? coachById(b.coach) : null;
+  const coachNames = blockCoaches(b).map(id=>coachById(id)).filter(Boolean).map(c=>c.name);
   const timeTxt = x.from!=null ? `${pdfFmt(x.from)}–${pdfFmt(x.to)}` : (x.dur ? x.dur+" min" : "");
   let inner = "";
-  if(coach && !compact) inner += `<div class="who"><b>Ansvarig:</b> ${escapeHtml(coach.name)}</div>`;
+  if(coachNames.length && !compact) inner += `<div class="who"><b>Ansvarig:</b> ${escapeHtml(coachNames.join(", "))}</div>`;
   const nums = x.exNums.filter(z=>!z.st);
   inner += nums.map(z=>{ const e = D.exList[z.n-1].e; return `<div class="ex"><span class="exn">${z.n}</span><span>${escapeHtml(e.namn)}</span></div>`; }).join("");
   if(b.instruction) inner += `<div class="ins">${escapeHtml(b.instruction)}</div>`;
@@ -5415,9 +5443,9 @@ function pdfBlockCard(D, x, compact){
     if(b.overview && typeof syncOverview==="function") syncOverview(D.s.id, b.id);   // översikten följer blockets stationer
     inner += pdfOverviewHTML(D, b, compact);
     inner += stations.map((st,si)=>{
-      const stCoach = st.coach ? coachById(st.coach) : null, stLetter = XD.hasContent(b.overview) ? `<span class="stl">${String.fromCharCode(65+si)}</span>` : "";
+      const stCoachNames = stationCoaches(st).map(id=>coachById(id)).filter(Boolean).map(c=>c.name), stLetter = XD.hasContent(b.overview) ? `<span class="stl">${String.fromCharCode(65+si)}</span>` : "";
       const exs = x.exNums.filter(z=>z.st===st);
-      return `<div class="st">${stLetter}<b>${escapeHtml(st.name||"Station")}</b>${st.subtheme?` <span class="sub">· ${escapeHtml(st.subtheme)}</span>`:""}${stCoach?` <span class="sub">· ${escapeHtml(stCoach.name)}</span>`:""}
+      return `<div class="st">${stLetter}<b>${escapeHtml(st.name||"Station")}</b>${st.subtheme?` <span class="sub">· ${escapeHtml(st.subtheme)}</span>`:""}${stCoachNames.length?` <span class="sub">· ${escapeHtml(stCoachNames.join(", "))}</span>`:""}
         ${exs.map(z=>`<div class="ex" style="font-size:14.5px"><span class="exn" style="flex:0 0 22px;height:22px;border-radius:11px;font-size:12px">${z.n}</span><span>${escapeHtml(D.exList[z.n-1].e.namn)}</span></div>`).join("")}
         ${st.note?`<div class="ins" style="font-size:12.5px;">${escapeHtml(st.note)}</div>`:""}</div>`;
     }).join("");
@@ -8235,12 +8263,14 @@ function stationExtraRowHTML(s, b){
           onchange="updateStationField('${s.id}','${b.id}','${st.id}','name',this.value)">
         <select style="font-size:11px;min-width:110px;flex:1;" title="Undertema"
           onchange="updateStationField('${s.id}','${b.id}','${st.id}','subtheme',this.value)">${subOpts}</select>
-        <select style="font-size:11px;min-width:100px;flex:1;" title="Ansvarig"
-          onchange="updateStationField('${s.id}','${b.id}','${st.id}','coach',this.value)">
-          <option value="">Ansvarig —</option>${DATA.coaches.map(c=>`<option value="${c.id}" ${st.coach===c.id?'selected':''}>${c.name}</option>`).join("")}</select>
         ${arrows}
         <button class="btn ghost small" style="padding:3px 7px;flex-shrink:0;" title="Ta bort station" onclick="removeStation('${s.id}','${b.id}','${st.id}')">🗑</button>
       </div>
+      <div style="font-size:10px;color:var(--muted);margin:4px 0 2px;">Ansvarig</div>
+      <div class="checkchips" style="gap:2px;">${DATA.coaches.length ? DATA.coaches.map(c=>{
+        const on = stationCoaches(st).includes(c.id);
+        return `<span class="checkchip chip-coach ${on?'on':''}" style="font-size:10px;padding:1px 6px;" onclick="toggleStationCoach('${s.id}','${b.id}','${st.id}','${c.id}')">${c.name}</span>`;
+      }).join("") : '<span style="font-size:10.5px;color:var(--muted);">Inga tränare upplagda</span>'}</div>
       <div style="font-size:10px;color:var(--muted);margin:4px 0 2px;">Övningar (förslag: ${subCat?EX_CATS.find(c=>c.id===subCat).label:"—"})</div>
       ${exerciseCellHTMLForStation(s.id, b.id, st, subCat)}
       <div style="font-size:10px;color:var(--muted);margin:6px 0 2px;">Fritext (valfritt — beskriv stationen utan att koppla en övning)</div>
