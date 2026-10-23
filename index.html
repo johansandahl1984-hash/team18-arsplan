@@ -5466,8 +5466,8 @@ function pdfBlockCard(D, x, compact){
     }
   }
   if(b.theme==="Vattenpaus" && !x.exNums.length && !b.instruction && !b.material)          // vattenpaus: bara en smal rubrikrad med tid
-    return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coach ? `<em>· ${escapeHtml(coach.name)}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div></div>`;
-  return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coach ? `<em>· ${escapeHtml(coach.name)}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div><div class="tl-b">${inner||'<div class="who">—</div>'}</div></div>`;
+    return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coachNames.length ? `<em>· ${escapeHtml(coachNames.join(", "))}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div></div>`;
+  return `<div class="tl"><div class="tl-h" style="background:${color}"><b>${escapeHtml(b.theme)}${compact && coachNames.length ? `<em>· ${escapeHtml(coachNames.join(", "))}</em>` : ""}</b><span>${escapeHtml(timeTxt)}</span></div><div class="tl-b">${inner||'<div class="who">—</div>'}</div></div>`;
 }
 function pdfTeamCard(x){
   const many = x.names.length > 6;
