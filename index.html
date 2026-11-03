@@ -294,17 +294,16 @@
   /* ---------- Turnering ---------- */
   .tour-card{border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; margin-bottom:18px;}
   .tour-grid-wrap{overflow-x:auto; margin-top:12px;}
-  .tour-grid{border-collapse:collapse; width:100%; min-width:620px; table-layout:fixed;}
+  .tour-grid{border-collapse:collapse; width:100%; min-width:620px;}
   .tour-grid th{background:var(--pine-dark); color:#fff; font-family:'Oswald'; font-size:12px; padding:6px 8px; text-align:left; white-space:nowrap;}
-  .tour-grid th:first-child{width:64px;}
   .tour-grid td{border:1px solid var(--line); padding:0; vertical-align:middle;}
   .tour-time-cell{font-family:'IBM Plex Mono'; font-size:12.5px; font-weight:600; padding:8px; white-space:nowrap; background:var(--ice); text-align:right;}
   .tour-match-cell{padding:4px;}
-  .tour-match{border-radius:7px; padding:6px 8px; font-size:11px; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; display:flex; flex-direction:column; justify-content:center; gap:1px; min-height:50px; box-sizing:border-box;}
-  .tour-match .team{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; line-height:1.3;}
+  .tour-match{border-radius:7px; padding:8px 12px; font-size:12px; font-weight:400; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; display:flex; align-items:center; justify-content:center; gap:10px; white-space:nowrap; min-height:34px; box-sizing:border-box;}
+  .tour-match .team{white-space:nowrap; font-weight:400;}
   .tour-match.selected{background:var(--pine); color:#fff; border-color:var(--pine);}
-  .tour-match .vs{color:var(--muted); font-size:9.5px; display:block; text-align:center; line-height:1; margin:1px 0;}
-  .tour-match.selected .vs{color:#DCE8DF;}
+  .tour-match .vs{color:var(--muted); font-size:12px; font-weight:400; border-left:1px solid var(--line); border-right:1px solid var(--line); padding:0 10px; line-height:1.4;}
+  .tour-match.selected .vs{color:#DCE8DF; border-color:rgba(255,255,255,.35);}
   .tour-empty-slot{font-size:10.5px; color:var(--muted); text-align:center; padding:16px 0;}
   .tour-break-row td{background:#FBF3E3; text-align:center; font-weight:700; font-size:12.5px; padding:8px; color:#6B5326;}
   .tour-break-handle{cursor:grab; touch-action:none; font-size:16px; color:#B5924A; padding:2px 4px; user-select:none;}
