@@ -889,8 +889,9 @@ body.xd-lock{overflow:hidden;}
       <div class="field"><label>Starttid</label><input type="time" id="tour-start" value="09:30"></div>
       <div class="field"><label>Sluttid</label><input type="time" id="tour-end" value="11:50"></div>
     </div>
-    <div class="field"><label>Matchlängd (min)</label><input type="number" id="tour-minutes" value="20" min="5" step="5" style="max-width:140px;"></div>
-    <p style="font-size:11px;color:var(--muted);margin:-6px 0 12px;">Start- och sluttid avgör hur många omgångar som ryms — inte alla lag behöver mötas. Prioritetsordning vid lottning: 1) nya föreningar för båda lagen, 2) förening ni redan mött (men inte just det laget), 3) lag inom samma förening — bara om tiden räcker efter att alla mött alla.</p>
+    <div class="field"><label>Matchlängd (min)</label><input type="number" id="tour-minutes" value="20" min="5" step="5" style="max-width:140px;" oninput="updateTourMinutesHint()"></div>
+    <p id="tour-minutes-hint" style="font-size:11px;color:var(--muted);margin:-6px 0 4px;display:none;"></p>
+    <p style="font-size:11px;color:var(--muted);margin:0 0 12px;">Start- och sluttid avgör hur många omgångar som ryms — inte alla lag behöver mötas. Prioritetsordning vid lottning: 1) nya föreningar för båda lagen, 2) förening ni redan mött (men inte just det laget), 3) lag inom samma förening — bara om tiden räcker efter att alla mött alla.</p>
     <div class="field">
       <label>Planer</label>
       <div id="tour-courts-list"></div>
@@ -6598,6 +6599,12 @@ async function deleteCustomExercise(id){
    (t.ex. en cupdag), fristående från er egen tränings-/matchplanering.
    ========================================================================= */
 
+// Vid 15-minutersmatcher hinner lagen inte byta plan på bara 15 min, så 5 min ställtid läggs
+// automatiskt på efter varje match — det blir 20 min mellan varje matchstart. Matchens egen
+// längd (t.matchMinutes) ändras inte, bara tidsluckan mellan start på en match och nästa.
+function tourSlotMinutes(matchMinutes){
+  return matchMinutes===15 ? matchMinutes+5 : matchMinutes;
+}
 // Beräknar hur många omgångar (matcher i följd) som ryms mellan start- och sluttid.
 // Inte alla lag behöver mötas — tidsramen avgör hur mycket poolspel som hinns med.
 function computeNumRounds(startTime, endTime, matchMinutes){
@@ -6606,7 +6613,7 @@ function computeNumRounds(startTime, endTime, matchMinutes){
   const [eh,em] = endTime.split(":").map(Number);
   let diff = (eh*60+em) - (sh*60+sm);
   if(diff < 0) diff += 24*60; // sluttid tolkas som efter midnatt om den är "före" starttiden
-  return Math.max(0, Math.floor(diff / matchMinutes));
+  return Math.max(0, Math.floor(diff / tourSlotMinutes(matchMinutes)));
 }
 function generateAllPairs(teams){
   const pairs = [];
@@ -6693,7 +6700,7 @@ function trimScheduleToEndTime(t){
     const row = t.schedule[i];
     if(row.isEndMarker) continue; // Slut-markören är alltid giltig oavsett var den råkar hamna — aldrig ett klippmål i sig
     if(row.type==="matches"){
-      const matchEndMin = clockMin + t.matchMinutes;
+      const matchEndMin = clockMin + tourSlotMinutes(t.matchMinutes);
       if(matchEndMin > endMin){ cutIndex = i; break; }
       clockMin = matchEndMin;
     } else {
@@ -6726,7 +6733,19 @@ function openTournamentModal(id){
   document.getElementById("tour-delete-btn").style.display = t ? "inline-block" : "none";
   renderSavedClubsChips();
   renderTourLists();
+  updateTourMinutesHint();
   openModal("modal-tournament");
+}
+function updateTourMinutesHint(){
+  const mm = +document.getElementById("tour-minutes").value || 0;
+  const hint = document.getElementById("tour-minutes-hint");
+  const slot = tourSlotMinutes(mm);
+  if(slot > mm){
+    hint.textContent = `5 min ställtid läggs automatiskt till efter varje match → ${slot} min mellan varje matchstart.`;
+    hint.style.display = "block";
+  } else {
+    hint.style.display = "none";
+  }
 }
 function renderSavedClubsChips(){
   const el = document.getElementById("tour-saved-clubs");
@@ -7100,7 +7119,7 @@ function renderTournaments(){
           </td>`;
         }).join("");
         html = `<tr data-tour-schedule-row="${ri}"><td class="tour-time-cell">${timeLabel}</td>${cells}</tr>`;
-        clock = tourAddMinutes(clock, t.matchMinutes);
+        clock = tourAddMinutes(clock, tourSlotMinutes(t.matchMinutes));
       }
       return html;
     }).join("");
@@ -7113,7 +7132,7 @@ function renderTournaments(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div>
           <h3 style="margin:0;">${t.name}</h3>
-          <span style="font-size:12px;color:var(--muted);">${t.date||"inget datum"} · ${t.startTime||"?"}–${t.endTime||"?"} · ${t.teams.length} lag · ${t.courts.length} plan${t.courts.length===1?"":"er"} · ${t.matchMinutes} min/match</span>
+          <span style="font-size:12px;color:var(--muted);">${t.date||"inget datum"} · ${t.startTime||"?"}–${t.endTime||"?"} · ${t.teams.length} lag · ${t.courts.length} plan${t.courts.length===1?"":"er"} · ${t.matchMinutes} min/match${tourSlotMinutes(t.matchMinutes)>t.matchMinutes?` (+${tourSlotMinutes(t.matchMinutes)-t.matchMinutes} min ställtid, ${tourSlotMinutes(t.matchMinutes)} min mellan matchstart)`:""}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn ghost small" onclick="addBreakBlock('${t.id}')">+ Ny paus/block</button>
