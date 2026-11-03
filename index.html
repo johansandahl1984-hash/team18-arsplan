@@ -294,16 +294,18 @@
   /* ---------- Turnering ---------- */
   .tour-card{border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; margin-bottom:18px;}
   .tour-grid-wrap{overflow-x:auto; margin-top:12px;}
-  .tour-grid{border-collapse:collapse; width:100%; min-width:480px;}
+  .tour-grid{border-collapse:collapse; width:100%; min-width:620px; table-layout:fixed;}
   .tour-grid th{background:var(--pine-dark); color:#fff; font-family:'Oswald'; font-size:12px; padding:6px 8px; text-align:left; white-space:nowrap;}
-  .tour-grid td{border:1px solid var(--line); padding:0; vertical-align:top;}
+  .tour-grid th:first-child{width:64px;}
+  .tour-grid td{border:1px solid var(--line); padding:0; vertical-align:middle;}
   .tour-time-cell{font-family:'IBM Plex Mono'; font-size:12.5px; font-weight:600; padding:8px; white-space:nowrap; background:var(--ice); text-align:right;}
   .tour-match-cell{padding:4px;}
-  .tour-match{border-radius:7px; padding:5px 7px; font-size:11.5px; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  .tour-match{border-radius:7px; padding:6px 8px; font-size:11px; cursor:grab; touch-action:none; background:#F4F6F1; border:1px solid var(--line); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; display:flex; flex-direction:column; justify-content:center; gap:1px; min-height:50px; box-sizing:border-box;}
+  .tour-match .team{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; line-height:1.3;}
   .tour-match.selected{background:var(--pine); color:#fff; border-color:var(--pine);}
-  .tour-match .vs{color:var(--muted); font-size:10px; display:block; text-align:center; margin:1px 0;}
+  .tour-match .vs{color:var(--muted); font-size:9.5px; display:block; text-align:center; line-height:1; margin:1px 0;}
   .tour-match.selected .vs{color:#DCE8DF;}
-  .tour-empty-slot{font-size:10.5px; color:var(--muted); text-align:center; padding:8px 0;}
+  .tour-empty-slot{font-size:10.5px; color:var(--muted); text-align:center; padding:16px 0;}
   .tour-break-row td{background:#FBF3E3; text-align:center; font-weight:700; font-size:12.5px; padding:8px; color:#6B5326;}
   .tour-break-handle{cursor:grab; touch-action:none; font-size:16px; color:#B5924A; padding:2px 4px; user-select:none;}
   .tour-match-ghost{box-shadow:0 6px 16px rgba(0,0,0,.3); z-index:500;}
@@ -7087,8 +7089,8 @@ function renderTournaments(){
           if(!m) return `<td class="tour-match-cell" data-tour-row="${ri}" data-tour-court="${ci}"><div class="tour-empty-slot">—</div></td>`;
           const sel = matchRefEq(tourSelectedMatch,{tourId:t.id,rowIndex:ri,court:ci}) ? "selected" : "";
           return `<td class="tour-match-cell" data-tour-row="${ri}" data-tour-court="${ci}">
-            <div class="tour-match ${sel}" onpointerdown="onTourMatchPointerDown(event,'${t.id}',${ri},${ci})" onclick="onTourMatchClick(event,'${t.id}',${ri},${ci})">
-              <div style="display:flex;justify-content:space-between;gap:4px;"><span>${m.teamA}</span><span style="opacity:.6;">–</span><span>${m.teamB}</span></div>
+            <div class="tour-match ${sel}" onpointerdown="onTourMatchPointerDown(event,'${t.id}',${ri},${ci})" onclick="onTourMatchClick(event,'${t.id}',${ri},${ci})" title="${escapeHtml(m.teamA)} – ${escapeHtml(m.teamB)}">
+              <span class="team">${escapeHtml(m.teamA)}</span><span class="vs">–</span><span class="team">${escapeHtml(m.teamB)}</span>
             </div>
           </td>`;
         }).join("");
