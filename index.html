@@ -6630,10 +6630,80 @@ function pairTier(a,b,teamClub,facedClubs){
   if(facedClubs[a].has(teamClub[b]) || facedClubs[b].has(teamClub[a])) return 1; // redan mött föreningen, annat lag
   return 0; // ny förening för båda
 }
+// Giriga grundmetoden: bygger en omgång bana för bana, väljer alltid den just nu "bästa"
+// motståndaren (ny förening > redan mött förening > samma förening) utan att titta framåt.
+// Kan fastna och tvingas para ihop lag från samma förening på en sen bana även när det hade
+// gått att undvika helt med en annan kombination tidigare i omgången — se backtracking-
+// varianten ovanför generateBalancedSchedule, som används i första hand.
+function buildRoundGreedy(available, numCourts, teamClub, facedClubs, matchCount, playedPairs, pairKey){
+  let pool = available.slice();
+  const slot = [];
+  while(slot.length < numCourts && pool.length>=2){
+    pool.sort((a,b)=>matchCount[a]-matchCount[b]);
+    const anchor = pool[0];
+    let best = null, bestScore = null;
+    for(let i=1;i<pool.length;i++){
+      const cand = pool[i];
+      const tier = pairTier(anchor,cand,teamClub,facedClubs);
+      const repeat = playedPairs.has(pairKey(anchor,cand)) ? 1 : 0;
+      const score = tier*100 + repeat*10 + matchCount[cand];
+      if(bestScore===null || score < bestScore){ bestScore = score; best = cand; }
+    }
+    if(!best) break;
+    slot.push([anchor, best]);
+    matchCount[anchor]++; matchCount[best]++;
+    facedClubs[anchor].add(teamClub[best]); facedClubs[best].add(teamClub[anchor]);
+    playedPairs.add(pairKey(anchor,best));
+    pool = pool.filter(tm=>tm!==anchor && tm!==best);
+  }
+  return slot;
+}
+// Försöker fylla HELA omgången (alla banor) utan att något lag möter ett lag från sin egen
+// förening — med backtracking (inte bara giriga val) så att ett val tidigt i omgången som
+// skulle tvinga fram ett föreningsinternt möte senare förkastas till förmån för ett annat.
+// Om turneringens lagsammansättning rent matematiskt tillåter en föreningsfri omgång (vilket
+// den nästan alltid gör så länge ingen förening har fler än hälften av lagen) hittas den.
+// Returnerar null om det bevisligen inte går — då faller anroparen tillbaka på den giriga
+// metoden, som tillåter föreningsinterna möten som sista utväg.
+function tryRoundWithoutClubClashes(available, numCourts, teamClub, facedClubs, matchCount, playedPairs, pairKey){
+  const slot = [];
+  let budget = 50000; // säkerhetsgräns mot pannkaksvändning vid ovanligt svåra kombinationer
+  function backtrack(pool){
+    if(budget-- <= 0) return false;
+    if(slot.length === numCourts || pool.length < 2) return true; // omgången fylld (eller inga fler lag kvar att para)
+    const anchor = pool.slice().sort((a,b)=>matchCount[a]-matchCount[b])[0];
+    const rest = pool.filter(tm=>tm!==anchor);
+    const candidates = rest.filter(cand => teamClub[cand] !== teamClub[anchor]); // föreningsinternt uteslutet helt i detta försök
+    candidates.sort((a,b)=>{
+      const scoreA = pairTier(anchor,a,teamClub,facedClubs)*100 + (playedPairs.has(pairKey(anchor,a))?10:0) + matchCount[a];
+      const scoreB = pairTier(anchor,b,teamClub,facedClubs)*100 + (playedPairs.has(pairKey(anchor,b))?10:0) + matchCount[b];
+      return scoreA - scoreB;
+    });
+    for(const cand of candidates){
+      const clubA = teamClub[anchor], clubC = teamClub[cand];
+      const anchorHadFaced = facedClubs[anchor].has(clubC), candHadFaced = facedClubs[cand].has(clubA);
+      const key = pairKey(anchor,cand), wasNewPair = !playedPairs.has(key);
+      slot.push([anchor, cand]);
+      matchCount[anchor]++; matchCount[cand]++;
+      if(!anchorHadFaced) facedClubs[anchor].add(clubC);
+      if(!candHadFaced) facedClubs[cand].add(clubA);
+      if(wasNewPair) playedPairs.add(key);
+      if(backtrack(pool.filter(tm=>tm!==anchor && tm!==cand))) return true;
+      slot.pop();
+      matchCount[anchor]--; matchCount[cand]--;
+      if(!anchorHadFaced) facedClubs[anchor].delete(clubC);
+      if(!candHadFaced) facedClubs[cand].delete(clubA);
+      if(wasNewPair) playedPairs.delete(key);
+    }
+    return false; // inget val för denna ankare funkade här — backtracka ett steg till
+  }
+  return backtrack(available.slice()) && slot.length === Math.min(numCourts, Math.floor(available.length/2)) ? slot : null;
+}
 // Balanserar TVÅ saker samtidigt: 1) att alla lag spelar lika många matcher (ingen ska halka
 // efter — det lag med FÄRST spelade matcher denna omgång får alltid välja motståndare först),
-// och 2) föreningsmix (ny förening prioriteras, föreningsinternt sist). Genererar bara så många
-// omgångar som ryms inom tidsramen (numRounds) — inte tills alla lag mötts.
+// och 2) föreningsmix (ny förening prioriteras, föreningsinternt undviks helt om möjligt).
+// Genererar bara så många omgångar som ryms inom tidsramen (numRounds) — inte tills alla lag
+// mötts.
 function generateBalancedSchedule(teams, numCourts, teamClub, numRounds){
   const facedClubs = {}; const matchCount = {};
   teams.forEach(tm=>{ facedClubs[tm]=new Set(); matchCount[tm]=0; });
@@ -6641,26 +6711,9 @@ function generateBalancedSchedule(teams, numCourts, teamClub, numRounds){
   const pairKey = (a,b)=>[a,b].sort().join("|");
   const slots = [];
   for(let r=0; r<numRounds; r++){
-    let available = teams.slice();
-    const slot = [];
-    while(slot.length < numCourts && available.length>=2){
-      available.sort((a,b)=>matchCount[a]-matchCount[b]);
-      const anchor = available[0];
-      let best = null, bestScore = null;
-      for(let i=1;i<available.length;i++){
-        const cand = available[i];
-        const tier = pairTier(anchor,cand,teamClub,facedClubs);
-        const repeat = playedPairs.has(pairKey(anchor,cand)) ? 1 : 0;
-        const score = tier*100 + repeat*10 + matchCount[cand];
-        if(bestScore===null || score < bestScore){ bestScore = score; best = cand; }
-      }
-      if(!best) break;
-      slot.push([anchor, best]);
-      matchCount[anchor]++; matchCount[best]++;
-      facedClubs[anchor].add(teamClub[best]); facedClubs[best].add(teamClub[anchor]);
-      playedPairs.add(pairKey(anchor,best));
-      available = available.filter(tm=>tm!==anchor && tm!==best);
-    }
+    const available = teams.slice();
+    let slot = tryRoundWithoutClubClashes(available, numCourts, teamClub, facedClubs, matchCount, playedPairs, pairKey);
+    if(!slot) slot = buildRoundGreedy(available, numCourts, teamClub, facedClubs, matchCount, playedPairs, pairKey);
     slots.push(slot);
   }
   return slots;
